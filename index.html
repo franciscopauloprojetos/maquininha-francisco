@@ -440,6 +440,80 @@
             </div>
           </section>
         </div>
+
+        <!-- ================= VIEW 3: DASHBOARD (Conforme Imagem) ================= -->
+        <div id="view-dashboard" class="app-view" style="display: none;">
+          <!-- Barra Superior de Ações com Botão Atualizar -->
+          <div class="dashboard-top-bar">
+            <button class="btn-refresh" id="btnRefreshDashboard">
+              <i data-lucide="rotate-cw"></i>
+              <span>Atualizar</span>
+            </button>
+          </div>
+
+          <!-- Grade de 4 Cards de Estatísticas -->
+          <div class="dashboard-cards-grid">
+            <!-- Card 1: Empresas Ativas -->
+            <div class="dash-stat-card">
+              <div class="dash-card-header">
+                <span class="dash-card-label">Empresas Ativas</span>
+                <span class="dash-card-icon"><i data-lucide="building-2"></i></span>
+              </div>
+              <div class="dash-card-value" id="dashValEmpresas">16</div>
+              <div>
+                <button class="dash-card-link" id="dashLinkEmpresas">
+                  <span>Ver detalhes</span>
+                  <i data-lucide="arrow-right"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 2: Transações Hoje -->
+            <div class="dash-stat-card">
+              <div class="dash-card-header">
+                <span class="dash-card-label">Transações Hoje</span>
+                <span class="dash-card-icon"><i data-lucide="arrow-left-right"></i></span>
+              </div>
+              <div class="dash-card-value" id="dashValTransacoes">45</div>
+              <div>
+                <button class="dash-card-link" id="dashLinkTransacoes">
+                  <span>Ver detalhes</span>
+                  <i data-lucide="arrow-right"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 3: Maquininhas Ativas -->
+            <div class="dash-stat-card">
+              <div class="dash-card-header">
+                <span class="dash-card-label">Maquininhas Ativas</span>
+                <span class="dash-card-icon"><i data-lucide="smartphone"></i></span>
+              </div>
+              <div class="dash-card-value" id="dashValTerminais">18</div>
+              <div>
+                <button class="dash-card-link" id="dashLinkTerminais">
+                  <span>Ver detalhes</span>
+                  <i data-lucide="arrow-right"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 4: Volume Total (R$) -->
+            <div class="dash-stat-card">
+              <div class="dash-card-header">
+                <span class="dash-card-label">Volume Total (R$)</span>
+                <span class="dash-card-icon" style="font-weight: 700; font-size: 17px; color: #94a3b8; font-family: monospace;">$</span>
+              </div>
+              <div class="dash-card-value" id="dashValVolume">R$ 213.025,44</div>
+              <div>
+                <button class="dash-card-link" id="dashLinkVolume">
+                  <span>Ver detalhes</span>
+                  <i data-lucide="arrow-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   </div>

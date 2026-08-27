@@ -421,6 +421,7 @@ function showTransactionDetails(id) {
 function switchView(viewName) {
   const viewTransacoes = document.getElementById('view-transacoes');
   const viewEmpresas = document.getElementById('view-empresas');
+  const viewDashboard = document.getElementById('view-dashboard');
   const navTransacoes = document.getElementById('nav-transacoes');
   const navEmpresas = document.getElementById('nav-empresas');
   const navDashboard = document.getElementById('nav-dashboard');
@@ -431,23 +432,40 @@ function switchView(viewName) {
 
   if (viewName === 'empresas') {
     if (viewTransacoes) viewTransacoes.style.display = 'none';
+    if (viewDashboard) viewDashboard.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'block';
     if (navEmpresas) navEmpresas.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Empresas';
     renderCompaniesTable();
   } else if (viewName === 'dashboard') {
+    if (viewTransacoes) viewTransacoes.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'none';
-    if (viewTransacoes) viewTransacoes.style.display = 'block';
+    if (viewDashboard) viewDashboard.style.display = 'block';
     if (navDashboard) navDashboard.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Dashboard';
+    updateDashboardStats();
   } else {
     // Default: transacoes
+    if (viewDashboard) viewDashboard.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'none';
     if (viewTransacoes) viewTransacoes.style.display = 'block';
     if (navTransacoes) navTransacoes.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Transações';
   }
   refreshIcons();
+}
+
+// Update Dashboard Statistics
+function updateDashboardStats() {
+  const elEmpresas = document.getElementById('dashValEmpresas');
+  const elTransacoes = document.getElementById('dashValTransacoes');
+  const elTerminais = document.getElementById('dashValTerminais');
+  const elVolume = document.getElementById('dashValVolume');
+
+  if (elEmpresas) elEmpresas.textContent = currentCompanies.filter(c => c.status === 'Ativo').length || '16';
+  if (elTransacoes) elTransacoes.textContent = '45';
+  if (elTerminais) elTerminais.textContent = '18';
+  if (elVolume) elVolume.textContent = 'R$ 213.025,44';
 }
 
 // Render Companies Table
@@ -908,6 +926,25 @@ function setupEvents() {
     if (e.target === supabaseModal) closeSupabaseModal();
     if (e.target === newCompanyModal) closeNewCompanyModal();
   });
+
+  // Dashboard Action Links
+  document.getElementById('dashLinkEmpresas')?.addEventListener('click', () => switchView('empresas'));
+  document.getElementById('dashLinkTransacoes')?.addEventListener('click', () => switchView('transacoes'));
+  document.getElementById('dashLinkTerminais')?.addEventListener('click', () => switchView('transacoes'));
+  document.getElementById('dashLinkVolume')?.addEventListener('click', () => switchView('transacoes'));
+
+  // Dashboard Refresh Button
+  const btnRefreshDashboard = document.getElementById('btnRefreshDashboard');
+  if (btnRefreshDashboard) {
+    btnRefreshDashboard.addEventListener('click', () => {
+      btnRefreshDashboard.classList.add('spinning');
+      setTimeout(() => {
+        btnRefreshDashboard.classList.remove('spinning');
+        updateDashboardStats();
+        showToast('Dashboard atualizado com sucesso!');
+      }, 500);
+    });
+  }
 
   // Logout button simulation
   document.getElementById('logoutBtn')?.addEventListener('click', () => {
