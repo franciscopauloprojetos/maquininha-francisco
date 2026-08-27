@@ -1146,16 +1146,29 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* Inline Rate Input & Action Buttons */
 .inline-rate-input {
+  width: 74px;
+  height: 32px;
+  padding: 4px 8px;
   border-radius: var(--radius-sm);
   border: 1.5px solid #cbd5e1;
   background-color: #ffffff;
   color: #0f172a;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
   transition: all var(--transition-fast);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.inline-rate-input:hover {
+  border-color: #94a3b8;
 }
 
 .inline-rate-input:focus {
   border-color: #059669;
   box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+  background-color: #ffffff;
 }
 
 .btn-save-inline-rate {
@@ -1164,7 +1177,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-weight: 700 !important;
   gap: 4px !important;
   border-radius: var(--radius-sm) !important;
-  height: 29px !important;
+  height: 32px !important;
 }
 
 .btn-open-edit-rate {
@@ -1176,9 +1189,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: #1d68d8 !important;
   font-weight: 700 !important;
   border: 1px solid #bfdbfe !important;
+  height: 32px !important;
 }
 
 .btn-open-edit-rate:hover {
   background-color: #dbeafe !important;
 }
+
 

@@ -968,10 +968,8 @@ function renderRatesTable() {
         </td>
         <td style="text-align: center;">
           <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-            <div class="input-wrapper" style="width: 80px; position: relative;">
-              <input type="number" step="0.1" min="0" max="100" class="custom-input inline-rate-input" data-id="${comp.id}" value="${rate}" style="padding: 5px 6px; font-size: 13px; font-weight: 700; text-align: center;">
-            </div>
-            <span style="font-weight: 700; color: #64748b; font-size: 12px;">%</span>
+            <input type="number" step="0.1" min="0" max="100" class="inline-rate-input" data-id="${comp.id}" value="${rate}">
+            <span style="font-weight: 700; color: #64748b; font-size: 13px;">%</span>
             <button type="button" class="btn btn-sm btn-primary-green btn-save-inline-rate" data-id="${comp.id}" title="Salvar Alíquota">
               <i data-lucide="check" style="width: 13px; height: 13px;"></i>
               <span>Salvar</span>
