@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="favGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFAB00"/>
+      <stop offset="100%" stop-color="#FFD902"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="#0f172a"/>
+  <!-- Stylized K Logo in Gold Gradient -->
+  <rect x="7" y="7" width="4.5" height="18" rx="2" fill="#ffffff"/>
+  <path d="M12.5 16.5 L19.5 8.5 C20.2 7.7 21.5 7.7 22.2 8.5 C23 9.3 23 10.5 22.2 11.3 L16.5 17.5 L23 23.8 C23.8 24.6 23.8 25.8 23 26.6 C22.2 27.4 21 27.4 20.2 26.6 L12.5 18.5 Z" fill="url(#favGrad)"/>
+</svg>
