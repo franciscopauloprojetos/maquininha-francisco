@@ -163,6 +163,36 @@ export function login(email, password, remember = false) {
 }
 
 /**
+ * Retorna todos os IDs da sub-árvore de um usuário (ele mesmo + descendentes diretos e indiretos)
+ */
+export function getUserSubtreeIds(userId, users = getStoredNetworkUsers()) {
+  const result = [userId];
+  const queue = [userId];
+
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+    const children = users.filter(u => u.parentId === currentId);
+    children.forEach(child => {
+      if (!result.includes(child.id)) {
+        result.push(child.id);
+        queue.push(child.id);
+      }
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Verifica se um usuário autenticado tem permissão para cadastrar um indicado sob determinado parentId
+ */
+export function canUserRegisterUnder(currentUserId, targetParentId, users = getStoredNetworkUsers(), isAdmin = false) {
+  if (isAdmin) return true;
+  const allowedSubtree = getUserSubtreeIds(currentUserId, users);
+  return allowedSubtree.includes(targetParentId);
+}
+
+/**
  * Encerra a sessão do usuário
  */
 export function logout() {

@@ -28,7 +28,9 @@ import {
   logout,
   ADMIN_CREDENTIALS,
   getStoredNetworkUsers,
-  saveNetworkUsers
+  saveNetworkUsers,
+  getUserSubtreeIds,
+  canUserRegisterUnder
 } from './auth.js';
 
 // Application State - Transações
@@ -703,29 +705,40 @@ function renderNetworkView() {
 
 // Render network metrics
 function renderNetworkMetrics() {
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
   const statTotal = document.getElementById('statTotalNetworkUsers');
   const statDirect = document.getElementById('statDirectUsers');
   const statDepth = document.getElementById('statTreeDepth');
   const statAvg = document.getElementById('statAvgCommission');
 
-  if (statTotal) statTotal.textContent = currentNetworkUsers.length;
+  const visibleUserIds = isAdmin 
+    ? currentNetworkUsers.map(u => u.id)
+    : getUserSubtreeIds(currentUser.id, currentNetworkUsers);
+
+  const visibleUsers = currentNetworkUsers.filter(u => visibleUserIds.includes(u.id));
+
+  if (statTotal) statTotal.textContent = visibleUsers.length;
   
-  const root = currentNetworkUsers.find(u => !u.parentId || u.id === 'USR-ADMIN');
-  const rootId = root ? root.id : 'USR-ADMIN';
+  const rootId = isAdmin ? 'USR-ADMIN' : currentUser.id;
   const directUsers = getUserDirectChildren(rootId);
   if (statDirect) statDirect.textContent = directUsers.length;
 
   let maxDepth = 0;
   let sumCommission = 0;
-  currentNetworkUsers.forEach(u => {
+  visibleUsers.forEach(u => {
     const lvl = calculateUserLevel(u.id);
     if (lvl > maxDepth) maxDepth = lvl;
     sumCommission += Number(u.commissionRate || 0);
   });
 
-  if (statDepth) statDepth.textContent = `${maxDepth + 1} Níveis`;
-  if (statAvg && currentNetworkUsers.length > 0) {
-    statAvg.textContent = `${(sumCommission / currentNetworkUsers.length).toFixed(1)}%`;
+  if (statDepth) {
+    const userLvl = isAdmin ? 0 : calculateUserLevel(currentUser.id);
+    const depthCount = maxDepth - userLvl + 1;
+    statDepth.textContent = `${Math.max(1, depthCount)} Níveis`;
+  }
+  if (statAvg && visibleUsers.length > 0) {
+    statAvg.textContent = `${(sumCommission / visibleUsers.length).toFixed(1)}%`;
   }
 }
 
@@ -734,17 +747,24 @@ function renderNetworkTree() {
   const container = document.getElementById('networkTreeWrapper');
   if (!container) return;
 
-  const root = currentNetworkUsers.find(u => !u.parentId || u.id === 'USR-ADMIN') || currentNetworkUsers[0];
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+
+  const root = isAdmin
+    ? (currentNetworkUsers.find(u => !u.parentId || u.id === 'USR-ADMIN') || currentNetworkUsers[0])
+    : currentNetworkUsers.find(u => u.id === currentUser.id);
+
   if (!root) {
-    container.innerHTML = '<p style="color: #64748b; padding: 20px;">Nenhum usuário cadastrado na rede.</p>';
+    container.innerHTML = '<p style="color: #64748b; padding: 20px;">Nenhum usuário cadastrado na sua rede.</p>';
     return;
   }
 
   function buildNodeHTML(user) {
-    const isRoot = !user.parentId || user.id === 'USR-ADMIN';
+    const isRoot = !user.parentId || user.id === 'USR-ADMIN' || (!isAdmin && user.id === currentUser.id);
     const level = calculateUserLevel(user.id);
     const children = getUserDirectChildren(user.id);
     const initials = user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    const isSelf = user.id === currentUser?.id;
 
     let html = `
       <div class="tree-branch">
@@ -752,7 +772,9 @@ function renderNetworkTree() {
           <div class="tree-node-header">
             <div class="tree-node-avatar">${initials}</div>
             <div class="tree-node-title-group">
-              <span class="tree-node-name" title="${user.name}">${user.name}</span>
+              <span class="tree-node-name" title="${user.name}">
+                ${user.name} ${isSelf ? '<span style="color:#059669; font-size:11px; font-weight:700;">(Você)</span>' : ''}
+              </span>
               <span class="tree-node-role">${user.role || 'Membro'}</span>
             </div>
           </div>
@@ -765,7 +787,7 @@ function renderNetworkTree() {
               <i data-lucide="users" style="width: 12px; height: 12px;"></i>
               ${children.length} ${children.length === 1 ? 'indicado' : 'indicados'}
             </span>
-            <button type="button" class="btn-add-subnode" data-parent-id="${user.id}" title="Cadastrar usuário abaixo deste nó">
+            <button type="button" class="btn-add-subnode" data-parent-id="${user.id}" title="Cadastrar usuário abaixo de ${user.name}">
               <i data-lucide="plus" style="width: 11px; height: 11px;"></i>
               <span>+ Indicar</span>
             </button>
@@ -805,23 +827,33 @@ function renderNetworkTable() {
   const tbody = document.getElementById('networkTableBody');
   if (!tbody) return;
 
-  if (filteredNetworkUsers.length === 0) {
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+
+  const visibleIds = isAdmin 
+    ? currentNetworkUsers.map(u => u.id)
+    : getUserSubtreeIds(currentUser.id, currentNetworkUsers);
+
+  const displayUsers = filteredNetworkUsers.filter(u => visibleIds.includes(u.id));
+
+  if (displayUsers.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="8" style="text-align: center; padding: 30px; color: #64748b;">
-          Nenhum membro encontrado na rede.
+          Nenhum membro encontrado na sua rede.
         </td>
       </tr>
     `;
     return;
   }
 
-  tbody.innerHTML = filteredNetworkUsers.map(u => {
-    const isRoot = !u.parentId || u.id === 'USR-ADMIN';
+  tbody.innerHTML = displayUsers.map(u => {
+    const isRoot = !u.parentId || u.id === 'USR-ADMIN' || (!isAdmin && u.id === currentUser.id);
     const level = calculateUserLevel(u.id);
     const uplineUser = currentNetworkUsers.find(parent => parent.id === u.parentId);
     const uplineName = uplineUser ? uplineUser.name : '👑 Raiz (Admin Master)';
     const initials = u.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    const isSelf = u.id === currentUser?.id;
 
     return `
       <tr>
@@ -829,7 +861,7 @@ function renderNetworkTable() {
           <div class="table-network-user">
             <div class="user-avatar-sm" style="${isRoot ? 'background: #fef3c7; color: #d97706;' : ''}">${initials}</div>
             <div class="user-name-col">
-              <span class="user-full-name">${u.name}</span>
+              <span class="user-full-name">${u.name} ${isSelf ? '<span style="color:#059669; font-size:11px; font-weight:700;">(Você)</span>' : ''}</span>
               <span class="user-id-sub">${u.id}</span>
             </div>
           </div>
@@ -858,11 +890,11 @@ function renderNetworkTable() {
           </span>
         </td>
         <td style="text-align: right;">
-          ${!isRoot ? `
+          ${(!isRoot && u.id !== currentUser?.id) ? `
             <button type="button" class="btn-delete-company btn-delete-user" data-user-id="${u.id}" title="Excluir Usuário da Rede">
               <i data-lucide="trash-2"></i>
             </button>
-          ` : '<span style="font-size: 12px; color: #94a3b8; font-weight: 600;">Admin</span>'}
+          ` : '<span style="font-size: 12px; color: #94a3b8; font-weight: 600;">Principal</span>'}
         </td>
       </tr>
     `;
@@ -884,10 +916,23 @@ function populateUplineSelect(selectedId = null) {
   const select = document.getElementById('newUserParentId');
   if (!select) return;
 
-  select.innerHTML = currentNetworkUsers.map(u => {
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+
+  const allowedIds = isAdmin
+    ? currentNetworkUsers.map(u => u.id)
+    : getUserSubtreeIds(currentUser.id, currentNetworkUsers);
+
+  const allowedUsers = currentNetworkUsers.filter(u => allowedIds.includes(u.id));
+
+  // Default target is either preselected or currentUser.id
+  const targetSelected = selectedId || (isAdmin ? (currentNetworkUsers[0]?.id || 'USR-ADMIN') : currentUser.id);
+
+  select.innerHTML = allowedUsers.map(u => {
     const level = calculateUserLevel(u.id);
-    const isSelected = selectedId === u.id ? 'selected' : '';
-    return `<option value="${u.id}" ${isSelected}>[Nível ${level}] ${u.name} (${u.role})</option>`;
+    const isSelected = targetSelected === u.id ? 'selected' : '';
+    const isMe = u.id === currentUser?.id ? ' (Você)' : '';
+    return `<option value="${u.id}" ${isSelected}>[Nível ${level}] ${u.name}${isMe} - ${u.role}</option>`;
   }).join('');
 }
 
@@ -1291,6 +1336,8 @@ function setupEvents() {
   if (newNetworkUserForm) {
     newNetworkUserForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      const currentUser = getCurrentUser();
+      const isAdmin = currentUser?.isAdmin ?? true;
       const parentId = document.getElementById('newUserParentId').value;
       const name = document.getElementById('newUserName').value.trim();
       const email = document.getElementById('newUserEmail').value.trim();
@@ -1300,7 +1347,19 @@ function setupEvents() {
       const phone = document.getElementById('newUserPhone').value.trim() || '(41) 99999-0000';
       const status = document.getElementById('newUserStatus').value || 'Ativo';
 
-      // Check if email already exists
+      // 1. Check if parentId is within the allowed lineage
+      if (!canUserRegisterUnder(currentUser.id, parentId, currentNetworkUsers, isAdmin)) {
+        showToast('Você só pode cadastrar indicados dentro da sua própria linhagem/rede.', 'success');
+        return;
+      }
+
+      // 2. Check commission limit (cannot exceed current user's commission if not admin)
+      if (!isAdmin && commissionRate > Number(currentUser.commissionRate || 100)) {
+        showToast(`A comissão informada (${commissionRate}%) não pode ultrapassar a sua comissão máxima (${currentUser.commissionRate}%).`, 'success');
+        return;
+      }
+
+      // 3. Check if email already exists
       if (currentNetworkUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
         showToast('Já existe um usuário cadastrado com este email.', 'success');
         return;
@@ -1330,7 +1389,7 @@ function setupEvents() {
 
       closeNewNetworkUserModal();
       renderNetworkView();
-      showToast(`Usuário ${name} cadastrado com sucesso na rede hierárquica!`);
+      showToast(`Usuário ${name} cadastrado com sucesso na sua rede!`);
     });
   }
 
@@ -1366,6 +1425,7 @@ function checkAuthState() {
   const loginScreen = document.getElementById('loginScreen');
   const appContainer = document.getElementById('appContainer');
   const headerUserName = document.getElementById('headerUserName');
+  const headerUserRole = document.getElementById('headerUserRole');
 
   if (isAuthenticated()) {
     if (loginScreen) loginScreen.style.display = 'none';
@@ -1373,6 +1433,10 @@ function checkAuthState() {
     const user = getCurrentUser();
     if (headerUserName && user) {
       headerUserName.textContent = user.shortName || user.name || 'Francisco';
+    }
+    if (headerUserRole && user) {
+      headerUserRole.textContent = user.role || 'Membro da Rede';
+      headerUserRole.style.color = user.isAdmin ? '#059669' : '#1d68d8';
     }
     refreshIcons();
     return true;
