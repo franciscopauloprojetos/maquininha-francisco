@@ -4,8 +4,8 @@
  */
 
 export const SUPABASE_CONFIG = {
-  url: window.SUPABASE_URL || localStorage.getItem('supabase_url') || '',
-  anonKey: window.SUPABASE_ANON_KEY || localStorage.getItem('supabase_anon_key') || ''
+  url: window.SUPABASE_URL || localStorage.getItem('supabase_url') || 'https://zoxevtbyuoxvolcuqrwo.supabase.co',
+  anonKey: window.SUPABASE_ANON_KEY || localStorage.getItem('supabase_anon_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpveGV2dGJ5dW94dm9sY3VxcndvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4MzgxOTAsImV4cCI6MjEwMzQxNDE5MH0.7WrErrdH_d38eMfZjp5mf6Q_5RvDVBcroBilJEWuv5Q'
 };
 
 let supabaseInstance = null;
