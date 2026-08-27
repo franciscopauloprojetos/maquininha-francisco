@@ -23,7 +23,7 @@ import {
 let currentTransactions = [...MOCK_TRANSACTIONS];
 let filteredTransactions = [...MOCK_TRANSACTIONS];
 let currentPage = 1;
-const recordsPerPage = 6;
+const recordsPerPage = 10;
 let currentSort = { column: 'date', order: 'desc' };
 
 // Initialize Lucide Icons
@@ -46,9 +46,7 @@ function populateSelect(elementId, options) {
   const select = document.getElementById(elementId);
   if (!select) return;
 
-  // Clear existing options
   select.innerHTML = '';
-
   options.forEach((opt, index) => {
     const option = document.createElement('option');
     option.value = index === 0 ? '' : opt;
@@ -93,17 +91,16 @@ function calculateKPIsFromTransactions(list) {
     };
   }
 
-  // If showing full default set, preserve calibrated screenshot baseline figures
   if (list.length === MOCK_TRANSACTIONS.length) {
     return INITIAL_KPIS;
   }
 
   const faturamento = list.reduce((acc, tx) => acc + tx.grossAmount, 0);
   const liquido = list.reduce((acc, tx) => acc + tx.netAmount, 0);
-  const parceiro = list.reduce((acc, tx) => acc + tx.partnerCommission, 0);
+  const parceiro = list.reduce((acc, tx) => acc + (tx.partnerCommission || 0), 0);
   const empresa = liquido - parceiro;
-  const pagoClientes = list.reduce((acc, tx) => acc + tx.clientPaid, 0);
-  const comissaoCliente = list.reduce((acc, tx) => acc + tx.clientCommission, 0);
+  const pagoClientes = list.reduce((acc, tx) => acc + (tx.clientPaid || 0), 0);
+  const comissaoCliente = list.reduce((acc, tx) => acc + (tx.clientCommission || 0), 0);
 
   return {
     totalFaturamento: faturamento,
@@ -115,19 +112,43 @@ function calculateKPIsFromTransactions(list) {
   };
 }
 
+// Get Card Brand SVG Icon
+function getBrandIcon(brand) {
+  const b = (brand || '').toLowerCase();
+  if (b.includes('visa')) {
+    return `
+      <svg width="26" height="16" viewBox="0 0 48 32" fill="none">
+        <text x="1" y="24" font-family="'Helvetica Neue', Arial, sans-serif" font-size="23" font-weight="900" font-style="italic" fill="#1434CB" letter-spacing="-1">VISA</text>
+      </svg>
+    `;
+  }
+  if (b.includes('master')) {
+    return `
+      <svg width="22" height="16" viewBox="0 0 36 24" fill="none">
+        <circle cx="13" cy="12" r="10" fill="#EB001B"/>
+        <circle cx="23" cy="12" r="10" fill="#F79E1B" fill-opacity="0.9"/>
+      </svg>
+    `;
+  }
+  if (b.includes('elo')) {
+    return `<span style="font-size: 10px; font-weight: 800; color: #0f172a;">elo</span>`;
+  }
+  return `<span style="font-size: 9px; font-weight: 700; color: #475569;">${brand}</span>`;
+}
+
 // Format badge based on status
 function getStatusBadge(status) {
-  let badgeClass = 'badge-approved';
-  if (status === 'Pendente') badgeClass = 'badge-pending';
-  else if (status === 'Cancelada') badgeClass = 'badge-cancelled';
-  else if (status === 'Estornada') badgeClass = 'badge-refunded';
-
-  return `
-    <span class="badge ${badgeClass}">
-      <span class="badge-dot"></span>
-      ${status}
-    </span>
-  `;
+  const s = (status || '').toLowerCase();
+  if (s.includes('aprovad')) {
+    return `<span class="status-pill status-approved">Aprovada</span>`;
+  }
+  if (s.includes('rejeit') || s.includes('cancel')) {
+    return `<span class="status-pill status-rejected">Rejeitada</span>`;
+  }
+  if (s.includes('pendent')) {
+    return `<span class="status-pill status-pending">Pendente</span>`;
+  }
+  return `<span class="status-pill status-refunded">${status}</span>`;
 }
 
 // Render transactions table
@@ -140,6 +161,9 @@ function renderTable() {
   filteredTransactions.sort((a, b) => {
     let valA = a[currentSort.column];
     let valB = b[currentSort.column];
+
+    if (valA === undefined) valA = '';
+    if (valB === undefined) valB = '';
 
     if (typeof valA === 'string') {
       return currentSort.order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
@@ -161,7 +185,7 @@ function renderTable() {
   if (totalRecords === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="12" style="text-align: center; padding: 40px; color: #94a3b8;">
+        <td colspan="10" style="text-align: center; padding: 40px; color: #94a3b8;">
           Nenhuma transação encontrada com os filtros aplicados.
         </td>
       </tr>
@@ -171,23 +195,45 @@ function renderTable() {
   }
 
   tbody.innerHTML = currentSlice.map(tx => {
+    let dateOnly = tx.date;
+    let timeOnly = tx.time || '12:00';
+    if (tx.date && tx.date.includes(' ')) {
+      const parts = tx.date.split(' ');
+      dateOnly = parts[0];
+      timeOnly = parts[1].slice(0, 5);
+    }
+
+    const feeDisplay = tx.feePercent || (tx.fee ? `${tx.fee}%` : '4.98%');
+    const spreadDisplay = tx.spread !== undefined ? tx.spread : (tx.grossAmount * 0.009);
+
     return `
       <tr>
-        <td style="font-weight: 600; color: #0f172a;">${tx.id}</td>
-        <td style="color: #64748b;">${tx.date}</td>
-        <td><strong>${tx.company}</strong></td>
-        <td>${tx.partner}</td>
-        <td>${tx.terminal.split(' ')[0]}</td>
-        <td>${tx.method} ${tx.installments !== '1x' ? `(${tx.installments})` : ''}</td>
-        <td>${tx.brand}</td>
-        <td style="font-weight: 600;">${formatBRL(tx.grossAmount)}</td>
-        <td style="color: #64748b;">${formatBRL(tx.fee)}</td>
-        <td style="font-weight: 700; color: #00ba50;">${formatBRL(tx.netAmount)}</td>
+        <td class="cell-terminal">${tx.terminal}</td>
+        <td>
+          <div class="cell-date">
+            <span class="date-day">${dateOnly}</span>
+            <span class="date-time">${timeOnly}</span>
+          </div>
+        </td>
+        <td class="cell-company">${tx.company}</td>
+        <td>
+          <div class="cell-payment">
+            <div class="payment-info">
+              <span class="payment-method-name">${tx.method}</span>
+              <span class="payment-installments">${tx.installments || '1x'}</span>
+            </div>
+            <div class="brand-badge" title="${tx.brand}">
+              ${getBrandIcon(tx.brand)}
+            </div>
+          </div>
+        </td>
         <td>${getStatusBadge(tx.status)}</td>
-        <td style="text-align: center;">
-          <button class="table-action-btn view-details-btn" data-id="${tx.id}" title="Ver Detalhes">
-            <i data-lucide="eye"></i>
-          </button>
+        <td class="cell-tax">${feeDisplay}</td>
+        <td class="cell-gross">${formatBRL(tx.grossAmount)}</td>
+        <td class="cell-net">${formatBRL(tx.netAmount)}</td>
+        <td class="cell-spread">${formatBRL(spreadDisplay)}</td>
+        <td class="cell-client-paid" style="text-align: center;">
+          ${tx.clientPaid ? formatBRL(tx.clientPaid) : '-'}
         </td>
       </tr>
     `;
@@ -195,14 +241,6 @@ function renderTable() {
 
   renderPagination(totalPages);
   refreshIcons();
-
-  // Attach detail events
-  document.querySelectorAll('.view-details-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = btn.getAttribute('data-id');
-      showTransactionDetails(id);
-    });
-  });
 }
 
 // Render Pagination controls
