@@ -26,9 +26,73 @@
   <link rel="stylesheet" href="styles/variables.css">
   <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/auth.css">
 </head>
 <body>
-  <div class="app-container">
+  <!-- Tela de Login / Autenticação (KONZPAY) -->
+  <div id="loginScreen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo-container">
+          <img src="assets/logo.svg" alt="KONZPAY" class="auth-logo-img">
+        </div>
+        <div class="auth-badge">
+          <i data-lucide="shield-check" style="width: 13px; height: 13px;"></i>
+          <span>Painel Administrativo</span>
+        </div>
+        <h1 class="auth-title">Acesso ao Sistema</h1>
+        <p class="auth-subtitle">Entre com suas credenciais de administrador para acessar o painel completo</p>
+      </div>
+
+      <form id="loginForm" class="auth-form">
+        <!-- Box de Erro -->
+        <div class="auth-error-box" id="loginErrorBox">
+          <i data-lucide="alert-circle"></i>
+          <span id="loginErrorMessage">Email ou senha incorretos.</span>
+        </div>
+
+        <div class="auth-input-group">
+          <label class="auth-label" for="loginEmail">Email do Administrador</label>
+          <div class="auth-input-wrapper">
+            <span class="auth-input-icon"><i data-lucide="mail"></i></span>
+            <input type="email" id="loginEmail" class="auth-input" placeholder="franciscopereirapaulo@gmail.com" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="auth-input-group">
+          <label class="auth-label" for="loginPassword">Senha de Acesso</label>
+          <div class="auth-input-wrapper">
+            <span class="auth-input-icon"><i data-lucide="lock"></i></span>
+            <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="btn-toggle-pwd" id="btnTogglePassword" title="Mostrar/Ocultar Senha">
+              <i data-lucide="eye" id="togglePasswordIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="auth-options">
+          <label class="auth-remember">
+            <input type="checkbox" id="loginRemember" checked>
+            <span>Lembrar meu acesso</span>
+          </label>
+          <a href="#" class="auth-forgot-link" id="btnForgotPwd">Esqueceu a senha?</a>
+        </div>
+
+        <button type="submit" class="btn-auth-submit" id="btnLoginSubmit">
+          <span>Acessar Painel</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </form>
+
+      <div class="auth-footer-security">
+        <i data-lucide="shield"></i>
+        <span>Ambiente Seguro & Criptografado • KONZPAY</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container Principal do Aplicativo (Protegido por Autenticação) -->
+  <div class="app-container" id="appContainer" style="display: none;">
     <!-- Sidebar / Menu Lateral -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-brand">
@@ -76,10 +140,12 @@
         </div>
 
         <div class="header-right">
-
-          <div class="header-user" id="userProfileBtn">
-            <i data-lucide="user"></i>
-            <span>Francisco</span>
+          <div class="header-user" id="userProfileBtn" title="Perfil do Administrador">
+            <i data-lucide="user-check"></i>
+            <div style="display: flex; flex-direction: column; line-height: 1.2; text-align: left;">
+              <span style="font-weight: 700; color: #0f172a; font-size: 13px;" id="headerUserName">Francisco</span>
+              <span style="font-size: 11px; color: #059669; font-weight: 600;">Admin Master</span>
+            </div>
           </div>
           <button class="header-logout" id="logoutBtn" title="Sair do sistema">
             <i data-lucide="log-out"></i>

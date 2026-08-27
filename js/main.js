@@ -20,6 +20,14 @@ import {
   SUPABASE_CONFIG
 } from './supabaseClient.js';
 
+import {
+  isAuthenticated,
+  getCurrentUser,
+  login,
+  logout,
+  ADMIN_CREDENTIALS
+} from './auth.js';
+
 // Application State - Transações
 let currentTransactions = [...MOCK_TRANSACTIONS];
 let filteredTransactions = [...MOCK_TRANSACTIONS];
@@ -946,10 +954,108 @@ function setupEvents() {
     });
   }
 
-  // Logout button simulation
+  // Logout button handler
   document.getElementById('logoutBtn')?.addEventListener('click', () => {
-    showToast('Sessão encerrada com sucesso.', 'success');
+    logout();
+    checkAuthState();
+    showToast('Sessão encerrada com sucesso.');
   });
+}
+
+// Authentication State Controller
+function checkAuthState() {
+  const loginScreen = document.getElementById('loginScreen');
+  const appContainer = document.getElementById('appContainer');
+  const headerUserName = document.getElementById('headerUserName');
+
+  if (isAuthenticated()) {
+    if (loginScreen) loginScreen.style.display = 'none';
+    if (appContainer) appContainer.style.display = 'flex';
+    const user = getCurrentUser();
+    if (headerUserName && user) {
+      headerUserName.textContent = user.shortName || user.name || 'Francisco';
+    }
+    refreshIcons();
+    return true;
+  } else {
+    if (appContainer) appContainer.style.display = 'none';
+    if (loginScreen) loginScreen.style.display = 'flex';
+    refreshIcons();
+    return false;
+  }
+}
+
+// Setup Authentication Event Listeners
+function setupAuthEvents() {
+  const loginForm = document.getElementById('loginForm');
+  const loginEmail = document.getElementById('loginEmail');
+  const loginPassword = document.getElementById('loginPassword');
+  const loginRemember = document.getElementById('loginRemember');
+  const loginErrorBox = document.getElementById('loginErrorBox');
+  const loginErrorMessage = document.getElementById('loginErrorMessage');
+  const btnTogglePassword = document.getElementById('btnTogglePassword');
+  const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+  const btnForgotPwd = document.getElementById('btnForgotPwd');
+  const btnLoginSubmit = document.getElementById('btnLoginSubmit');
+
+  // Toggle Password Visibility
+  if (btnTogglePassword && loginPassword) {
+    btnTogglePassword.addEventListener('click', () => {
+      const isPassword = loginPassword.type === 'password';
+      loginPassword.type = isPassword ? 'text' : 'password';
+      if (togglePasswordIcon) {
+        togglePasswordIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+        refreshIcons();
+      }
+    });
+  }
+
+  // Forgot Password Action
+  if (btnForgotPwd) {
+    btnForgotPwd.addEventListener('click', (e) => {
+      e.preventDefault();
+      showToast(`Email de admin: ${ADMIN_CREDENTIALS.email}`);
+    });
+  }
+
+  // Login Submit Handler
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = loginEmail.value.trim();
+      const password = loginPassword.value.trim();
+      const remember = loginRemember?.checked || false;
+
+      if (btnLoginSubmit) {
+        btnLoginSubmit.classList.add('loading');
+        btnLoginSubmit.innerHTML = '<span>Verificando...</span>';
+      }
+
+      setTimeout(async () => {
+        const result = login(email, password, remember);
+
+        if (result.success) {
+          if (loginErrorBox) loginErrorBox.classList.remove('show');
+          loginPassword.value = '';
+          checkAuthState();
+          await loadInitialData();
+          showToast(`Bem-vindo, ${result.user.shortName}! Acesso total de Administrador liberado.`);
+        } else {
+          if (loginErrorBox && loginErrorMessage) {
+            loginErrorMessage.textContent = result.message;
+            loginErrorBox.classList.add('show');
+          }
+          loginPassword.focus();
+        }
+
+        if (btnLoginSubmit) {
+          btnLoginSubmit.classList.remove('loading');
+          btnLoginSubmit.innerHTML = '<span>Acessar Painel</span><i data-lucide="arrow-right"></i>';
+          refreshIcons();
+        }
+      }, 400);
+    });
+  }
 }
 
 // Update Supabase UI Status Indicator
@@ -983,7 +1089,6 @@ async function loadInitialData() {
   if (remoteTransactions && remoteTransactions.length > 0) {
     currentTransactions = remoteTransactions;
     filteredTransactions = [...remoteTransactions];
-    showToast(`Conectado ao Supabase: ${remoteTransactions.length} transações carregadas!`);
   } else {
     currentTransactions = [...MOCK_TRANSACTIONS];
     filteredTransactions = [...MOCK_TRANSACTIONS];
@@ -999,6 +1104,10 @@ async function loadInitialData() {
 document.addEventListener('DOMContentLoaded', async () => {
   initFilters();
   setupEvents();
-  await loadInitialData();
+  setupAuthEvents();
+  const isAuth = checkAuthState();
+  if (isAuth) {
+    await loadInitialData();
+  }
   refreshIcons();
 });
