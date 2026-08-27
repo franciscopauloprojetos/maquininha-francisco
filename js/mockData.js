@@ -262,7 +262,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 98485-8140",
     createdAt: "11/08/2026",
     status: "Ativo",
-    registeredBy: "USR-001"
+    registeredBy: "USR-001",
+    commissionRate: 10.0
   },
   {
     id: "EMP-002",
@@ -273,7 +274,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(58) 84968-9810",
     createdAt: "11/08/2026",
     status: "Ativo",
-    registeredBy: "USR-002"
+    registeredBy: "USR-002",
+    commissionRate: 8.5
   },
   {
     id: "EMP-003",
@@ -284,7 +286,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 98788-0938",
     createdAt: "11/08/2026",
     status: "Ativo",
-    registeredBy: "USR-001"
+    registeredBy: "USR-001",
+    commissionRate: 7.0
   },
   {
     id: "EMP-004",
@@ -295,7 +298,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(43) 99928-1144",
     createdAt: "10/08/2026",
     status: "Ativo",
-    registeredBy: "USR-004"
+    registeredBy: "USR-004",
+    commissionRate: 6.5
   },
   {
     id: "EMP-005",
@@ -306,7 +310,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 99746-2339",
     createdAt: "03/08/2026",
     status: "Ativo",
-    registeredBy: "USR-005"
+    registeredBy: "USR-005",
+    commissionRate: 7.5
   },
   {
     id: "EMP-006",
@@ -317,7 +322,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 99122-3344",
     createdAt: "01/08/2026",
     status: "Ativo",
-    registeredBy: "USR-001"
+    registeredBy: "USR-001",
+    commissionRate: 12.0
   },
   {
     id: "EMP-007",
@@ -328,7 +334,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 98877-6655",
     createdAt: "28/07/2026",
     status: "Ativo",
-    registeredBy: "USR-002"
+    registeredBy: "USR-002",
+    commissionRate: 9.0
   },
   {
     id: "EMP-008",
@@ -339,7 +346,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 3344-5566",
     createdAt: "25/07/2026",
     status: "Ativo",
-    registeredBy: "USR-004"
+    registeredBy: "USR-004",
+    commissionRate: 5.5
   },
   {
     id: "EMP-009",
@@ -350,7 +358,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 98711-2233",
     createdAt: "20/07/2026",
     status: "Ativo",
-    registeredBy: "USR-ADMIN"
+    registeredBy: "USR-ADMIN",
+    commissionRate: 15.0
   },
   {
     id: "EMP-010",
@@ -361,7 +370,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 3211-9988",
     createdAt: "18/07/2026",
     status: "Ativo",
-    registeredBy: "USR-007"
+    registeredBy: "USR-007",
+    commissionRate: 6.0
   },
   {
     id: "EMP-011",
@@ -372,7 +382,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 99655-4433",
     createdAt: "15/07/2026",
     status: "Ativo",
-    registeredBy: "USR-007"
+    registeredBy: "USR-007",
+    commissionRate: 8.0
   },
   {
     id: "EMP-012",
@@ -383,7 +394,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 98400-1122",
     createdAt: "12/07/2026",
     status: "Ativo",
-    registeredBy: "USR-009"
+    registeredBy: "USR-009",
+    commissionRate: 4.5
   },
   {
     id: "EMP-013",
@@ -394,7 +406,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 3322-1100",
     createdAt: "10/07/2026",
     status: "Ativo",
-    registeredBy: "USR-006"
+    registeredBy: "USR-006",
+    commissionRate: 7.0
   },
   {
     id: "EMP-014",
@@ -405,7 +418,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 98800-7788",
     createdAt: "05/07/2026",
     status: "Inativo",
-    registeredBy: "USR-002"
+    registeredBy: "USR-002",
+    commissionRate: 5.0
   },
   {
     id: "EMP-015",
@@ -416,7 +430,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 99111-2299",
     createdAt: "02/07/2026",
     status: "Ativo",
-    registeredBy: "USR-003"
+    registeredBy: "USR-003",
+    commissionRate: 11.0
   },
   {
     id: "EMP-016",
@@ -427,7 +442,8 @@ export const MOCK_COMPANIES_DATA = [
     phone: "(41) 3355-7799",
     createdAt: "01/07/2026",
     status: "Ativo",
-    registeredBy: "USR-ADMIN"
+    registeredBy: "USR-ADMIN",
+    commissionRate: 3.5
   }
 ];
 

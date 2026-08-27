@@ -570,16 +570,21 @@ function switchView(viewName) {
     if (pageTitle) pageTitle.textContent = 'Dashboard';
     updateDashboardStats();
   } else if (viewName === 'comissoes') {
+    if (!isAdmin) {
+      showToast('Acesso restrito ao Administrador Master.');
+      switchView('transacoes');
+      return;
+    }
     if (viewTransacoes) viewTransacoes.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'none';
     if (viewDashboard) viewDashboard.style.display = 'none';
     if (viewComissoes) viewComissoes.style.display = 'block';
     if (navComissoes) navComissoes.classList.add('active');
-    if (pageTitle) pageTitle.textContent = 'Comissões & Extrato';
+    if (pageTitle) pageTitle.textContent = 'Alíquotas de Comissões por Empresa';
 
-    populateCommissionBeneficiarySelect();
-    filterCommissions();
-    renderCommissionsMetrics();
+    populateRatePartnerSelect();
+    filterRates();
+    renderRateMetrics();
   } else {
     // Default: transacoes
     if (viewDashboard) viewDashboard.style.display = 'none';
@@ -852,273 +857,292 @@ function filterCompanies() {
 }
 
 // ==========================================================================
-// MÓDULO DE COMISSÕES (EXTRATO, REPASSES E SPREAD DE REDE)
+// MÓDULO DE GESTÃO DE ALÍQUOTAS DE COMISSÕES POR EMPRESA (EXCLUSIVO ADMIN)
 // ==========================================================================
 
-// Get allowed commissions for current user based on hierarchy subtree
-function getAllowedCommissions() {
-  const currentUser = getCurrentUser();
-  const isAdmin = currentUser?.isAdmin ?? true;
-  if (isAdmin) return currentCommissions;
+let filteredRateCompanies = [...currentCompanies];
+let ratesCurrentPage = 1;
+const ratesPerPage = 8;
+let ratesSort = { column: 'createdAt', order: 'desc' };
 
-  const allowedUserIds = getUserSubtreeIds(currentUser.id, currentNetworkUsers);
-  return currentCommissions.filter(c => allowedUserIds.includes(c.beneficiaryId));
+// Render Rate Top Metrics
+function renderRateMetrics() {
+  const companies = currentCompanies;
+  const count = companies.length;
+  const rates = companies.map(c => Number(c.commissionRate !== undefined ? c.commissionRate : 5.0));
+
+  const avg = count > 0 ? (rates.reduce((a, b) => a + b, 0) / count).toFixed(1) : '0.0';
+  const max = count > 0 ? Math.max(...rates).toFixed(1) : '0.0';
+  const min = count > 0 ? Math.min(...rates).toFixed(1) : '0.0';
+
+  const elTotal = document.getElementById('rateStatTotal');
+  const elAvg = document.getElementById('rateStatAvg');
+  const elMax = document.getElementById('rateStatMax');
+  const elMin = document.getElementById('rateStatMin');
+
+  if (elTotal) elTotal.textContent = count;
+  if (elAvg) elAvg.textContent = `${avg}%`;
+  if (elMax) elMax.textContent = `${max}%`;
+  if (elMin) elMin.textContent = `${min}%`;
 }
 
-// Render Commissions Top KPI Metrics
-function renderCommissionsMetrics() {
-  const currentUser = getCurrentUser();
-  const isAdmin = currentUser?.isAdmin ?? true;
-  const allowed = getAllowedCommissions();
-
-  const totalSum = allowed.reduce((acc, c) => acc + (c.commissionAmount || 0), 0);
-  
-  // Direct: commissions of the logged in user with type 'Direta' (or all direct if admin)
-  const directSum = allowed
-    .filter(c => c.type === 'Direta' && (isAdmin || c.beneficiaryId === currentUser.id))
-    .reduce((acc, c) => acc + (c.commissionAmount || 0), 0);
-
-  // Network: commissions of team bonus or downlines
-  const networkSum = allowed
-    .filter(c => c.type !== 'Direta' || (!isAdmin && c.beneficiaryId !== currentUser.id))
-    .reduce((acc, c) => acc + (c.commissionAmount || 0), 0);
-
-  // Pending / Processing
-  const pendingSum = allowed
-    .filter(c => c.status !== 'Paga')
-    .reduce((acc, c) => acc + (c.commissionAmount || 0), 0);
-
-  const elTotal = document.getElementById('comValTotal');
-  const elDirect = document.getElementById('comValDirect');
-  const elNetwork = document.getElementById('comValNetwork');
-  const elPending = document.getElementById('comValPending');
-
-  if (elTotal) elTotal.textContent = formatBRL(totalSum);
-  if (elDirect) elDirect.textContent = formatBRL(directSum);
-  if (elNetwork) elNetwork.textContent = formatBRL(networkSum);
-  if (elPending) elPending.textContent = formatBRL(pendingSum);
-}
-
-// Populate Beneficiary select options for filtering
-function populateCommissionBeneficiarySelect() {
-  const select = document.getElementById('filterCommissionBeneficiary');
+// Populate Partner select in rates filter
+function populateRatePartnerSelect() {
+  const select = document.getElementById('filterRatePartner');
   if (!select) return;
 
-  const currentUser = getCurrentUser();
-  const isAdmin = currentUser?.isAdmin ?? true;
-  const allowedUserIds = isAdmin
-    ? currentNetworkUsers.map(u => u.id)
-    : getUserSubtreeIds(currentUser.id, currentNetworkUsers);
-
-  const allowedUsers = currentNetworkUsers.filter(u => allowedUserIds.includes(u.id));
-
-  select.innerHTML = `<option value="">Todos os beneficiários</option>` + allowedUsers.map(u => {
-    const isMe = u.id === currentUser?.id ? ' (Você)' : '';
-    return `<option value="${u.id}">${u.name}${isMe}</option>`;
+  const partners = currentNetworkUsers;
+  select.innerHTML = `<option value="">Todos os parceiros</option>` + partners.map(p => {
+    return `<option value="${p.id}">${p.name} - ${p.role}</option>`;
   }).join('');
 }
 
-// Render Commissions Table
-function renderCommissionsTable() {
-  const tbody = document.getElementById('commissionsTableBody');
-  const titleEl = document.getElementById('commissionsListTitle');
+// Render Rates Table
+function renderRatesTable() {
+  const tbody = document.getElementById('ratesTableBody');
+  const titleEl = document.getElementById('ratesListTitle');
   if (!tbody) return;
 
   // Sorting
-  filteredCommissions.sort((a, b) => {
-    let valA = a[commissionsSort.column] || '';
-    let valB = b[commissionsSort.column] || '';
+  filteredRateCompanies.sort((a, b) => {
+    let valA = a[ratesSort.column];
+    let valB = b[ratesSort.column];
 
-    if (typeof valA === 'string') {
-      return commissionsSort.order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    if (ratesSort.column === 'commissionRate') {
+      valA = Number(valA !== undefined ? valA : 5.0);
+      valB = Number(valB !== undefined ? valB : 5.0);
+      return ratesSort.order === 'asc' ? valA - valB : valB - valA;
     }
-    return commissionsSort.order === 'asc' ? valA - valB : valB - valA;
+
+    valA = (valA || '').toString().toLowerCase();
+    valB = (valB || '').toString().toLowerCase();
+    return ratesSort.order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
   });
 
-  const totalRecords = filteredCommissions.length;
-  const totalPages = Math.ceil(totalRecords / commissionsPerPage) || 1;
-  if (commissionsCurrentPage > totalPages) commissionsCurrentPage = totalPages;
+  const totalRecords = filteredRateCompanies.length;
+  const totalPages = Math.ceil(totalRecords / ratesPerPage) || 1;
+  if (ratesCurrentPage > totalPages) ratesCurrentPage = totalPages;
 
-  const startIndex = (commissionsCurrentPage - 1) * commissionsPerPage;
-  const endIndex = Math.min(startIndex + commissionsPerPage, totalRecords);
-  const currentSlice = filteredCommissions.slice(startIndex, endIndex);
+  const startIndex = (ratesCurrentPage - 1) * ratesPerPage;
+  const endIndex = Math.min(startIndex + ratesPerPage, totalRecords);
+  const currentSlice = filteredRateCompanies.slice(startIndex, endIndex);
 
   if (titleEl) {
-    titleEl.textContent = `Extrato Detalhado de Comissões (${totalRecords})`;
+    titleEl.textContent = `Alíquotas de Comissões por Empresa (${totalRecords})`;
   }
 
   if (totalRecords === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
-          Nenhum registro de comissão encontrado para os filtros selecionados.
+        <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+          Nenhuma empresa encontrada com os filtros pesquisados.
         </td>
       </tr>
     `;
-    renderCommissionsPagination(totalPages);
+    renderRatesPagination(totalPages);
     return;
   }
 
-  tbody.innerHTML = currentSlice.map(com => {
-    const isDirect = com.type === 'Direta';
-    const typeBadge = isDirect
-      ? `<span class="badge-com-type direct"><i data-lucide="zap" style="width:11px;height:11px;"></i> Venda Direta</span>`
-      : `<span class="badge-com-type network"><i data-lucide="git-branch" style="width:11px;height:11px;"></i> ${com.type}</span>`;
-
-    let statusClass = 'paga';
-    if (com.status === 'Pendente') statusClass = 'pendente';
-    else if (com.status === 'Processando') statusClass = 'processando';
-
-    const statusBadge = `<span class="badge-com-status ${statusClass}"><span class="badge-dot"></span> ${com.status}</span>`;
+  tbody.innerHTML = currentSlice.map(comp => {
+    const rate = Number(comp.commissionRate !== undefined ? comp.commissionRate : 5.0).toFixed(1);
+    const partner = currentNetworkUsers.find(u => u.id === comp.registeredBy);
+    const partnerName = partner ? partner.name : '👑 Admin Master';
+    const statusBadge = comp.status === 'Ativo'
+      ? `<span class="badge-company-active">Ativo</span>`
+      : `<span class="badge-company-inactive">Inativo</span>`;
 
     return `
       <tr>
-        <td>
-          <div style="font-weight: 700; color: #0f172a; font-size: 13px;">${com.id}</div>
-          <div style="font-size: 11.5px; color: #94a3b8; font-family: monospace;">${com.date}</div>
+        <td class="cell-company-name">
+          <strong>${comp.name}</strong>
+          <div style="font-size: 11px; color: #94a3b8; font-family: monospace;">${comp.id} • Criado em ${comp.createdAt}</div>
         </td>
+        <td class="cell-doc" style="font-family: monospace; font-size: 12px; color: #475569;">${comp.doc || '-'}</td>
         <td>
-          <span style="font-weight: 600; color: #334155; font-size: 13.5px;">${formatBRL(com.saleAmount)}</span>
-          <div style="font-size: 11px; color: #94a3b8;">${com.terminal}</div>
+          <div style="font-weight: 600; color: #0f172a; font-size: 12.5px;">${partnerName}</div>
+          <div style="font-size: 11px; color: #64748b;">${partner?.role || 'Administrador'}</div>
         </td>
-        <td class="cell-company-name"><strong>${com.company}</strong></td>
-        <td>
-          <div style="font-weight: 600; color: #0f172a; font-size: 13px;">${com.beneficiaryName}</div>
-          <div style="font-size: 11.5px; color: #64748b;">${com.beneficiaryRole || 'Parceiro'}</div>
-        </td>
-        <td>
-          <span class="badge-commission">${Number(com.ratePercent).toFixed(1)}%</span>
-        </td>
-        <td>
-          <strong style="color: #059669; font-size: 14.5px; font-weight: 800;">${formatBRL(com.commissionAmount)}</strong>
-        </td>
-        <td>${typeBadge}</td>
         <td>${statusBadge}</td>
+        <td style="text-align: center;">
+          <span class="badge-commission" style="font-size: 13px; font-weight: 800; padding: 4px 10px;">${rate}%</span>
+        </td>
+        <td style="text-align: center;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+            <div class="input-wrapper" style="width: 80px; position: relative;">
+              <input type="number" step="0.1" min="0" max="100" class="custom-input inline-rate-input" data-id="${comp.id}" value="${rate}" style="padding: 5px 6px; font-size: 13px; font-weight: 700; text-align: center;">
+            </div>
+            <span style="font-weight: 700; color: #64748b; font-size: 12px;">%</span>
+            <button type="button" class="btn btn-sm btn-primary-green btn-save-inline-rate" data-id="${comp.id}" title="Salvar Alíquota">
+              <i data-lucide="check" style="width: 13px; height: 13px;"></i>
+              <span>Salvar</span>
+            </button>
+          </div>
+        </td>
+        <td style="text-align: center;">
+          <button type="button" class="btn btn-sm btn-ghost btn-open-edit-rate" data-id="${comp.id}" title="Ajustar Alíquota no Modal" style="color: #1d68d8; font-weight: 600;">
+            <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+            <span>Ajustar</span>
+          </button>
+        </td>
       </tr>
     `;
   }).join('');
 
-  renderCommissionsPagination(totalPages);
+  renderRatesPagination(totalPages);
   refreshIcons();
+
+  // Attach inline save events
+  tbody.querySelectorAll('.btn-save-inline-rate').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const input = tbody.querySelector(`.inline-rate-input[data-id="${id}"]`);
+      if (input) {
+        const val = parseFloat(input.value);
+        if (isNaN(val) || val < 0 || val > 100) {
+          showToast('Informe uma alíquota válida entre 0% e 100%.');
+          return;
+        }
+        updateCompanyCommissionRate(id, val);
+      }
+    });
+  });
+
+  // Attach modal open events
+  tbody.querySelectorAll('.btn-open-edit-rate').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      openEditRateModal(id);
+    });
+  });
 }
 
-// Render Commissions Pagination
-function renderCommissionsPagination(totalPages) {
-  const info = document.getElementById('commissionsPaginationInfo');
-  const controls = document.getElementById('commissionsPaginationControls');
+// Render Rates Pagination
+function renderRatesPagination(totalPages) {
+  const info = document.getElementById('ratesPaginationInfo');
+  const controls = document.getElementById('ratesPaginationControls');
   if (!info || !controls) return;
 
-  info.textContent = `Página ${commissionsCurrentPage} de ${totalPages}`;
+  info.textContent = `Página ${ratesCurrentPage} de ${totalPages}`;
 
   let buttonsHtml = `
-    <button class="page-btn" id="btnComPrevPage" ${commissionsCurrentPage === 1 ? 'disabled' : ''}>
+    <button class="page-btn" id="btnRatePrevPage" ${ratesCurrentPage === 1 ? 'disabled' : ''}>
       <i data-lucide="chevron-left" style="width: 15px; height: 15px;"></i>
     </button>
   `;
 
   for (let i = 1; i <= totalPages; i++) {
     buttonsHtml += `
-      <button class="page-btn ${i === commissionsCurrentPage ? 'active' : ''}" data-com-page="${i}">
+      <button class="page-btn ${i === ratesCurrentPage ? 'active' : ''}" data-rate-page="${i}">
         ${i}
       </button>
     `;
   }
 
   buttonsHtml += `
-    <button class="page-btn" id="btnComNextPage" ${commissionsCurrentPage === totalPages ? 'disabled' : ''}>
+    <button class="page-btn" id="btnRateNextPage" ${ratesCurrentPage === totalPages ? 'disabled' : ''}>
       <i data-lucide="chevron-right" style="width: 15px; height: 15px;"></i>
     </button>
   `;
 
   controls.innerHTML = buttonsHtml;
 
-  controls.querySelectorAll('.page-btn[data-com-page]').forEach(btn => {
+  controls.querySelectorAll('.page-btn[data-rate-page]').forEach(btn => {
     btn.addEventListener('click', () => {
-      commissionsCurrentPage = parseInt(btn.getAttribute('data-com-page'));
-      renderCommissionsTable();
+      ratesCurrentPage = parseInt(btn.getAttribute('data-rate-page'));
+      renderRatesTable();
     });
   });
 
-  const prev = document.getElementById('btnComPrevPage');
-  const next = document.getElementById('btnComNextPage');
+  const prev = document.getElementById('btnRatePrevPage');
+  const next = document.getElementById('btnRateNextPage');
   if (prev) {
     prev.addEventListener('click', () => {
-      if (commissionsCurrentPage > 1) {
-        commissionsCurrentPage--;
-        renderCommissionsTable();
+      if (ratesCurrentPage > 1) {
+        ratesCurrentPage--;
+        renderRatesTable();
       }
     });
   }
   if (next) {
     next.addEventListener('click', () => {
-      if (commissionsCurrentPage < totalPages) {
-        commissionsCurrentPage++;
-        renderCommissionsTable();
+      if (ratesCurrentPage < totalPages) {
+        ratesCurrentPage++;
+        renderRatesTable();
       }
     });
   }
 }
 
-// Filter Commissions Handler
-function filterCommissions() {
-  const term = document.getElementById('inputSearchCommissions')?.value.trim().toLowerCase() || '';
-  const status = document.getElementById('filterCommissionStatus')?.value || '';
-  const type = document.getElementById('filterCommissionType')?.value || '';
-  const order = document.getElementById('filterCommissionOrder')?.value || 'recentes';
-  const beneficiary = document.getElementById('filterCommissionBeneficiary')?.value || '';
+// Filter Rates Handler
+function filterRates() {
+  const term = document.getElementById('inputSearchRateCompany')?.value.trim().toLowerCase() || '';
+  const status = document.getElementById('filterRateStatus')?.value || '';
+  const partner = document.getElementById('filterRatePartner')?.value || '';
+  const range = document.getElementById('filterRateRange')?.value || '';
+  const order = document.getElementById('filterRateOrder')?.value || 'recentes';
 
-  const baseCommissions = getAllowedCommissions();
-
-  filteredCommissions = baseCommissions.filter(com => {
+  filteredRateCompanies = currentCompanies.filter(comp => {
     if (term) {
-      const matchComp = (com.company || '').toLowerCase().includes(term);
-      const matchBen = (com.beneficiaryName || '').toLowerCase().includes(term);
-      const matchTerm = (com.terminal || '').toLowerCase().includes(term);
-      const matchId = (com.id || '').toLowerCase().includes(term);
-      if (!matchComp && !matchBen && !matchTerm && !matchId) return false;
+      const matchName = (comp.name || '').toLowerCase().includes(term);
+      const matchDoc = (comp.doc || '').toLowerCase().includes(term);
+      const matchOwner = (comp.owner || '').toLowerCase().includes(term);
+      const matchEmail = (comp.email || '').toLowerCase().includes(term);
+      if (!matchName && !matchDoc && !matchOwner && !matchEmail) return false;
     }
-    if (status && com.status !== status) return false;
-    if (type) {
-      if (type === 'Direta' && com.type !== 'Direta') return false;
-      if (type === 'Rede' && com.type === 'Direta') return false;
+    if (status && comp.status !== status) return false;
+    if (partner && comp.registeredBy !== partner) return false;
+    if (range) {
+      const r = Number(comp.commissionRate !== undefined ? comp.commissionRate : 5.0);
+      if (range === 'low' && r > 5.0) return false;
+      if (range === 'mid' && (r <= 5.0 || r >= 10.0)) return false;
+      if (range === 'high' && r < 10.0) return false;
     }
-    if (beneficiary && com.beneficiaryId !== beneficiary) return false;
     return true;
   });
 
-  if (order === 'maior_valor') {
-    commissionsSort = { column: 'commissionAmount', order: 'desc' };
-  } else if (order === 'menor_valor') {
-    commissionsSort = { column: 'commissionAmount', order: 'asc' };
+  if (order === 'maior_aliquota') {
+    ratesSort = { column: 'commissionRate', order: 'desc' };
+  } else if (order === 'menor_aliquota') {
+    ratesSort = { column: 'commissionRate', order: 'asc' };
+  } else if (order === 'nome_asc') {
+    ratesSort = { column: 'name', order: 'asc' };
   } else {
-    commissionsSort = { column: 'date', order: 'desc' };
+    ratesSort = { column: 'createdAt', order: 'desc' };
   }
 
-  commissionsCurrentPage = 1;
-  renderCommissionsTable();
-  renderCommissionsMetrics();
+  ratesCurrentPage = 1;
+  renderRatesTable();
+  renderRateMetrics();
 }
 
-// Export Commissions CSV
-function exportCommissions() {
-  const data = filteredCommissions;
-  if (data.length === 0) {
-    showToast('Nenhum dado para exportar.');
-    return;
-  }
-  let csv = 'ID;Data;Valor Venda;Empresa;Beneficiário;Taxa;Comissão;Tipo;Status\n';
-  data.forEach(c => {
-    csv += `${c.id};${c.date};${c.saleAmount};"${c.company}";"${c.beneficiaryName}";${c.ratePercent}%;${c.commissionAmount};"${c.type}";"${c.status}"\n`;
-  });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `extrato_comissoes_${new Date().toISOString().slice(0, 10)}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  showToast('Extrato de comissões exportado em CSV com sucesso!');
+// Update single company commission rate
+function updateCompanyCommissionRate(companyId, newRate) {
+  const comp = currentCompanies.find(c => c.id === companyId);
+  if (!comp) return;
+
+  comp.commissionRate = parseFloat(newRate);
+  renderRatesTable();
+  renderRateMetrics();
+  showToast(`Alíquota da empresa "${comp.name}" atualizada para ${comp.commissionRate}% com sucesso!`);
+}
+
+// Open Edit Rate Modal
+function openEditRateModal(companyId) {
+  const comp = currentCompanies.find(c => c.id === companyId);
+  if (!comp) return;
+
+  const modal = document.getElementById('editRateModal');
+  const idInput = document.getElementById('editRateCompanyId');
+  const nameEl = document.getElementById('editRateCompanyName');
+  const docEl = document.getElementById('editRateCompanyDoc');
+  const rateInput = document.getElementById('editRateInput');
+
+  if (idInput) idInput.value = comp.id;
+  if (nameEl) nameEl.textContent = comp.name;
+  if (docEl) docEl.textContent = comp.doc || '-';
+  if (rateInput) rateInput.value = comp.commissionRate !== undefined ? comp.commissionRate : 5.0;
+
+  modal?.classList.add('open');
 }
 
 // ==========================================================================
@@ -1657,55 +1681,97 @@ function setupEvents() {
     });
   }
 
-  // Commissions Filter Form & Actions
-  const commissionsFilterForm = document.getElementById('commissionsFilterForm');
-  if (commissionsFilterForm) {
-    commissionsFilterForm.addEventListener('submit', (e) => {
+  // Rates Filter Form & Actions (Gestão de Alíquotas)
+  const ratesFilterForm = document.getElementById('ratesFilterForm');
+  if (ratesFilterForm) {
+    ratesFilterForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      filterCommissions();
+      filterRates();
     });
   }
 
-  const btnClearCommissionsFilters = document.getElementById('btnClearCommissionsFilters');
-  if (btnClearCommissionsFilters) {
-    btnClearCommissionsFilters.addEventListener('click', () => {
-      const inputSearch = document.getElementById('inputSearchCommissions');
-      const selectStatus = document.getElementById('filterCommissionStatus');
-      const selectType = document.getElementById('filterCommissionType');
-      const selectOrder = document.getElementById('filterCommissionOrder');
-      const selectBeneficiary = document.getElementById('filterCommissionBeneficiary');
+  const btnClearRatesFilters = document.getElementById('btnClearRatesFilters');
+  if (btnClearRatesFilters) {
+    btnClearRatesFilters.addEventListener('click', () => {
+      const inputSearch = document.getElementById('inputSearchRateCompany');
+      const selectStatus = document.getElementById('filterRateStatus');
+      const selectPartner = document.getElementById('filterRatePartner');
+      const selectRange = document.getElementById('filterRateRange');
+      const selectOrder = document.getElementById('filterRateOrder');
 
       if (inputSearch) inputSearch.value = '';
       if (selectStatus) selectStatus.value = '';
-      if (selectType) selectType.value = '';
+      if (selectPartner) selectPartner.value = '';
+      if (selectRange) selectRange.value = '';
       if (selectOrder) selectOrder.value = 'recentes';
-      if (selectBeneficiary) selectBeneficiary.value = '';
-      filterCommissions();
+      filterRates();
     });
   }
 
-  const inputSearchCommissions = document.getElementById('inputSearchCommissions');
-  if (inputSearchCommissions) {
-    inputSearchCommissions.addEventListener('input', () => {
-      filterCommissions();
+  const inputSearchRateCompany = document.getElementById('inputSearchRateCompany');
+  if (inputSearchRateCompany) {
+    inputSearchRateCompany.addEventListener('input', () => {
+      filterRates();
     });
   }
 
-  const selectFilterStatus = document.getElementById('filterCommissionStatus');
-  if (selectFilterStatus) selectFilterStatus.addEventListener('change', filterCommissions);
+  document.getElementById('filterRateStatus')?.addEventListener('change', filterRates);
+  document.getElementById('filterRatePartner')?.addEventListener('change', filterRates);
+  document.getElementById('filterRateRange')?.addEventListener('change', filterRates);
+  document.getElementById('filterRateOrder')?.addEventListener('change', filterRates);
 
-  const selectFilterType = document.getElementById('filterCommissionType');
-  if (selectFilterType) selectFilterType.addEventListener('change', filterCommissions);
+  // Modal: Edit Single Rate
+  const editRateModal = document.getElementById('editRateModal');
+  const btnCloseEditRateModal = document.getElementById('btnCloseEditRateModal');
+  const btnCancelEditRate = document.getElementById('btnCancelEditRate');
+  const editRateForm = document.getElementById('editRateForm');
 
-  const selectFilterOrder = document.getElementById('filterCommissionOrder');
-  if (selectFilterOrder) selectFilterOrder.addEventListener('change', filterCommissions);
+  const closeEditRateModal = () => editRateModal?.classList.remove('open');
+  if (btnCloseEditRateModal) btnCloseEditRateModal.addEventListener('click', closeEditRateModal);
+  if (btnCancelEditRate) btnCancelEditRate.addEventListener('click', closeEditRateModal);
 
-  const selectFilterBeneficiary = document.getElementById('filterCommissionBeneficiary');
-  if (selectFilterBeneficiary) selectFilterBeneficiary.addEventListener('change', filterCommissions);
+  if (editRateForm) {
+    editRateForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const compId = document.getElementById('editRateCompanyId').value;
+      const rateVal = parseFloat(document.getElementById('editRateInput').value);
+      if (isNaN(rateVal) || rateVal < 0 || rateVal > 100) {
+        showToast('Informe uma alíquota válida entre 0% e 100%.');
+        return;
+      }
+      updateCompanyCommissionRate(compId, rateVal);
+      closeEditRateModal();
+    });
+  }
 
-  const btnExportCommissions = document.getElementById('btnExportCommissions');
-  if (btnExportCommissions) {
-    btnExportCommissions.addEventListener('click', exportCommissions);
+  // Modal: Bulk Rate
+  const bulkRateModal = document.getElementById('bulkRateModal');
+  const btnOpenBulkRateModal = document.getElementById('btnOpenBulkRateModal');
+  const btnCloseBulkRateModal = document.getElementById('btnCloseBulkRateModal');
+  const btnCancelBulkRate = document.getElementById('btnCancelBulkRate');
+  const bulkRateForm = document.getElementById('bulkRateForm');
+
+  const closeBulkRateModal = () => bulkRateModal?.classList.remove('open');
+  if (btnOpenBulkRateModal) btnOpenBulkRateModal.addEventListener('click', () => bulkRateModal?.classList.add('open'));
+  if (btnCloseBulkRateModal) btnCloseBulkRateModal.addEventListener('click', closeBulkRateModal);
+  if (btnCancelBulkRate) btnCancelBulkRate.addEventListener('click', closeBulkRateModal);
+
+  if (bulkRateForm) {
+    bulkRateForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const bulkRate = parseFloat(document.getElementById('bulkRateInput').value);
+      if (isNaN(bulkRate) || bulkRate < 0 || bulkRate > 100) {
+        showToast('Informe uma alíquota válida entre 0% e 100%.');
+        return;
+      }
+      filteredRateCompanies.forEach(c => {
+        c.commissionRate = bulkRate;
+      });
+      renderRatesTable();
+      renderRateMetrics();
+      closeBulkRateModal();
+      showToast(`Alíquota de ${bulkRate}% aplicada com sucesso a ${filteredRateCompanies.length} empresas!`);
+    });
   }
 
   // Filter Form Submit (Transações)
@@ -2114,6 +2180,8 @@ function setupEvents() {
     if (e.target === detailsModal) closeDetailsModal();
     if (e.target === newCompanyModal) closeNewCompanyModal();
     if (e.target === newNetworkUserModal) closeNewNetworkUserModal();
+    if (e.target === editRateModal) closeEditRateModal();
+    if (e.target === bulkRateModal) closeBulkRateModal();
   });
 
   // Dashboard Action Links
@@ -2159,6 +2227,7 @@ function checkAuthState() {
   const appContainer = document.getElementById('appContainer');
   const headerUserName = document.getElementById('headerUserName');
   const headerUserRole = document.getElementById('headerUserRole');
+  const navComissoes = document.getElementById('nav-comissoes');
 
   if (isAuthenticated()) {
     if (loginScreen) loginScreen.style.display = 'none';
@@ -2171,6 +2240,16 @@ function checkAuthState() {
       headerUserRole.textContent = user.role || 'Membro da Rede';
       headerUserRole.style.color = user.isAdmin ? '#059669' : '#1d68d8';
     }
+
+    // Comissões menu item is strictly visible ONLY for Admin Master
+    if (navComissoes && navComissoes.parentElement) {
+      if (user?.isAdmin) {
+        navComissoes.parentElement.style.display = 'block';
+      } else {
+        navComissoes.parentElement.style.display = 'none';
+      }
+    }
+
     refreshIcons();
     return true;
   } else {

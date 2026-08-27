@@ -749,114 +749,129 @@
           </div>
         </div>
 
-        <!-- ================= VIEW 4: COMISSÕES (Extrato & Gestão de Repasses) ================= -->
+        <!-- ================= VIEW 4: COMISSÕES (Gestão de Alíquotas por Empresa - Admin) ================= -->
         <div id="view-comissoes" class="app-view" style="display: none;">
-          <!-- Grade de 4 Cards de Métricas de Comissões -->
+          <!-- Topo da Seção de Alíquotas -->
+          <div class="hierarchy-header-card" style="margin-bottom: 24px;">
+            <div>
+              <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Alíquotas de Comissões por Empresa</h2>
+              <p style="font-size: 13px; color: #64748b;">Configure e gerencie a alíquota percentual (%) de comissão aplicada sobre o faturamento de cada empresa cadastrada.</p>
+            </div>
+            <div>
+              <button type="button" class="btn btn-primary-blue" id="btnOpenBulkRateModal">
+                <i data-lucide="sliders"></i>
+                <span>Definir Alíquota em Massa</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Grade de 4 Cards de Métricas de Alíquotas -->
           <div class="commissions-metrics-grid">
             <div class="com-metric-card">
               <div class="com-metric-icon icon-emerald">
-                <i data-lucide="coins"></i>
+                <i data-lucide="building-2"></i>
               </div>
               <div class="com-metric-info">
-                <span class="com-metric-label">Total de Comissões Geradas</span>
-                <span class="com-metric-val" id="comValTotal">R$ 1.954,55</span>
+                <span class="com-metric-label">Empresas Cadastradas</span>
+                <span class="com-metric-val" id="rateStatTotal">16</span>
               </div>
             </div>
 
             <div class="com-metric-card">
               <div class="com-metric-icon icon-blue">
-                <i data-lucide="award"></i>
+                <i data-lucide="percent"></i>
               </div>
               <div class="com-metric-info">
-                <span class="com-metric-label">Comissões Diretas</span>
-                <span class="com-metric-val" id="comValDirect">R$ 1.861,04</span>
+                <span class="com-metric-label">Alíquota Média Geral</span>
+                <span class="com-metric-val" id="rateStatAvg">7.7%</span>
               </div>
             </div>
 
             <div class="com-metric-card">
               <div class="com-metric-icon icon-purple">
-                <i data-lucide="git-branch"></i>
+                <i data-lucide="trending-up"></i>
               </div>
               <div class="com-metric-info">
-                <span class="com-metric-label">Comissões de Rede (Equipe)</span>
-                <span class="com-metric-val" id="comValNetwork">R$ 93,51</span>
+                <span class="com-metric-label">Maior Alíquota Configurada</span>
+                <span class="com-metric-val" id="rateStatMax">15.0%</span>
               </div>
             </div>
 
             <div class="com-metric-card">
               <div class="com-metric-icon icon-amber">
-                <i data-lucide="clock"></i>
+                <i data-lucide="trending-down"></i>
               </div>
               <div class="com-metric-info">
-                <span class="com-metric-label">Pendentes / Processando</span>
-                <span class="com-metric-val" id="comValPending">R$ 247,00</span>
+                <span class="com-metric-label">Menor Alíquota Configurada</span>
+                <span class="com-metric-val" id="rateStatMin">3.5%</span>
               </div>
             </div>
           </div>
 
-          <!-- CARD 1: Pesquisar e Filtrar Comissões -->
+          <!-- CARD 1: Pesquisar e Filtrar Empresas -->
           <section class="card companies-search-card">
-            <h2 class="card-title" style="margin-bottom: 16px;">Pesquisar Extrato de Comissões</h2>
+            <h2 class="card-title" style="margin-bottom: 16px;">Pesquisar Pessoas/Empresas para Ajuste de Alíquota</h2>
 
-            <form id="commissionsFilterForm">
+            <form id="ratesFilterForm">
               <div class="search-top-row">
                 <div class="input-wrapper search-main-input">
                   <span class="input-icon-left"><i data-lucide="search"></i></span>
-                  <input type="text" id="inputSearchCommissions" class="custom-input" placeholder="Buscar por empresa, beneficiário, terminal ou ID...">
+                  <input type="text" id="inputSearchRateCompany" class="custom-input" placeholder="Buscar por nome da empresa, CPF/CNPJ ou responsável...">
                 </div>
                 <div class="search-actions-group">
-                  <button type="submit" class="btn btn-primary-green" id="btnSearchCommissions">
+                  <button type="submit" class="btn btn-primary-green" id="btnSearchRates">
                     <i data-lucide="search"></i>
                     <span>Buscar</span>
                   </button>
-                  <button type="button" class="btn btn-ghost" id="btnClearCommissionsFilters">Limpar Filtros</button>
+                  <button type="button" class="btn btn-ghost" id="btnClearRatesFilters">Limpar Filtros</button>
                 </div>
               </div>
 
               <div class="search-bottom-grid">
                 <div class="filter-group">
-                  <label class="filter-label" for="filterCommissionStatus">Status do Repasse</label>
+                  <label class="filter-label" for="filterRateStatus">Status da Empresa</label>
                   <div class="input-wrapper">
-                    <select id="filterCommissionStatus" class="custom-select">
+                    <select id="filterRateStatus" class="custom-select">
                       <option value="">Todos os status</option>
-                      <option value="Paga">Paga</option>
-                      <option value="Pendente">Pendente</option>
-                      <option value="Processando">Processando</option>
+                      <option value="Ativo">Ativo</option>
+                      <option value="Inativo">Inativo</option>
                     </select>
                     <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
                   </div>
                 </div>
 
                 <div class="filter-group">
-                  <label class="filter-label" for="filterCommissionType">Tipo de Ganho</label>
+                  <label class="filter-label" for="filterRatePartner">Parceiro / Responsável</label>
                   <div class="input-wrapper">
-                    <select id="filterCommissionType" class="custom-select">
-                      <option value="">Todos os tipos</option>
-                      <option value="Direta">Venda Direta</option>
-                      <option value="Rede">Bônus de Rede / Equipe</option>
-                    </select>
-                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                  </div>
-                </div>
-
-                <div class="filter-group">
-                  <label class="filter-label" for="filterCommissionOrder">Ordenar por</label>
-                  <div class="input-wrapper">
-                    <select id="filterCommissionOrder" class="custom-select">
-                      <option value="recentes">Mais recentes</option>
-                      <option value="maior_valor">Maior valor (R$)</option>
-                      <option value="menor_valor">Menor valor (R$)</option>
-                    </select>
-                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                  </div>
-                </div>
-
-                <div class="filter-group">
-                  <label class="filter-label" for="filterCommissionBeneficiary">Beneficiário</label>
-                  <div class="input-wrapper">
-                    <select id="filterCommissionBeneficiary" class="custom-select">
-                      <option value="">Todos os beneficiários</option>
+                    <select id="filterRatePartner" class="custom-select">
+                      <option value="">Todos os parceiros</option>
                       <!-- Preenchido dinamicamente via JS -->
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterRateRange">Faixa de Alíquota (%)</label>
+                  <div class="input-wrapper">
+                    <select id="filterRateRange" class="custom-select">
+                      <option value="">Todas as alíquotas</option>
+                      <option value="low">Até 5.0%</option>
+                      <option value="mid">5.1% a 9.9%</option>
+                      <option value="high">10.0% ou mais</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterRateOrder">Ordenar por</label>
+                  <div class="input-wrapper">
+                    <select id="filterRateOrder" class="custom-select">
+                      <option value="recentes">Mais recentes</option>
+                      <option value="maior_aliquota">Maior Alíquota (%)</option>
+                      <option value="menor_aliquota">Menor Alíquota (%)</option>
+                      <option value="nome_asc">Nome (A - Z)</option>
                     </select>
                     <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
                   </div>
@@ -865,42 +880,41 @@
             </form>
           </section>
 
-          <!-- CARD 2: Tabela de Extrato de Comissões -->
+          <!-- CARD 2: Tabela de Alíquotas de Comissões por Empresa -->
           <section class="card companies-list-card" style="margin-top: 24px;">
             <div class="companies-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-              <h2 class="card-title" id="commissionsListTitle">Extrato Detalhado de Comissões (12)</h2>
-              <button class="btn btn-primary-blue" id="btnExportCommissions" style="background-color: #1d68d8;">
-                <i data-lucide="download"></i>
-                <span>Exportar Extrato</span>
-              </button>
+              <h2 class="card-title" id="ratesListTitle">Alíquotas de Comissões por Empresa (16)</h2>
+              <span style="font-size: 13px; color: #64748b; font-weight: 500;">
+                <i data-lucide="info" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i>
+                Edite os valores diretamente nos campos abaixo ou pelo botão de ajuste
+              </span>
             </div>
 
             <div class="table-responsive">
-              <table class="data-table" id="commissionsTable">
+              <table class="data-table" id="ratesTable">
                 <thead>
                   <tr>
-                    <th class="sortable" data-sort="id">ID / Data</th>
-                    <th class="sortable" data-sort="saleAmount">Valor da Venda</th>
-                    <th class="sortable" data-sort="company">Pessoa / Empresa</th>
-                    <th class="sortable" data-sort="beneficiaryName">Beneficiário</th>
-                    <th class="sortable" data-sort="ratePercent">Taxa Aplicada</th>
-                    <th class="sortable" data-sort="commissionAmount">Valor Comissão</th>
-                    <th class="sortable" data-sort="type">Tipo de Ganho</th>
-                    <th class="sortable" data-sort="status">Status</th>
+                    <th>Empresa / Pessoa</th>
+                    <th>CPF / CNPJ</th>
+                    <th>Parceiro Responsável</th>
+                    <th>Status</th>
+                    <th style="text-align: center; width: 140px;">Alíquota Atual</th>
+                    <th style="text-align: center; width: 220px;">Definir Alíquota (%)</th>
+                    <th style="text-align: center; width: 110px;">Ações</th>
                   </tr>
                 </thead>
-                <tbody id="commissionsTableBody">
+                <tbody id="ratesTableBody">
                   <!-- Linhas renderizadas dinamicamente via JS -->
                 </tbody>
               </table>
             </div>
 
-            <!-- Paginação de Comissões -->
+            <!-- Paginação de Alíquotas -->
             <div class="pagination-container" style="margin-top: 20px;">
-              <div class="pagination-info" id="commissionsPaginationInfo">
+              <div class="pagination-info" id="ratesPaginationInfo">
                 Página 1 de 1
               </div>
-              <div class="pagination-controls" id="commissionsPaginationControls">
+              <div class="pagination-controls" id="ratesPaginationControls">
                 <!-- Botões de paginação -->
               </div>
             </div>
@@ -1170,6 +1184,69 @@
             <i data-lucide="check"></i>
             <span>Cadastrar na Rede</span>
           </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Editar Alíquota de Comissão da Empresa -->
+  <div class="modal-backdrop" id="editRateModal">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Ajustar Alíquota de Comissão</h3>
+        <button class="modal-close" id="btnCloseEditRateModal">&times;</button>
+      </div>
+      <form id="editRateForm">
+        <div class="modal-body">
+          <input type="hidden" id="editRateCompanyId">
+          
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+            <div style="font-size: 11.5px; color: #64748b; font-weight: 600; text-transform: uppercase;">Empresa Selecionada</div>
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 2px;" id="editRateCompanyName">ESSENCE BEAUTY MIND</div>
+            <div style="font-size: 12.5px; color: #475569; font-family: monospace;" id="editRateCompanyDoc">14.283.912/0001-44</div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="editRateInput">Nova Alíquota de Comissão (%)</label>
+            <div class="input-wrapper" style="position: relative;">
+              <input type="number" step="0.1" min="0" max="100" id="editRateInput" class="custom-input" style="font-size: 16px; font-weight: 700; color: #059669; padding-right: 40px;" required>
+              <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b;">%</span>
+            </div>
+            <span style="font-size: 12px; color: #64748b; margin-top: 6px;">Esta alíquota será aplicada no cálculo de comissões de todas as vendas desta empresa.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="btnCancelEditRate">Cancelar</button>
+          <button type="submit" class="btn btn-primary-blue">Salvar Alíquota</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Alíquota em Massa -->
+  <div class="modal-backdrop" id="bulkRateModal">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Aplicar Alíquota em Massa</h3>
+        <button class="modal-close" id="btnCloseBulkRateModal">&times;</button>
+      </div>
+      <form id="bulkRateForm">
+        <div class="modal-body">
+          <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
+            Defina uma alíquota percentual (%) para ser aplicada a <strong>todas as empresas filtradas</strong> de uma só vez.
+          </p>
+
+          <div class="filter-group">
+            <label class="filter-label" for="bulkRateInput">Alíquota Global para Empresas (%)</label>
+            <div class="input-wrapper" style="position: relative;">
+              <input type="number" step="0.1" min="0" max="100" id="bulkRateInput" class="custom-input" placeholder="Ex: 8.0" style="font-size: 16px; font-weight: 700; color: #059669; padding-right: 40px;" required>
+              <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b;">%</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="btnCancelBulkRate">Cancelar</button>
+          <button type="submit" class="btn btn-primary-blue">Aplicar a Todas</button>
         </div>
       </form>
     </div>
