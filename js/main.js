@@ -10,7 +10,8 @@ import {
   MOCK_PROVIDER_ACCOUNTS,
   MOCK_SPREADS,
   MOCK_TRANSACTIONS,
-  MOCK_COMPANIES_DATA
+  MOCK_COMPANIES_DATA,
+  MOCK_NETWORK_USERS
 } from './mockData.js';
 
 import {
@@ -25,7 +26,9 @@ import {
   getCurrentUser,
   login,
   logout,
-  ADMIN_CREDENTIALS
+  ADMIN_CREDENTIALS,
+  getStoredNetworkUsers,
+  saveNetworkUsers
 } from './auth.js';
 
 // Application State - Transações
@@ -41,6 +44,11 @@ let filteredCompanies = [...MOCK_COMPANIES_DATA];
 let companiesCurrentPage = 1;
 const companiesPerPage = 8;
 let companiesSort = { column: 'createdAt', order: 'desc' };
+
+// Application State - Rede Hierárquica
+let currentNetworkUsers = getStoredNetworkUsers();
+let filteredNetworkUsers = [...currentNetworkUsers];
+let currentNetworkViewMode = 'tree'; // 'tree' ou 'table'
 
 // Initialize Lucide Icons
 function refreshIcons() {
@@ -430,17 +438,20 @@ function switchView(viewName) {
   const viewTransacoes = document.getElementById('view-transacoes');
   const viewEmpresas = document.getElementById('view-empresas');
   const viewDashboard = document.getElementById('view-dashboard');
+  const viewRede = document.getElementById('view-rede');
   const navTransacoes = document.getElementById('nav-transacoes');
   const navEmpresas = document.getElementById('nav-empresas');
   const navDashboard = document.getElementById('nav-dashboard');
+  const navRede = document.getElementById('nav-rede');
   const pageTitle = document.getElementById('pageHeaderTitle');
 
   // Reset active classes
-  [navTransacoes, navEmpresas, navDashboard].forEach(el => el && el.classList.remove('active'));
+  [navTransacoes, navEmpresas, navDashboard, navRede].forEach(el => el && el.classList.remove('active'));
 
   if (viewName === 'empresas') {
     if (viewTransacoes) viewTransacoes.style.display = 'none';
     if (viewDashboard) viewDashboard.style.display = 'none';
+    if (viewRede) viewRede.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'block';
     if (navEmpresas) navEmpresas.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Empresas';
@@ -448,14 +459,24 @@ function switchView(viewName) {
   } else if (viewName === 'dashboard') {
     if (viewTransacoes) viewTransacoes.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'none';
+    if (viewRede) viewRede.style.display = 'none';
     if (viewDashboard) viewDashboard.style.display = 'block';
     if (navDashboard) navDashboard.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Dashboard';
     updateDashboardStats();
+  } else if (viewName === 'rede') {
+    if (viewTransacoes) viewTransacoes.style.display = 'none';
+    if (viewEmpresas) viewEmpresas.style.display = 'none';
+    if (viewDashboard) viewDashboard.style.display = 'none';
+    if (viewRede) viewRede.style.display = 'block';
+    if (navRede) navRede.classList.add('active');
+    if (pageTitle) pageTitle.textContent = 'Rede & Hierarquia de Usuários';
+    renderNetworkView();
   } else {
     // Default: transacoes
     if (viewDashboard) viewDashboard.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'none';
+    if (viewRede) viewRede.style.display = 'none';
     if (viewTransacoes) viewTransacoes.style.display = 'block';
     if (navTransacoes) navTransacoes.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Transações';
@@ -651,12 +672,275 @@ function filterCompanies() {
   renderCompaniesTable();
 }
 
+// ==========================================================================
+// REDE HIERÁRQUICA E ÁRVORE GENEALÓGICA DE USUÁRIOS
+// ==========================================================================
+
+// Calculate user level in hierarchy tree
+function calculateUserLevel(userId, users = currentNetworkUsers) {
+  let level = 0;
+  let current = users.find(u => u.id === userId);
+  while (current && current.parentId) {
+    level++;
+    current = users.find(u => u.id === current.parentId);
+  }
+  return level;
+}
+
+// Get direct children of a user
+function getUserDirectChildren(userId, users = currentNetworkUsers) {
+  return users.filter(u => u.parentId === userId);
+}
+
+// Render complete Network view (metrics, tree, table, and selects)
+function renderNetworkView() {
+  currentNetworkUsers = getStoredNetworkUsers();
+  renderNetworkMetrics();
+  renderNetworkTree();
+  renderNetworkTable();
+  populateUplineSelect();
+}
+
+// Render network metrics
+function renderNetworkMetrics() {
+  const statTotal = document.getElementById('statTotalNetworkUsers');
+  const statDirect = document.getElementById('statDirectUsers');
+  const statDepth = document.getElementById('statTreeDepth');
+  const statAvg = document.getElementById('statAvgCommission');
+
+  if (statTotal) statTotal.textContent = currentNetworkUsers.length;
+  
+  const root = currentNetworkUsers.find(u => !u.parentId || u.id === 'USR-ADMIN');
+  const rootId = root ? root.id : 'USR-ADMIN';
+  const directUsers = getUserDirectChildren(rootId);
+  if (statDirect) statDirect.textContent = directUsers.length;
+
+  let maxDepth = 0;
+  let sumCommission = 0;
+  currentNetworkUsers.forEach(u => {
+    const lvl = calculateUserLevel(u.id);
+    if (lvl > maxDepth) maxDepth = lvl;
+    sumCommission += Number(u.commissionRate || 0);
+  });
+
+  if (statDepth) statDepth.textContent = `${maxDepth + 1} Níveis`;
+  if (statAvg && currentNetworkUsers.length > 0) {
+    statAvg.textContent = `${(sumCommission / currentNetworkUsers.length).toFixed(1)}%`;
+  }
+}
+
+// Render visual hierarchy tree (Recursive)
+function renderNetworkTree() {
+  const container = document.getElementById('networkTreeWrapper');
+  if (!container) return;
+
+  const root = currentNetworkUsers.find(u => !u.parentId || u.id === 'USR-ADMIN') || currentNetworkUsers[0];
+  if (!root) {
+    container.innerHTML = '<p style="color: #64748b; padding: 20px;">Nenhum usuário cadastrado na rede.</p>';
+    return;
+  }
+
+  function buildNodeHTML(user) {
+    const isRoot = !user.parentId || user.id === 'USR-ADMIN';
+    const level = calculateUserLevel(user.id);
+    const children = getUserDirectChildren(user.id);
+    const initials = user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+
+    let html = `
+      <div class="tree-branch">
+        <div class="tree-node ${isRoot ? 'is-root' : ''}" data-user-id="${user.id}">
+          <div class="tree-node-header">
+            <div class="tree-node-avatar">${initials}</div>
+            <div class="tree-node-title-group">
+              <span class="tree-node-name" title="${user.name}">${user.name}</span>
+              <span class="tree-node-role">${user.role || 'Membro'}</span>
+            </div>
+          </div>
+          <div class="tree-node-badges">
+            <span class="badge-level">Nível ${level}</span>
+            <span class="badge-commission">${user.commissionRate}% Comiss.</span>
+          </div>
+          <div class="tree-node-footer">
+            <span class="tree-downlines-count">
+              <i data-lucide="users" style="width: 12px; height: 12px;"></i>
+              ${children.length} ${children.length === 1 ? 'indicado' : 'indicados'}
+            </span>
+            <button type="button" class="btn-add-subnode" data-parent-id="${user.id}" title="Cadastrar usuário abaixo deste nó">
+              <i data-lucide="plus" style="width: 11px; height: 11px;"></i>
+              <span>+ Indicar</span>
+            </button>
+          </div>
+        </div>
+    `;
+
+    if (children.length > 0) {
+      html += `<div class="tree-branch-connector"></div>`;
+      html += `<div class="tree-children">`;
+      children.forEach(child => {
+        html += buildNodeHTML(child);
+      });
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+    return html;
+  }
+
+  container.innerHTML = buildNodeHTML(root);
+
+  // Attach quick add buttons
+  container.querySelectorAll('.btn-add-subnode').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const parentId = btn.getAttribute('data-parent-id');
+      openNewNetworkUserModal(parentId);
+    });
+  });
+
+  refreshIcons();
+}
+
+// Render network data table
+function renderNetworkTable() {
+  const tbody = document.getElementById('networkTableBody');
+  if (!tbody) return;
+
+  if (filteredNetworkUsers.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 30px; color: #64748b;">
+          Nenhum membro encontrado na rede.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filteredNetworkUsers.map(u => {
+    const isRoot = !u.parentId || u.id === 'USR-ADMIN';
+    const level = calculateUserLevel(u.id);
+    const uplineUser = currentNetworkUsers.find(parent => parent.id === u.parentId);
+    const uplineName = uplineUser ? uplineUser.name : '👑 Raiz (Admin Master)';
+    const initials = u.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+
+    return `
+      <tr>
+        <td>
+          <div class="table-network-user">
+            <div class="user-avatar-sm" style="${isRoot ? 'background: #fef3c7; color: #d97706;' : ''}">${initials}</div>
+            <div class="user-name-col">
+              <span class="user-full-name">${u.name}</span>
+              <span class="user-id-sub">${u.id}</span>
+            </div>
+          </div>
+        </td>
+        <td>
+          <span style="font-size: 13px; color: #475569; font-weight: 500;">${u.email}</span>
+        </td>
+        <td>
+          <span class="upline-badge">
+            <i data-lucide="arrow-up-right" style="width: 13px; height: 13px; color: #64748b;"></i>
+            <span>${uplineName}</span>
+          </span>
+        </td>
+        <td>
+          <span class="badge-level">Nível ${level}</span>
+        </td>
+        <td>
+          <span style="font-weight: 600; color: #0f172a; font-size: 12.5px;">${u.role || 'Membro'}</span>
+        </td>
+        <td>
+          <span class="badge-commission">${u.commissionRate}%</span>
+        </td>
+        <td>
+          <span class="${u.status === 'Ativo' ? 'badge-company-active' : 'badge-company-inactive'}">
+            ${u.status || 'Ativo'}
+          </span>
+        </td>
+        <td style="text-align: right;">
+          ${!isRoot ? `
+            <button type="button" class="btn-delete-company btn-delete-user" data-user-id="${u.id}" title="Excluir Usuário da Rede">
+              <i data-lucide="trash-2"></i>
+            </button>
+          ` : '<span style="font-size: 12px; color: #94a3b8; font-weight: 600;">Admin</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Attach delete buttons
+  tbody.querySelectorAll('.btn-delete-user').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-user-id');
+      deleteNetworkUser(id);
+    });
+  });
+
+  refreshIcons();
+}
+
+// Populate upline select options
+function populateUplineSelect(selectedId = null) {
+  const select = document.getElementById('newUserParentId');
+  if (!select) return;
+
+  select.innerHTML = currentNetworkUsers.map(u => {
+    const level = calculateUserLevel(u.id);
+    const isSelected = selectedId === u.id ? 'selected' : '';
+    return `<option value="${u.id}" ${isSelected}>[Nível ${level}] ${u.name} (${u.role})</option>`;
+  }).join('');
+}
+
+// Modal open / close handlers
+function openNewNetworkUserModal(preselectedParentId = null) {
+  const modal = document.getElementById('newNetworkUserModal');
+  if (!modal) return;
+  populateUplineSelect(preselectedParentId);
+  modal.classList.add('open');
+  refreshIcons();
+}
+
+function closeNewNetworkUserModal() {
+  const modal = document.getElementById('newNetworkUserModal');
+  if (modal) modal.classList.remove('open');
+}
+
+// Delete user from network
+function deleteNetworkUser(userId) {
+  const user = currentNetworkUsers.find(u => u.id === userId);
+  if (!user) return;
+
+  const hasChildren = currentNetworkUsers.some(u => u.parentId === userId);
+  if (hasChildren) {
+    if (!confirm(`O usuário ${user.name} possui indicados abaixo dele na árvore. Se você excluí-lo, os indicados passarão para o superior direto dele. Deseja continuar?`)) {
+      return;
+    }
+    // Re-link children to grandparent
+    currentNetworkUsers.forEach(u => {
+      if (u.parentId === userId) {
+        u.parentId = user.parentId || 'USR-ADMIN';
+      }
+    });
+  } else {
+    if (!confirm(`Deseja realmente remover ${user.name} da rede de parceiros?`)) {
+      return;
+    }
+  }
+
+  currentNetworkUsers = currentNetworkUsers.filter(u => u.id !== userId);
+  filteredNetworkUsers = [...currentNetworkUsers];
+  saveNetworkUsers(currentNetworkUsers);
+  renderNetworkView();
+  showToast(`Usuário ${user.name} removido da rede.`);
+}
+
 // Setup Event Listeners
 function setupEvents() {
   // Sidebar View Switchers
   const navDashboard = document.getElementById('nav-dashboard');
   const navEmpresas = document.getElementById('nav-empresas');
   const navTransacoes = document.getElementById('nav-transacoes');
+  const navRede = document.getElementById('nav-rede');
 
   if (navDashboard) {
     navDashboard.addEventListener('click', (e) => {
@@ -928,12 +1212,127 @@ function setupEvents() {
   }
 
   // Close modals on backdrop click
+  const newNetworkUserModal = document.getElementById('newNetworkUserModal');
   window.addEventListener('click', (e) => {
     if (e.target === reportModal) closeReportModal();
     if (e.target === detailsModal) closeDetailsModal();
     if (e.target === supabaseModal) closeSupabaseModal();
     if (e.target === newCompanyModal) closeNewCompanyModal();
+    if (e.target === newNetworkUserModal) closeNewNetworkUserModal();
   });
+
+  // Network Navigation Link
+  if (navRede) {
+    navRede.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchView('rede');
+    });
+  }
+
+  // Network View Mode Toggle (Tree vs Table)
+  const btnModeTree = document.getElementById('btnModeTree');
+  const btnModeTable = document.getElementById('btnModeTable');
+  const treeViewContainer = document.getElementById('treeViewContainer');
+  const networkTableViewContainer = document.getElementById('networkTableViewContainer');
+
+  if (btnModeTree && btnModeTable) {
+    btnModeTree.addEventListener('click', () => {
+      btnModeTree.classList.add('active');
+      btnModeTable.classList.remove('active');
+      if (treeViewContainer) treeViewContainer.style.display = 'block';
+      if (networkTableViewContainer) networkTableViewContainer.style.display = 'none';
+      currentNetworkViewMode = 'tree';
+    });
+
+    btnModeTable.addEventListener('click', () => {
+      btnModeTable.classList.add('active');
+      btnModeTree.classList.remove('active');
+      if (treeViewContainer) treeViewContainer.style.display = 'none';
+      if (networkTableViewContainer) networkTableViewContainer.style.display = 'block';
+      currentNetworkViewMode = 'table';
+      renderNetworkTable();
+    });
+  }
+
+  // Network User Search
+  const networkUserSearchInput = document.getElementById('networkUserSearchInput');
+  if (networkUserSearchInput) {
+    networkUserSearchInput.addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase().trim();
+      if (!term) {
+        filteredNetworkUsers = [...currentNetworkUsers];
+      } else {
+        filteredNetworkUsers = currentNetworkUsers.filter(u => {
+          const upline = currentNetworkUsers.find(p => p.id === u.parentId);
+          const uplineName = upline ? upline.name.toLowerCase() : 'admin raiz';
+          return (
+            u.name.toLowerCase().includes(term) ||
+            u.email.toLowerCase().includes(term) ||
+            u.id.toLowerCase().includes(term) ||
+            u.role.toLowerCase().includes(term) ||
+            uplineName.includes(term)
+          );
+        });
+      }
+      renderNetworkTable();
+    });
+  }
+
+  // Modal: Novo Usuário na Rede
+  const btnOpenNewUserModal = document.getElementById('btnOpenNewUserModal');
+  const btnCloseNewUserModal = document.getElementById('btnCloseNewUserModal');
+  const btnCancelNewUser = document.getElementById('btnCancelNewUser');
+  const newNetworkUserForm = document.getElementById('newNetworkUserForm');
+
+  if (btnOpenNewUserModal) btnOpenNewUserModal.addEventListener('click', () => openNewNetworkUserModal());
+  if (btnCloseNewUserModal) btnCloseNewUserModal.addEventListener('click', closeNewNetworkUserModal);
+  if (btnCancelNewUser) btnCancelNewUser.addEventListener('click', closeNewNetworkUserModal);
+
+  if (newNetworkUserForm) {
+    newNetworkUserForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const parentId = document.getElementById('newUserParentId').value;
+      const name = document.getElementById('newUserName').value.trim();
+      const email = document.getElementById('newUserEmail').value.trim();
+      const password = document.getElementById('newUserPassword').value.trim();
+      const role = document.getElementById('newUserRole').value;
+      const commissionRate = parseFloat(document.getElementById('newUserCommission').value) || 5.0;
+      const phone = document.getElementById('newUserPhone').value.trim() || '(41) 99999-0000';
+      const status = document.getElementById('newUserStatus').value || 'Ativo';
+
+      // Check if email already exists
+      if (currentNetworkUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+        showToast('Já existe um usuário cadastrado com este email.', 'success');
+        return;
+      }
+
+      const nextNum = (currentNetworkUsers.length + 1).toString().padStart(3, '0');
+      const newUser = {
+        id: `USR-${nextNum}`,
+        name,
+        email,
+        password,
+        role,
+        parentId,
+        commissionRate,
+        phone,
+        createdAt: new Date().toLocaleDateString('pt-BR'),
+        status
+      };
+
+      currentNetworkUsers.push(newUser);
+      filteredNetworkUsers = [...currentNetworkUsers];
+      saveNetworkUsers(currentNetworkUsers);
+
+      newNetworkUserForm.reset();
+      document.getElementById('newUserPassword').value = '123456';
+      document.getElementById('newUserCommission').value = '5.0';
+
+      closeNewNetworkUserModal();
+      renderNetworkView();
+      showToast(`Usuário ${name} cadastrado com sucesso na rede hierárquica!`);
+    });
+  }
 
   // Dashboard Action Links
   document.getElementById('dashLinkEmpresas')?.addEventListener('click', () => switchView('empresas'));

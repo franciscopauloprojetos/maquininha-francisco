@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/components.css">
   <link rel="stylesheet" href="styles/auth.css">
+  <link rel="stylesheet" href="styles/hierarchy.css">
 </head>
 <body>
   <!-- Tela de Login / Autenticação (KONZPAY) -->
@@ -123,6 +124,12 @@
           <a href="#" class="sidebar-nav-link active" id="nav-transacoes">
             <i data-lucide="arrow-left-right"></i>
             <span>Transações</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-rede">
+            <i data-lucide="git-fork"></i>
+            <span>Rede & Usuários</span>
           </a>
         </li>
       </ul>
@@ -578,6 +585,115 @@
             </div>
           </div>
         </div>
+
+        <!-- ================= VIEW 4: REDE & HIERARQUIA DE USUÁRIOS ================= -->
+        <div id="view-rede" class="app-view" style="display: none;">
+          <!-- Top Bar de Métricas da Rede -->
+          <div class="hierarchy-metrics-grid">
+            <div class="hierarchy-stat-card">
+              <div class="hierarchy-stat-icon icon-blue">
+                <i data-lucide="users"></i>
+              </div>
+              <div class="hierarchy-stat-info">
+                <span class="hierarchy-stat-label">Total de Membros na Rede</span>
+                <span class="hierarchy-stat-val" id="statTotalNetworkUsers">11</span>
+              </div>
+            </div>
+
+            <div class="hierarchy-stat-card">
+              <div class="hierarchy-stat-icon icon-green">
+                <i data-lucide="user-check"></i>
+              </div>
+              <div class="hierarchy-stat-info">
+                <span class="hierarchy-stat-label">Indicados Diretos (Nível 1)</span>
+                <span class="hierarchy-stat-val" id="statDirectUsers">3</span>
+              </div>
+            </div>
+
+            <div class="hierarchy-stat-card">
+              <div class="hierarchy-stat-icon icon-purple">
+                <i data-lucide="git-branch"></i>
+              </div>
+              <div class="hierarchy-stat-info">
+                <span class="hierarchy-stat-label">Profundidade da Árvore</span>
+                <span class="hierarchy-stat-val" id="statTreeDepth">4 Níveis</span>
+              </div>
+            </div>
+
+            <div class="hierarchy-stat-card">
+              <div class="hierarchy-stat-icon icon-amber">
+                <i data-lucide="percent"></i>
+              </div>
+              <div class="hierarchy-stat-info">
+                <span class="hierarchy-stat-label">Média de Comissão Base</span>
+                <span class="hierarchy-stat-val" id="statAvgCommission">7.2%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Header de Ações & Alternador de Visualização -->
+          <div class="hierarchy-header-card">
+            <div>
+              <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Hierarquia & Estrutura da Rede</h2>
+              <p style="font-size: 13px; color: #64748b;">Gerencie a árvore genealógica de parceiros, líderes e consultores indicados</p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div class="view-mode-toggle">
+                <button type="button" class="btn-toggle-mode active" id="btnModeTree">
+                  <i data-lucide="git-fork"></i>
+                  <span>Árvore Visual</span>
+                </button>
+                <button type="button" class="btn-toggle-mode" id="btnModeTable">
+                  <i data-lucide="table"></i>
+                  <span>Tabela Detalhada</span>
+                </button>
+              </div>
+
+              <button type="button" class="btn btn-primary-blue" id="btnOpenNewUserModal">
+                <i data-lucide="user-plus"></i>
+                <span>+ Novo Usuário na Rede</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Container 1: Visão em Árvore Interativa -->
+          <div id="treeViewContainer" class="tree-container-card">
+            <div class="tree-wrapper" id="networkTreeWrapper">
+              <!-- Árvore gerada dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Container 2: Visão em Tabela -->
+          <div id="networkTableViewContainer" class="card" style="display: none; padding: 24px;">
+            <div class="search-top-row" style="margin-bottom: 20px;">
+              <div class="input-wrapper search-main-input">
+                <span class="input-icon-left"><i data-lucide="search"></i></span>
+                <input type="text" id="networkUserSearchInput" class="custom-input" placeholder="Buscar por nome, email, papel ou indicador...">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Membro / ID</th>
+                    <th>Email de Login</th>
+                    <th>Indicado por (Upline)</th>
+                    <th>Nível</th>
+                    <th>Papel / Cargo</th>
+                    <th>% Comissão</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="networkTableBody">
+                  <!-- Linhas renderizadas dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   </div>
@@ -736,6 +852,101 @@
           <button type="submit" class="btn btn-primary-blue" id="btnSaveNewCompany">
             <i data-lucide="plus"></i>
             <span>Cadastrar Empresa</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Novo Usuário / Parceiro na Rede -->
+  <div class="modal-backdrop" id="newNetworkUserModal">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Cadastrar Novo Usuário na Rede</h3>
+          <p style="font-size: 12px; color: #64748b; margin-top: 2px;">Crie o login, senha e defina a posição hierárquica na árvore</p>
+        </div>
+        <button class="modal-close" id="btnCloseNewUserModal">&times;</button>
+      </div>
+
+      <form id="newNetworkUserForm">
+        <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="filter-group" style="grid-column: span 2;">
+            <label class="filter-label" for="newUserParentId">Indicado por (Superior Hierárquico / Upline) *</label>
+            <div class="input-wrapper">
+              <select id="newUserParentId" class="custom-select" required>
+                <!-- Preenchido dinamicamente com todos os nós da árvore -->
+              </select>
+              <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+            </div>
+            <span style="font-size: 11.5px; color: #64748b; margin-top: 3px;">O novo usuário será posicionado exatamente abaixo deste indicador na árvore.</span>
+          </div>
+
+          <div class="filter-group" style="grid-column: span 2;">
+            <label class="filter-label" for="newUserName">Nome Completo / Razão Social *</label>
+            <div class="input-wrapper">
+              <input type="text" id="newUserName" class="custom-input" placeholder="Ex: Lucas Gabriel da Silva" required>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newUserEmail">Email de Login *</label>
+            <div class="input-wrapper">
+              <input type="email" id="newUserEmail" class="custom-input" placeholder="usuario@email.com" required>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newUserPassword">Senha de Acesso Inicial *</label>
+            <div class="input-wrapper">
+              <input type="text" id="newUserPassword" class="custom-input" placeholder="Ex: 123456" value="123456" required>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newUserRole">Papel / Cargo na Rede *</label>
+            <div class="input-wrapper">
+              <select id="newUserRole" class="custom-select" required>
+                <option value="Parceiro Master">Parceiro Master</option>
+                <option value="Líder Regional">Líder Regional</option>
+                <option value="Consultor de Vendas" selected>Consultor de Vendas</option>
+                <option value="Afiliado / Vendedor">Afiliado / Vendedor</option>
+              </select>
+              <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newUserCommission">Comissão Base (%)</label>
+            <div class="input-wrapper">
+              <input type="number" step="0.1" min="0" max="100" id="newUserCommission" class="custom-input" value="5.0" required>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newUserPhone">Telefone / WhatsApp</label>
+            <div class="input-wrapper">
+              <input type="text" id="newUserPhone" class="custom-input" placeholder="(41) 99999-0000">
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newUserStatus">Status</label>
+            <div class="input-wrapper">
+              <select id="newUserStatus" class="custom-select">
+                <option value="Ativo" selected>Ativo</option>
+                <option value="Inativo">Inativo</option>
+              </select>
+              <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="btnCancelNewUser">Cancelar</button>
+          <button type="submit" class="btn btn-primary-blue" id="btnSaveNewUser">
+            <i data-lucide="check"></i>
+            <span>Cadastrar na Rede</span>
           </button>
         </div>
       </form>

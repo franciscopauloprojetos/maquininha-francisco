@@ -398,3 +398,138 @@ export const MOCK_COMPANIES_DATA = [
     status: "Ativo"
   }
 ];
+
+export const MOCK_NETWORK_USERS = [
+  {
+    id: "USR-ADMIN",
+    name: "Francisco Pereira Paulo",
+    email: "franciscopereirapaulo@gmail.com",
+    password: "1Sucesso#",
+    role: "Admin Master",
+    parentId: null,
+    commissionRate: 15.0,
+    phone: "(41) 99999-8888",
+    createdAt: "01/01/2026",
+    status: "Ativo"
+  },
+  {
+    id: "USR-001",
+    name: "Alpha Soluções e Pagamentos",
+    email: "alpha@solucoes.com.br",
+    password: "123456",
+    role: "Parceiro Master",
+    parentId: "USR-ADMIN",
+    commissionRate: 10.0,
+    phone: "(41) 98888-1111",
+    createdAt: "10/01/2026",
+    status: "Ativo"
+  },
+  {
+    id: "USR-002",
+    name: "Beta Intermediações Comerciais",
+    email: "beta@comercial.com.br",
+    password: "123456",
+    role: "Parceiro Master",
+    parentId: "USR-ADMIN",
+    commissionRate: 10.0,
+    phone: "(41) 97777-2222",
+    createdAt: "15/01/2026",
+    status: "Ativo"
+  },
+  {
+    id: "USR-003",
+    name: "Delta Pay Serviços",
+    email: "delta@deltapay.com.br",
+    password: "123456",
+    role: "Parceiro Master",
+    parentId: "USR-ADMIN",
+    commissionRate: 10.0,
+    phone: "(41) 96666-3333",
+    createdAt: "20/01/2026",
+    status: "Ativo"
+  },
+  {
+    id: "USR-004",
+    name: "Carlos Silva",
+    email: "carlos.silva@gmail.com",
+    password: "123456",
+    role: "Líder Regional",
+    parentId: "USR-001",
+    commissionRate: 7.5,
+    phone: "(41) 98411-2233",
+    createdAt: "01/02/2026",
+    status: "Ativo"
+  },
+  {
+    id: "USR-005",
+    name: "Mariana Lima",
+    email: "mariana.lima@gmail.com",
+    password: "123456",
+    role: "Consultora Senior",
+    parentId: "USR-001",
+    commissionRate: 7.5,
+    phone: "(41) 99122-4455",
+    createdAt: "05/02/2026",
+    status: "Ativo"
+  },
+  {
+    id: "USR-006",
+    name: "Rodrigo Costa",
+    email: "rodrigo.costa@gmail.com",
+    password: "123456",
+    role: "Líder Regional",
+    parentId: "USR-002",
+    commissionRate: 7.5,
+    phone: "(41) 99877-6611",
+    createdAt: "12/02/2026",
+    status: "Ativo"
+  },
+  {
+    id: "USR-007",
+    name: "João Pedro",
+    email: "joao.pedro@gmail.com",
+    password: "123456",
+    role: "Consultor de Vendas",
+    parentId: "USR-004",
+    commissionRate: 5.0,
+    phone: "(41) 98700-1122",
+    createdAt: "01/03/2026",
+    status: "Ativo"
+  },
+  {
+    id: "USR-008",
+    name: "Bruna Souza",
+    email: "bruna.souza@gmail.com",
+    password: "123456",
+    role: "Consultora de Vendas",
+    parentId: "USR-004",
+    commissionRate: 5.0,
+    phone: "(41) 99655-3344",
+    createdAt: "08/03/2026",
+    status: "Ativo"
+  },
+  {
+    id: "USR-009",
+    name: "Lucas Mendes",
+    email: "lucas.mendes@gmail.com",
+    password: "123456",
+    role: "Afiliado Comercial",
+    parentId: "USR-005",
+    commissionRate: 3.5,
+    phone: "(41) 98400-5566",
+    createdAt: "15/03/2026",
+    status: "Ativo"
+  },
+  {
+    id: "USR-010",
+    name: "Fernanda Ribeiro",
+    email: "fernanda.ribeiro@gmail.com",
+    password: "123456",
+    role: "Afiliada / Vendedora",
+    parentId: "USR-007",
+    commissionRate: 2.5,
+    phone: "(41) 99111-7788",
+    createdAt: "01/04/2026",
+    status: "Ativo"
+  }
+];
