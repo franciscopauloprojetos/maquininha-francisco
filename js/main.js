@@ -894,7 +894,7 @@ function renderNetworkTree() {
     const isSelf = user.id === currentUser?.id;
 
     let html = `
-      <div class="tree-branch">
+      <div class="tree-branch ${children.length > 0 ? 'has-children' : ''}">
         <div class="tree-node ${isRoot ? 'is-root' : ''}" data-user-id="${user.id}">
           <div class="tree-node-header">
             <div class="tree-node-avatar">${initials}</div>
@@ -923,7 +923,6 @@ function renderNetworkTree() {
     `;
 
     if (children.length > 0) {
-      html += `<div class="tree-branch-connector"></div>`;
       html += `<div class="tree-children">`;
       children.forEach(child => {
         html += buildNodeHTML(child);
