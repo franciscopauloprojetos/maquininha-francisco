@@ -46,6 +46,7 @@ let filteredCompanies = [...MOCK_COMPANIES_DATA];
 let companiesCurrentPage = 1;
 const companiesPerPage = 8;
 let companiesSort = { column: 'createdAt', order: 'desc' };
+let selectedCompanyIds = new Set();
 
 // Application State - Rede Hierárquica
 let currentNetworkUsers = getStoredNetworkUsers();
@@ -499,6 +500,40 @@ function updateDashboardStats() {
   if (elVolume) elVolume.textContent = 'R$ 213.025,44';
 }
 
+// Update Companies Bulk Action UI
+function updateCompaniesBulkUI() {
+  const bulkBar = document.getElementById('companiesBulkActionBar');
+  const countText = document.getElementById('bulkDeleteCountText');
+  const checkAll = document.getElementById('checkAllCompanies');
+
+  if (bulkBar && countText) {
+    if (selectedCompanyIds.size > 0) {
+      bulkBar.style.display = 'inline-flex';
+      countText.textContent = `Excluir Selecionadas (${selectedCompanyIds.size})`;
+    } else {
+      bulkBar.style.display = 'none';
+    }
+  }
+
+  // Check if all visible companies on current page are selected
+  if (checkAll) {
+    const startIndex = (companiesCurrentPage - 1) * companiesPerPage;
+    const endIndex = Math.min(startIndex + companiesPerPage, filteredCompanies.length);
+    const currentSlice = filteredCompanies.slice(startIndex, endIndex);
+
+    if (currentSlice.length > 0 && currentSlice.every(c => selectedCompanyIds.has(c.id))) {
+      checkAll.checked = true;
+      checkAll.indeterminate = false;
+    } else if (currentSlice.some(c => selectedCompanyIds.has(c.id))) {
+      checkAll.checked = false;
+      checkAll.indeterminate = true;
+    } else {
+      checkAll.checked = false;
+      checkAll.indeterminate = false;
+    }
+  }
+}
+
 // Render Companies Table
 function renderCompaniesTable() {
   const tbody = document.getElementById('companiesTableBody');
@@ -531,12 +566,13 @@ function renderCompaniesTable() {
   if (totalRecords === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+        <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
           Nenhuma empresa encontrada com os filtros pesquisados.
         </td>
       </tr>
     `;
     renderCompaniesPagination(totalPages);
+    updateCompaniesBulkUI();
     return;
   }
 
@@ -545,8 +581,13 @@ function renderCompaniesTable() {
       ? `<span class="badge-company-active">Ativo</span>`
       : `<span class="badge-company-inactive">Inativo</span>`;
 
+    const isChecked = selectedCompanyIds.has(comp.id) ? 'checked' : '';
+
     return `
       <tr>
+        <td style="text-align: center; width: 44px;">
+          <input type="checkbox" class="check-company-item" data-id="${comp.id}" ${isChecked} style="cursor: pointer; width: 16px; height: 16px; accent-color: #1d68d8;">
+        </td>
         <td class="cell-company-name">${comp.name}</td>
         <td class="cell-owner">${comp.owner}</td>
         <td class="cell-email">${comp.email}</td>
@@ -563,10 +604,24 @@ function renderCompaniesTable() {
   }).join('');
 
   renderCompaniesPagination(totalPages);
+  updateCompaniesBulkUI();
   refreshIcons();
 
+  // Attach individual checkbox events
+  tbody.querySelectorAll('.check-company-item').forEach(chk => {
+    chk.addEventListener('change', () => {
+      const id = chk.getAttribute('data-id');
+      if (chk.checked) {
+        selectedCompanyIds.add(id);
+      } else {
+        selectedCompanyIds.delete(id);
+      }
+      updateCompaniesBulkUI();
+    });
+  });
+
   // Attach delete events
-  document.querySelectorAll('.delete-comp-btn').forEach(btn => {
+  tbody.querySelectorAll('.delete-comp-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
       deleteCompany(id);
@@ -1106,14 +1161,43 @@ function setupEvents() {
   const filterCompanyOrder = document.getElementById('filterCompanyOrder');
   if (filterCompanyOrder) filterCompanyOrder.addEventListener('change', filterCompanies);
 
-  const btnClearCompaniesFilters = document.getElementById('btnClearCompaniesFilters');
-  if (btnClearCompaniesFilters) {
-    btnClearCompaniesFilters.addEventListener('click', () => {
-      if (companiesFilterForm) companiesFilterForm.reset();
-      filteredCompanies = [...currentCompanies];
-      companiesCurrentPage = 1;
+  // Bulk Delete Companies Handlers
+  const checkAllCompanies = document.getElementById('checkAllCompanies');
+  if (checkAllCompanies) {
+    checkAllCompanies.addEventListener('change', () => {
+      const startIndex = (companiesCurrentPage - 1) * companiesPerPage;
+      const endIndex = Math.min(startIndex + companiesPerPage, filteredCompanies.length);
+      const currentSlice = filteredCompanies.slice(startIndex, endIndex);
+
+      if (checkAllCompanies.checked) {
+        currentSlice.forEach(c => selectedCompanyIds.add(c.id));
+      } else {
+        currentSlice.forEach(c => selectedCompanyIds.delete(c.id));
+      }
       renderCompaniesTable();
-      showToast('Filtros de empresas limpos.');
+    });
+  }
+
+  const btnDeleteSelectedCompanies = document.getElementById('btnDeleteSelectedCompanies');
+  if (btnDeleteSelectedCompanies) {
+    btnDeleteSelectedCompanies.addEventListener('click', () => {
+      if (selectedCompanyIds.size === 0) return;
+      const count = selectedCompanyIds.size;
+      if (confirm(`Deseja realmente excluir ${count} empresa(s) selecionada(s)? Esta ação é permanente.`)) {
+        currentCompanies = currentCompanies.filter(c => !selectedCompanyIds.has(c.id));
+        filteredCompanies = filteredCompanies.filter(c => !selectedCompanyIds.has(c.id));
+        selectedCompanyIds.clear();
+        renderCompaniesTable();
+        showToast(`${count} empresa(s) excluída(s) com sucesso.`);
+      }
+    });
+  }
+
+  const btnClearCompanySelection = document.getElementById('btnClearCompanySelection');
+  if (btnClearCompanySelection) {
+    btnClearCompanySelection.addEventListener('click', () => {
+      selectedCompanyIds.clear();
+      renderCompaniesTable();
     });
   }
 
