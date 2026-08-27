@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transações - Maquininha Francisco</title>
+  <meta name="description" content="Painel de controle financeiro e gestão de transações da Maquininha Francisco.">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="styles/variables.css">
+  <link rel="stylesheet" href="styles/layout.css">
+  <link rel="stylesheet" href="styles/components.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar / Menu Lateral -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <a href="#" class="sidebar-logo">
+          <!-- Logo Exato do Topo: Cubos estilizados verde e grafite -->
+          <div class="sidebar-logo-icon">
+            <svg width="34" height="34" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Top Left Small Box (Gray/Black) -->
+              <rect x="10" y="4" width="7" height="7" rx="1.5" transform="rotate(12 10 4)" fill="#1e293b"/>
+              <!-- Top Right Main Box (Green border) -->
+              <rect x="22" y="5" width="11" height="11" rx="2.5" transform="rotate(12 22 5)" stroke="#00ba50" stroke-width="2.5" fill="#ffffff"/>
+              <!-- Bottom Left Main Box (Dark Slate with Green Corner) -->
+              <rect x="6" y="16" width="14" height="14" rx="3" transform="rotate(12 6 16)" fill="#1e293b"/>
+              <rect x="10" y="20" width="6" height="6" rx="1.5" transform="rotate(12 10 20)" fill="#00ba50"/>
+              <!-- Bottom Right Small Box (Gray) -->
+              <rect x="23" y="22" width="7" height="7" rx="1.5" transform="rotate(12 23 22)" fill="#64748b"/>
+            </svg>
+          </div>
+        </a>
+      </div>
+
+      <div class="sidebar-section-title">Menu Principal</div>
+
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-dashboard">
+            <i data-lucide="bar-chart-2"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-empresas">
+            <i data-lucide="building-2"></i>
+            <span>Empresas</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link active" id="nav-transacoes">
+            <i data-lucide="arrow-left-right"></i>
+            <span>Transações</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-pagamentos">
+            <i data-lucide="credit-card"></i>
+            <span>Pagamentos</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-terminais">
+            <i data-lucide="smartphone"></i>
+            <span>Terminais</span>
+            <span class="nav-arrow"><i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i></span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-contratos">
+            <i data-lucide="file-text"></i>
+            <span>Contratos</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-parceiros">
+            <i data-lucide="users"></i>
+            <span>Parceiros</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-usuarios">
+            <i data-lucide="user"></i>
+            <span>Usuários</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-contas">
+            <i data-lucide="shield"></i>
+            <span>Contas de Provedor</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-alertas">
+            <i data-lucide="bell"></i>
+            <span>Alertas</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-seguranca">
+            <i data-lucide="key"></i>
+            <span>Segurança</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-ajuda">
+            <i data-lucide="help-circle"></i>
+            <span>Ajuda</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Área Principal -->
+    <div class="main-wrapper">
+      <!-- Cabeçalho Topo -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="header-toggle-btn" id="sidebarToggle" title="Alternar Menu">
+            <i data-lucide="sidebar"></i>
+          </button>
+          <h1 class="header-title">Transações</h1>
+        </div>
+
+        <div class="header-right">
+          <div class="header-user" id="userProfileBtn">
+            <i data-lucide="user"></i>
+            <span>Francisco</span>
+          </div>
+          <button class="header-logout" id="logoutBtn" title="Sair do sistema">
+            <i data-lucide="log-out"></i>
+            <span>Sair</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Conteúdo da Página -->
+      <main class="page-content">
+        <!-- ================= CARD 1: Filtros de Transação ================= -->
+        <section class="card filter-card">
+          <h2 class="card-title">Filtros de Transação</h2>
+
+          <form id="filterForm">
+            <div class="filters-grid">
+              <!-- Linha 1 -->
+              <div class="filter-group">
+                <label class="filter-label" for="filterEmpresas">Empresas</label>
+                <div class="input-wrapper">
+                  <span class="input-icon-left"><i data-lucide="search"></i></span>
+                  <select id="filterEmpresas" class="custom-select">
+                    <option value="">Selecionar</option>
+                  </select>
+                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                </div>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterParceiro">Parceiro</label>
+                <div class="input-wrapper">
+                  <span class="input-icon-left"><i data-lucide="search"></i></span>
+                  <select id="filterParceiro" class="custom-select">
+                    <option value="">Todos os parceiros</option>
+                  </select>
+                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                </div>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterTerminal">Terminal</label>
+                <div class="input-wrapper">
+                  <span class="input-icon-left"><i data-lucide="search"></i></span>
+                  <select id="filterTerminal" class="custom-select">
+                    <option value="">Selecionar</option>
+                  </select>
+                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                </div>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterFormaPagamento">Forma de Pagamento</label>
+                <div class="input-wrapper">
+                  <select id="filterFormaPagamento" class="custom-select">
+                    <option value="">Todas</option>
+                  </select>
+                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                </div>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterParcelas">Parcelas</label>
+                <div class="input-wrapper">
+                  <select id="filterParcelas" class="custom-select">
+                    <option value="">Todas</option>
+                  </select>
+                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                </div>
+              </div>
+
+              <!-- Linha 2 -->
+              <div class="filter-group">
+                <label class="filter-label" for="filterBandeira">Bandeira</label>
+                <div class="input-wrapper">
+                  <select id="filterBandeira" class="custom-select">
+                    <option value="">Todas</option>
+                  </select>
+                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                </div>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterStatus">Status</label>
+                <div class="input-wrapper">
+                  <select id="filterStatus" class="custom-select">
+                    <option value="">Todos</option>
+                  </select>
+                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                </div>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterContaProvedor">Conta de Provedor</label>
+                <div class="input-wrapper">
+                  <span class="input-icon-left"><i data-lucide="search"></i></span>
+                  <select id="filterContaProvedor" class="custom-select">
+                    <option value="">Todas as contas</option>
+                  </select>
+                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                </div>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterDataInicio">Início</label>
+                <div class="input-wrapper">
+                  <span class="input-icon-left"><i data-lucide="calendar"></i></span>
+                  <input type="text" id="filterDataInicio" class="custom-input" value="01/07/2026" placeholder="01/07/2026">
+                </div>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label" for="filterDataTermino">Término</label>
+                <div class="input-wrapper">
+                  <span class="input-icon-left"><i data-lucide="calendar"></i></span>
+                  <input type="text" id="filterDataTermino" class="custom-input" value="27/08/2026" placeholder="27/08/2026">
+                </div>
+              </div>
+
+              <!-- Linha 3: Spread, Valor e Botões de Ação -->
+              <div class="filters-row-3">
+                <div class="filters-row-3-left">
+                  <div class="filter-group">
+                    <label class="filter-label" for="filterSpread">Spread</label>
+                    <div class="input-wrapper">
+                      <select id="filterSpread" class="custom-select">
+                        <option value="">Todos os spreads</option>
+                      </select>
+                      <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                    </div>
+                  </div>
+
+                  <div class="filter-group">
+                    <label class="filter-label" for="filterValorMinimo">Valor (a partir de)</label>
+                    <div class="input-wrapper">
+                      <input type="text" id="filterValorMinimo" class="custom-input" value="R$ 0,00" placeholder="R$ 0,00">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="filter-actions">
+                  <button type="button" class="btn btn-ghost" id="btnClearFilters">Limpar Filtros</button>
+                  <button type="submit" class="btn btn-primary-green" id="btnApplyFilters">
+                    <i data-lucide="search"></i>
+                    <span>Filtrar</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </section>
+
+        <!-- ================= CARD 2: Totais / Métricas (KPIs) ================= -->
+        <section class="card kpi-container">
+          <!-- Linha Superior: 4 Métricas Principais -->
+          <div class="kpi-row-top">
+            <div class="kpi-item">
+              <span class="kpi-label">Total de Faturamento</span>
+              <span class="kpi-value kpi-val-dark" id="valTotalFaturamento">R$ 125.579,07</span>
+            </div>
+
+            <div class="kpi-item">
+              <span class="kpi-label">Total Empresa</span>
+              <span class="kpi-value kpi-val-blue" id="valTotalEmpresa">R$ 118.178,67</span>
+            </div>
+
+            <div class="kpi-item">
+              <span class="kpi-label">Total Líquido</span>
+              <span class="kpi-value kpi-val-green" id="valTotalLiquido">R$ 2.177,38</span>
+            </div>
+
+            <div class="kpi-item">
+              <span class="kpi-label">Total Parceiro</span>
+              <span class="kpi-value kpi-val-blue" id="valTotalParceiro">R$ 1.692,06</span>
+            </div>
+          </div>
+
+          <!-- Linha Inferior: 2 Métricas de Clientes -->
+          <div class="kpi-row-bottom">
+            <div class="kpi-item kpi-small">
+              <span class="kpi-label">Total Pago Clientes</span>
+              <span class="kpi-value kpi-val-amber" id="valTotalPagoClientes">R$ 425,13</span>
+            </div>
+
+            <div class="kpi-item kpi-small">
+              <span class="kpi-label">Total Comissão Cliente</span>
+              <span class="kpi-value kpi-val-green" id="valTotalComissaoCliente">R$ 0,05</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= CARD 3: Transações Detalhadas ================= -->
+        <section class="card transactions-card">
+          <div class="transactions-header">
+            <h2 class="card-title">Transações Detalhadas</h2>
+            <button class="btn btn-primary-blue" id="btnOpenReportModal">
+              <i data-lucide="file-text"></i>
+              <span>Gerar relatório</span>
+            </button>
+          </div>
+
+          <!-- Barra de busca e totalizador da tabela -->
+          <div class="table-toolbar">
+            <div class="table-search input-wrapper">
+              <span class="input-icon-left"><i data-lucide="search"></i></span>
+              <input type="text" id="tableSearchInput" class="custom-input" placeholder="Buscar por ID, empresa, terminal...">
+            </div>
+            <div class="table-meta-count" id="tableRecordCount">
+              Exibindo <strong>11</strong> transações
+            </div>
+          </div>
+
+          <!-- Tabela de Transações -->
+          <div class="table-responsive">
+            <table class="data-table" id="transactionsTable">
+              <thead>
+                <tr>
+                  <th class="sortable" data-sort="id">ID</th>
+                  <th class="sortable" data-sort="date">Data/Hora</th>
+                  <th class="sortable" data-sort="company">Empresa</th>
+                  <th class="sortable" data-sort="partner">Parceiro</th>
+                  <th>Terminal</th>
+                  <th>Forma Pagto</th>
+                  <th>Bandeira</th>
+                  <th class="sortable" data-sort="grossAmount">Valor Bruto</th>
+                  <th>Taxa</th>
+                  <th class="sortable" data-sort="netAmount">Valor Líquido</th>
+                  <th class="sortable" data-sort="status">Status</th>
+                  <th style="text-align: center;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="transactionsTableBody">
+                <!-- Linhas preenchidas dinamicamente via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Paginação -->
+          <div class="pagination-container">
+            <div class="pagination-info" id="paginationInfo">
+              Página 1 de 1
+            </div>
+            <div class="pagination-controls" id="paginationControls">
+              <!-- Botões de navegação -->
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal: Gerar Relatório -->
+  <div class="modal-backdrop" id="reportModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Gerar Relatório de Transações</h3>
+        <button class="modal-close" id="btnCloseReportModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="filter-group">
+          <label class="filter-label">Formato do Arquivo</label>
+          <div class="input-wrapper">
+            <select id="reportFormat" class="custom-select">
+              <option value="excel">Microsoft Excel (.xlsx)</option>
+              <option value="csv">Arquivo CSV (.csv)</option>
+              <option value="pdf">Documento PDF (.pdf)</option>
+            </select>
+            <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Período de Referência</label>
+          <div class="input-wrapper">
+            <input type="text" class="custom-input" value="01/07/2026 até 27/08/2026" readonly>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Incluir Colunas de Detalhamento</label>
+          <div style="display: flex; gap: 16px; margin-top: 6px; font-size: 13px; color: #475569;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" checked> Taxas e Splits
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" checked> Comissões de Parceiros
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="btnCancelReport">Cancelar</button>
+        <button class="btn btn-primary-blue" id="btnConfirmReport">
+          <i data-lucide="download"></i>
+          <span>Baixar Relatório</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Detalhes da Transação -->
+  <div class="modal-backdrop" id="detailsModal">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="detailsModalTitle">Detalhes da Transação</h3>
+        <button class="modal-close" id="btnCloseDetailsModal">&times;</button>
+      </div>
+      <div class="modal-body" id="detailsModalContent">
+        <!-- Preenchido via JavaScript -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="btnCloseDetailsBtn">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

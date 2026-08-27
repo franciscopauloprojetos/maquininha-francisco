@@ -1,0 +1,248 @@
+/* Layout Structure */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 40;
+  transition: transform var(--transition-normal), width var(--transition-normal);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-brand {
+  padding: 24px 20px 16px 20px;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.sidebar-logo-icon {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-section-title {
+  padding: 16px 20px 8px 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 0 10px;
+  gap: 2px;
+  list-style: none;
+}
+
+.sidebar-nav-item {
+  position: relative;
+}
+
+.sidebar-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #475569;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sidebar-nav-link:hover {
+  background-color: #f1f5f9;
+  color: var(--text-main);
+}
+
+.sidebar-nav-link.active {
+  background-color: #f8fafc;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.sidebar-nav-link i,
+.sidebar-nav-link svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.8;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.sidebar-nav-link.active i,
+.sidebar-nav-link.active svg {
+  color: var(--text-main);
+}
+
+.sidebar-nav-link .nav-arrow {
+  margin-left: auto;
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+/* Main Area */
+.main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-color: var(--bg-main);
+}
+
+/* Header */
+.top-header {
+  height: 56px;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: #334155;
+  transition: background-color var(--transition-fast);
+}
+
+.header-toggle-btn:hover {
+  background-color: #f1f5f9;
+}
+
+.header-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.header-user:hover {
+  background-color: #f1f5f9;
+}
+
+.header-user svg {
+  width: 16px;
+  height: 16px;
+  color: #475569;
+}
+
+.header-logout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #334155;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.header-logout:hover {
+  background-color: #fef2f2;
+  color: var(--primary-red);
+}
+
+.header-logout svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Page Content Container */
+.page-content {
+  padding: 24px 28px 40px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .page-content {
+    padding: 16px;
+  }
+  
+  .top-header {
+    padding: 0 16px;
+  }
+}
