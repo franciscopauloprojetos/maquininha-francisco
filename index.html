@@ -126,12 +126,6 @@
             <span>Transações</span>
           </a>
         </li>
-        <li class="sidebar-nav-item">
-          <a href="#" class="sidebar-nav-link" id="nav-rede">
-            <i data-lucide="git-fork"></i>
-            <span>Rede & Usuários</span>
-          </a>
-        </li>
       </ul>
     </aside>
 
@@ -402,130 +396,256 @@
           </section>
         </div>
 
-        <!-- ================= VIEW 2: EMPRESAS ================= -->
+        <!-- ================= VIEW 2: EMPRESAS (Com Árvore Integrada para o Admin) ================= -->
         <div id="view-empresas" class="app-view" style="display: none;">
-          <!-- CARD 1: Pesquisar Empresas -->
-          <section class="card companies-search-card">
-            <h2 class="card-title" style="margin-bottom: 16px;">Pesquisar Empresas</h2>
-
-            <form id="companiesFilterForm">
-              <!-- Linha Superior: Campo de busca + Botões Buscar e Limpar Filtros -->
-              <div class="search-top-row">
-                <div class="input-wrapper search-main-input">
-                  <span class="input-icon-left"><i data-lucide="search"></i></span>
-                  <input type="text" id="inputSearchCompany" class="custom-input" placeholder="Buscar por nome, email ou proprietário...">
-                </div>
-                <div class="search-actions-group">
-                  <button type="submit" class="btn btn-primary-green" id="btnSearchCompanies">
-                    <i data-lucide="search"></i>
-                    <span>Buscar</span>
-                  </button>
-                  <button type="button" class="btn btn-ghost" id="btnClearCompaniesFilters">Limpar Filtros</button>
-                </div>
-              </div>
-
-              <!-- Linha Inferior: 4 Filtros em Grid -->
-              <div class="search-bottom-grid">
-                <div class="filter-group">
-                  <label class="filter-label" for="filterCompanyStatus">Status</label>
-                  <div class="input-wrapper">
-                    <select id="filterCompanyStatus" class="custom-select">
-                      <option value="">Todos os status</option>
-                      <option value="Ativo">Ativo</option>
-                      <option value="Inativo">Inativo</option>
-                    </select>
-                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                  </div>
-                </div>
-
-                <div class="filter-group">
-                  <label class="filter-label" for="filterCompanyOrder">Ordenar por</label>
-                  <div class="input-wrapper">
-                    <select id="filterCompanyOrder" class="custom-select">
-                      <option value="recentes">Mais recentes</option>
-                      <option value="antigos">Mais antigos</option>
-                      <option value="nome_asc">Nome (A-Z)</option>
-                      <option value="nome_desc">Nome (Z-A)</option>
-                    </select>
-                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                  </div>
-                </div>
-
-                <div class="filter-group">
-                  <label class="filter-label" for="filterCompanyCreatedFrom">Criado de</label>
-                  <div class="input-wrapper">
-                    <span class="input-icon-left"><i data-lucide="calendar"></i></span>
-                    <input type="text" id="filterCompanyCreatedFrom" class="custom-input" placeholder="Data inicial">
-                  </div>
-                </div>
-
-                <div class="filter-group">
-                  <label class="filter-label" for="filterCompanyCreatedTo">Criado até</label>
-                  <div class="input-wrapper">
-                    <span class="input-icon-left"><i data-lucide="calendar"></i></span>
-                    <input type="text" id="filterCompanyCreatedTo" class="custom-input" placeholder="Data final">
-                  </div>
-                </div>
-              </div>
-            </form>
-          </section>
-
-          <!-- CARD 2: Lista de Empresas -->
-          <section class="card companies-list-card" style="margin-top: 24px;">
-            <div class="companies-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-              <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-                <h2 class="card-title" id="companiesListTitle">Lista de Empresas (16)</h2>
-                <!-- Barra de Ações em Massa (Exclusão em Massa) -->
-                <div id="companiesBulkActionBar" style="display: none; align-items: center; gap: 8px;">
-                  <button type="button" class="btn btn-danger" id="btnDeleteSelectedCompanies" style="background-color: #ef4444; color: #ffffff; height: 34px; padding: 0 14px; font-size: 12.5px; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; box-shadow: 0 1px 3px rgba(239, 68, 68, 0.25);">
-                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                    <span id="bulkDeleteCountText">Excluir Selecionadas (0)</span>
-                  </button>
-                  <button type="button" class="btn btn-ghost" id="btnClearCompanySelection" style="height: 34px; padding: 0 10px; font-size: 12px; border-radius: 6px;">
-                    Desmarcar
-                  </button>
-                </div>
-              </div>
-
-              <button class="btn btn-primary-blue" id="btnOpenNewCompanyModal">
-                <i data-lucide="plus"></i>
-                <span>Nova Empresa</span>
+          <!-- Alternador Exclusivo para o Admin (Empresas vs Árvore da Rede) -->
+          <div id="adminCompaniesViewToggle" class="companies-admin-toggle-wrapper" style="display: none; margin-bottom: 20px;">
+            <div class="view-mode-toggle">
+              <button type="button" class="btn-toggle-mode active" id="btnEmpresasTabList">
+                <i data-lucide="building-2"></i>
+                <span>Lista de Empresas</span>
+              </button>
+              <button type="button" class="btn-toggle-mode" id="btnEmpresasTabTree">
+                <i data-lucide="git-fork"></i>
+                <span>Árvore Genealógica da Rede</span>
               </button>
             </div>
+          </div>
 
-            <!-- Tabela de Empresas -->
-            <div class="table-responsive">
-              <table class="data-table" id="companiesTable">
-                <thead>
-                  <tr>
-                    <th style="width: 44px; text-align: center;">
-                      <input type="checkbox" id="checkAllCompanies" title="Selecionar / Deselecionar todas" style="cursor: pointer; width: 16px; height: 16px; accent-color: #1d68d8;">
-                    </th>
-                    <th class="sortable" data-sort="name">Nome</th>
-                    <th class="sortable" data-sort="owner">Proprietário</th>
-                    <th class="sortable" data-sort="email">Email</th>
-                    <th>Contato</th>
-                    <th class="sortable" data-sort="createdAt">Criado em</th>
-                    <th class="sortable" data-sort="status">Status</th>
-                    <th style="text-align: center;">Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="companiesTableBody">
-                  <!-- Linhas de empresas preenchidas via JS -->
-                </tbody>
-              </table>
+          <!-- CONTAINER 1: Lista de Empresas (Visão Padrão para todos) -->
+          <div id="companiesListContainer">
+            <!-- CARD 1: Pesquisar Empresas -->
+            <section class="card companies-search-card">
+              <h2 class="card-title" style="margin-bottom: 16px;">Pesquisar Empresas</h2>
+
+              <form id="companiesFilterForm">
+                <!-- Linha Superior: Campo de busca + Botões Buscar e Limpar Filtros -->
+                <div class="search-top-row">
+                  <div class="input-wrapper search-main-input">
+                    <span class="input-icon-left"><i data-lucide="search"></i></span>
+                    <input type="text" id="inputSearchCompany" class="custom-input" placeholder="Buscar por nome, email ou proprietário...">
+                  </div>
+                  <div class="search-actions-group">
+                    <button type="submit" class="btn btn-primary-green" id="btnSearchCompanies">
+                      <i data-lucide="search"></i>
+                      <span>Buscar</span>
+                    </button>
+                    <button type="button" class="btn btn-ghost" id="btnClearCompaniesFilters">Limpar Filtros</button>
+                  </div>
+                </div>
+
+                <!-- Linha Inferior: 4 Filtros em Grid -->
+                <div class="search-bottom-grid">
+                  <div class="filter-group">
+                    <label class="filter-label" for="filterCompanyStatus">Status</label>
+                    <div class="input-wrapper">
+                      <select id="filterCompanyStatus" class="custom-select">
+                        <option value="">Todos os status</option>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                      </select>
+                      <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                    </div>
+                  </div>
+
+                  <div class="filter-group">
+                    <label class="filter-label" for="filterCompanyOrder">Ordenar por</label>
+                    <div class="input-wrapper">
+                      <select id="filterCompanyOrder" class="custom-select">
+                        <option value="recentes">Mais recentes</option>
+                        <option value="antigos">Mais antigos</option>
+                        <option value="nome_asc">Nome (A-Z)</option>
+                        <option value="nome_desc">Nome (Z-A)</option>
+                      </select>
+                      <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                    </div>
+                  </div>
+
+                  <div class="filter-group">
+                    <label class="filter-label" for="filterCompanyCreatedFrom">Criado de</label>
+                    <div class="input-wrapper">
+                      <span class="input-icon-left"><i data-lucide="calendar"></i></span>
+                      <input type="text" id="filterCompanyCreatedFrom" class="custom-input" placeholder="Data inicial">
+                    </div>
+                  </div>
+
+                  <div class="filter-group">
+                    <label class="filter-label" for="filterCompanyCreatedTo">Criado até</label>
+                    <div class="input-wrapper">
+                      <span class="input-icon-left"><i data-lucide="calendar"></i></span>
+                      <input type="text" id="filterCompanyCreatedTo" class="custom-input" placeholder="Data final">
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </section>
+
+            <!-- CARD 2: Lista de Empresas -->
+            <section class="card companies-list-card" style="margin-top: 24px;">
+              <div class="companies-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                  <h2 class="card-title" id="companiesListTitle">Lista de Empresas (16)</h2>
+                  <!-- Barra de Ações em Massa (Exclusão em Massa) -->
+                  <div id="companiesBulkActionBar" style="display: none; align-items: center; gap: 8px;">
+                    <button type="button" class="btn btn-danger" id="btnDeleteSelectedCompanies" style="background-color: #ef4444; color: #ffffff; height: 34px; padding: 0 14px; font-size: 12.5px; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; box-shadow: 0 1px 3px rgba(239, 68, 68, 0.25);">
+                      <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                      <span id="bulkDeleteCountText">Excluir Selecionadas (0)</span>
+                    </button>
+                    <button type="button" class="btn btn-ghost" id="btnClearCompanySelection" style="height: 34px; padding: 0 10px; font-size: 12px; border-radius: 6px;">
+                      Desmarcar
+                    </button>
+                  </div>
+                </div>
+
+                <button class="btn btn-primary-blue" id="btnOpenNewCompanyModal">
+                  <i data-lucide="plus"></i>
+                  <span>Nova Empresa</span>
+                </button>
+              </div>
+
+              <!-- Tabela de Empresas -->
+              <div class="table-responsive">
+                <table class="data-table" id="companiesTable">
+                  <thead>
+                    <tr>
+                      <th style="width: 44px; text-align: center;">
+                        <input type="checkbox" id="checkAllCompanies" title="Selecionar / Deselecionar todas" style="cursor: pointer; width: 16px; height: 16px; accent-color: #1d68d8;">
+                      </th>
+                      <th class="sortable" data-sort="name">Nome</th>
+                      <th class="sortable" data-sort="owner">Proprietário</th>
+                      <th class="sortable" data-sort="email">Email</th>
+                      <th>Contato</th>
+                      <th class="sortable" data-sort="createdAt">Criado em</th>
+                      <th class="sortable" data-sort="status">Status</th>
+                      <th style="text-align: center;">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="companiesTableBody">
+                    <!-- Linhas de empresas preenchidas via JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Paginação de Empresas -->
+              <div class="pagination-container" style="margin-top: 20px;">
+                <div class="pagination-info" id="companiesPaginationInfo">
+                  Página 1 de 2
+                </div>
+                <div class="pagination-controls" id="companiesPaginationControls">
+                  <!-- Botões de paginação de empresas -->
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- CONTAINER 2: Árvore Genealógica da Rede (Exibida ao Admin quando selecionada a aba) -->
+          <div id="companiesTreeContainer" style="display: none;">
+            <!-- Top Bar de Métricas da Rede -->
+            <div class="hierarchy-metrics-grid">
+              <div class="hierarchy-stat-card">
+                <div class="hierarchy-stat-icon icon-blue">
+                  <i data-lucide="users"></i>
+                </div>
+                <div class="hierarchy-stat-info">
+                  <span class="hierarchy-stat-label">Total de Membros na Rede</span>
+                  <span class="hierarchy-stat-val" id="statTotalNetworkUsers">11</span>
+                </div>
+              </div>
+
+              <div class="hierarchy-stat-card">
+                <div class="hierarchy-stat-icon icon-green">
+                  <i data-lucide="user-check"></i>
+                </div>
+                <div class="hierarchy-stat-info">
+                  <span class="hierarchy-stat-label">Indicados Diretos (Nível 1)</span>
+                  <span class="hierarchy-stat-val" id="statDirectUsers">3</span>
+                </div>
+              </div>
+
+              <div class="hierarchy-stat-card">
+                <div class="hierarchy-stat-icon icon-purple">
+                  <i data-lucide="git-branch"></i>
+                </div>
+                <div class="hierarchy-stat-info">
+                  <span class="hierarchy-stat-label">Profundidade da Árvore</span>
+                  <span class="hierarchy-stat-val" id="statTreeDepth">4 Níveis</span>
+                </div>
+              </div>
+
+              <div class="hierarchy-stat-card">
+                <div class="hierarchy-stat-icon icon-amber">
+                  <i data-lucide="percent"></i>
+                </div>
+                <div class="hierarchy-stat-info">
+                  <span class="hierarchy-stat-label">Média de Comissão Base</span>
+                  <span class="hierarchy-stat-val" id="statAvgCommission">7.2%</span>
+                </div>
+              </div>
             </div>
 
-            <!-- Paginação de Empresas -->
-            <div class="pagination-container" style="margin-top: 20px;">
-              <div class="pagination-info" id="companiesPaginationInfo">
-                Página 1 de 2
+            <!-- Header de Ações & Alternador de Visualização -->
+            <div class="hierarchy-header-card">
+              <div>
+                <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Hierarquia & Estrutura da Rede</h2>
+                <p style="font-size: 13px; color: #64748b;">Gerencie a árvore genealógica de parceiros, líderes e consultores indicados</p>
               </div>
-              <div class="pagination-controls" id="companiesPaginationControls">
-                <!-- Botões de paginação de empresas -->
+
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div class="view-mode-toggle">
+                  <button type="button" class="btn-toggle-mode active" id="btnModeTree">
+                    <i data-lucide="git-fork"></i>
+                    <span>Árvore Visual</span>
+                  </button>
+                  <button type="button" class="btn-toggle-mode" id="btnModeTable">
+                    <i data-lucide="table"></i>
+                    <span>Tabela Detalhada</span>
+                  </button>
+                </div>
+
+                <button type="button" class="btn btn-primary-blue" id="btnOpenNewUserModal">
+                  <i data-lucide="user-plus"></i>
+                  <span>+ Novo Usuário na Rede</span>
+                </button>
               </div>
             </div>
-          </section>
+
+            <!-- Visão em Árvore Interativa -->
+            <div id="treeViewContainer" class="tree-container-card">
+              <div class="tree-wrapper" id="networkTreeWrapper">
+                <!-- Árvore gerada dinamicamente via JS -->
+              </div>
+            </div>
+
+            <!-- Visão em Tabela de Rede -->
+            <div id="networkTableViewContainer" class="card" style="display: none; padding: 24px; margin-top: 20px;">
+              <div class="search-top-row" style="margin-bottom: 20px;">
+                <div class="input-wrapper search-main-input">
+                  <span class="input-icon-left"><i data-lucide="search"></i></span>
+                  <input type="text" id="networkUserSearchInput" class="custom-input" placeholder="Buscar por nome, email, papel ou indicador...">
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Membro / ID</th>
+                      <th>Email de Login</th>
+                      <th>Indicado por (Upline)</th>
+                      <th>Nível</th>
+                      <th>Papel / Cargo</th>
+                      <th>% Comissão</th>
+                      <th>Status</th>
+                      <th style="text-align: right;">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="networkTableBody">
+                    <!-- Linhas renderizadas dinamicamente via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- ================= VIEW 3: DASHBOARD (Conforme Imagem) ================= -->
@@ -598,115 +718,6 @@
                   <i data-lucide="arrow-right"></i>
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ================= VIEW 4: REDE & HIERARQUIA DE USUÁRIOS ================= -->
-        <div id="view-rede" class="app-view" style="display: none;">
-          <!-- Top Bar de Métricas da Rede -->
-          <div class="hierarchy-metrics-grid">
-            <div class="hierarchy-stat-card">
-              <div class="hierarchy-stat-icon icon-blue">
-                <i data-lucide="users"></i>
-              </div>
-              <div class="hierarchy-stat-info">
-                <span class="hierarchy-stat-label">Total de Membros na Rede</span>
-                <span class="hierarchy-stat-val" id="statTotalNetworkUsers">11</span>
-              </div>
-            </div>
-
-            <div class="hierarchy-stat-card">
-              <div class="hierarchy-stat-icon icon-green">
-                <i data-lucide="user-check"></i>
-              </div>
-              <div class="hierarchy-stat-info">
-                <span class="hierarchy-stat-label">Indicados Diretos (Nível 1)</span>
-                <span class="hierarchy-stat-val" id="statDirectUsers">3</span>
-              </div>
-            </div>
-
-            <div class="hierarchy-stat-card">
-              <div class="hierarchy-stat-icon icon-purple">
-                <i data-lucide="git-branch"></i>
-              </div>
-              <div class="hierarchy-stat-info">
-                <span class="hierarchy-stat-label">Profundidade da Árvore</span>
-                <span class="hierarchy-stat-val" id="statTreeDepth">4 Níveis</span>
-              </div>
-            </div>
-
-            <div class="hierarchy-stat-card">
-              <div class="hierarchy-stat-icon icon-amber">
-                <i data-lucide="percent"></i>
-              </div>
-              <div class="hierarchy-stat-info">
-                <span class="hierarchy-stat-label">Média de Comissão Base</span>
-                <span class="hierarchy-stat-val" id="statAvgCommission">7.2%</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Header de Ações & Alternador de Visualização -->
-          <div class="hierarchy-header-card">
-            <div>
-              <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Hierarquia & Estrutura da Rede</h2>
-              <p style="font-size: 13px; color: #64748b;">Gerencie a árvore genealógica de parceiros, líderes e consultores indicados</p>
-            </div>
-
-            <div style="display: flex; align-items: center; gap: 14px;">
-              <div class="view-mode-toggle">
-                <button type="button" class="btn-toggle-mode active" id="btnModeTree">
-                  <i data-lucide="git-fork"></i>
-                  <span>Árvore Visual</span>
-                </button>
-                <button type="button" class="btn-toggle-mode" id="btnModeTable">
-                  <i data-lucide="table"></i>
-                  <span>Tabela Detalhada</span>
-                </button>
-              </div>
-
-              <button type="button" class="btn btn-primary-blue" id="btnOpenNewUserModal">
-                <i data-lucide="user-plus"></i>
-                <span>+ Novo Usuário na Rede</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Container 1: Visão em Árvore Interativa -->
-          <div id="treeViewContainer" class="tree-container-card">
-            <div class="tree-wrapper" id="networkTreeWrapper">
-              <!-- Árvore gerada dinamicamente via JS -->
-            </div>
-          </div>
-
-          <!-- Container 2: Visão em Tabela -->
-          <div id="networkTableViewContainer" class="card" style="display: none; padding: 24px;">
-            <div class="search-top-row" style="margin-bottom: 20px;">
-              <div class="input-wrapper search-main-input">
-                <span class="input-icon-left"><i data-lucide="search"></i></span>
-                <input type="text" id="networkUserSearchInput" class="custom-input" placeholder="Buscar por nome, email, papel ou indicador...">
-              </div>
-            </div>
-
-            <div class="table-responsive">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Membro / ID</th>
-                    <th>Email de Login</th>
-                    <th>Indicado por (Upline)</th>
-                    <th>Nível</th>
-                    <th>Papel / Cargo</th>
-                    <th>% Comissão</th>
-                    <th>Status</th>
-                    <th style="text-align: right;">Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="networkTableBody">
-                  <!-- Linhas renderizadas dinamicamente via JS -->
-                </tbody>
-              </table>
             </div>
           </div>
         </div>
@@ -849,6 +860,16 @@
             <label class="filter-label" for="newCompanyPhone">Telefone / WhatsApp</label>
             <div class="input-wrapper">
               <input type="text" id="newCompanyPhone" class="custom-input" placeholder="Ex: (41) 99122-3344">
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newCompanyRegisteredBy">Parceiro / Consultor Responsável *</label>
+            <div class="input-wrapper">
+              <select id="newCompanyRegisteredBy" class="custom-select" required>
+                <!-- Preenchido dinamicamente via JS de acordo com a hierarquia -->
+              </select>
+              <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
             </div>
           </div>
 

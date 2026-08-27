@@ -437,52 +437,114 @@ function showTransactionDetails(id) {
 }
 
 // View Navigation Switcher
+// Get companies allowed for the current logged-in user (Lineage based)
+function getAllowedCompanies() {
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+  if (isAdmin) return currentCompanies;
+  const allowedSubtreeIds = getUserSubtreeIds(currentUser.id, currentNetworkUsers);
+  return currentCompanies.filter(c => !c.registeredBy || allowedSubtreeIds.includes(c.registeredBy));
+}
+
+// Get transactions allowed for the current logged-in user (Lineage based)
+function getAllowedTransactions() {
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+  if (isAdmin) return currentTransactions;
+  const allowedCompanies = getAllowedCompanies();
+  const allowedNames = allowedCompanies.map(c => c.name.toLowerCase());
+  return currentTransactions.filter(tx => allowedNames.includes(tx.company.toLowerCase()));
+}
+
+// Populate partner / user select options for new company
+function populateCompanyPartnerSelect(selectedId = null) {
+  const select = document.getElementById('newCompanyRegisteredBy');
+  if (!select) return;
+
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+
+  const allowedIds = isAdmin
+    ? currentNetworkUsers.map(u => u.id)
+    : getUserSubtreeIds(currentUser.id, currentNetworkUsers);
+
+  const allowedUsers = currentNetworkUsers.filter(u => allowedIds.includes(u.id));
+  const targetSelected = selectedId || (isAdmin ? (currentNetworkUsers[0]?.id || 'USR-ADMIN') : currentUser.id);
+
+  select.innerHTML = allowedUsers.map(u => {
+    const level = calculateUserLevel(u.id);
+    const isSelected = targetSelected === u.id ? 'selected' : '';
+    const isMe = u.id === currentUser?.id ? ' (Você)' : '';
+    return `<option value="${u.id}" ${isSelected}>[Nível ${level}] ${u.name}${isMe} - ${u.role}</option>`;
+  }).join('');
+}
+
+// View Navigation Switcher
 function switchView(viewName) {
   const viewTransacoes = document.getElementById('view-transacoes');
   const viewEmpresas = document.getElementById('view-empresas');
   const viewDashboard = document.getElementById('view-dashboard');
-  const viewRede = document.getElementById('view-rede');
   const navTransacoes = document.getElementById('nav-transacoes');
   const navEmpresas = document.getElementById('nav-empresas');
   const navDashboard = document.getElementById('nav-dashboard');
-  const navRede = document.getElementById('nav-rede');
   const pageTitle = document.getElementById('pageHeaderTitle');
 
+  const adminCompaniesToggle = document.getElementById('adminCompaniesViewToggle');
+  const companiesListContainer = document.getElementById('companiesListContainer');
+  const companiesTreeContainer = document.getElementById('companiesTreeContainer');
+  const btnEmpresasTabList = document.getElementById('btnEmpresasTabList');
+  const btnEmpresasTabTree = document.getElementById('btnEmpresasTabTree');
+
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+
   // Reset active classes
-  [navTransacoes, navEmpresas, navDashboard, navRede].forEach(el => el && el.classList.remove('active'));
+  [navTransacoes, navEmpresas, navDashboard].forEach(el => el && el.classList.remove('active'));
 
   if (viewName === 'empresas') {
     if (viewTransacoes) viewTransacoes.style.display = 'none';
     if (viewDashboard) viewDashboard.style.display = 'none';
-    if (viewRede) viewRede.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'block';
     if (navEmpresas) navEmpresas.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Empresas';
-    renderCompaniesTable();
+
+    // Configure Admin vs Partner view inside Empresas
+    if (isAdmin) {
+      if (adminCompaniesToggle) adminCompaniesToggle.style.display = 'flex';
+      if (btnEmpresasTabTree && btnEmpresasTabTree.classList.contains('active')) {
+        if (companiesListContainer) companiesListContainer.style.display = 'none';
+        if (companiesTreeContainer) companiesTreeContainer.style.display = 'block';
+        renderNetworkView();
+      } else {
+        if (companiesListContainer) companiesListContainer.style.display = 'block';
+        if (companiesTreeContainer) companiesTreeContainer.style.display = 'none';
+        filterCompanies();
+      }
+    } else {
+      if (adminCompaniesToggle) adminCompaniesToggle.style.display = 'none';
+      if (companiesListContainer) companiesListContainer.style.display = 'block';
+      if (companiesTreeContainer) companiesTreeContainer.style.display = 'none';
+      filterCompanies();
+    }
   } else if (viewName === 'dashboard') {
     if (viewTransacoes) viewTransacoes.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'none';
-    if (viewRede) viewRede.style.display = 'none';
     if (viewDashboard) viewDashboard.style.display = 'block';
     if (navDashboard) navDashboard.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Dashboard';
     updateDashboardStats();
-  } else if (viewName === 'rede') {
-    if (viewTransacoes) viewTransacoes.style.display = 'none';
-    if (viewEmpresas) viewEmpresas.style.display = 'none';
-    if (viewDashboard) viewDashboard.style.display = 'none';
-    if (viewRede) viewRede.style.display = 'block';
-    if (navRede) navRede.classList.add('active');
-    if (pageTitle) pageTitle.textContent = 'Rede & Hierarquia de Usuários';
-    renderNetworkView();
   } else {
     // Default: transacoes
     if (viewDashboard) viewDashboard.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'none';
-    if (viewRede) viewRede.style.display = 'none';
     if (viewTransacoes) viewTransacoes.style.display = 'block';
     if (navTransacoes) navTransacoes.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Transações';
+
+    filteredTransactions = getAllowedTransactions();
+    currentPage = 1;
+    renderTable();
+    updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
   }
   refreshIcons();
 }
@@ -494,10 +556,18 @@ function updateDashboardStats() {
   const elTerminais = document.getElementById('dashValTerminais');
   const elVolume = document.getElementById('dashValVolume');
 
-  if (elEmpresas) elEmpresas.textContent = currentCompanies.filter(c => c.status === 'Ativo').length || '16';
-  if (elTransacoes) elTransacoes.textContent = '45';
-  if (elTerminais) elTerminais.textContent = '18';
-  if (elVolume) elVolume.textContent = 'R$ 213.025,44';
+  const allowedCompanies = getAllowedCompanies();
+  const allowedTransactions = getAllowedTransactions();
+
+  const activeCount = allowedCompanies.filter(c => c.status === 'Ativo').length;
+  const txCount = allowedTransactions.length;
+  const terminalsCount = new Set(allowedTransactions.map(tx => tx.terminal)).size;
+  const volumeSum = allowedTransactions.reduce((acc, tx) => acc + (tx.status === 'Aprovada' ? tx.grossAmount : 0), 0);
+
+  if (elEmpresas) elEmpresas.textContent = activeCount;
+  if (elTransacoes) elTransacoes.textContent = txCount;
+  if (elTerminais) elTerminais.textContent = terminalsCount;
+  if (elVolume) elVolume.textContent = formatBRL(volumeSum);
 }
 
 // Update Companies Bulk Action UI
@@ -704,7 +774,9 @@ function filterCompanies() {
   const status = document.getElementById('filterCompanyStatus')?.value || '';
   const order = document.getElementById('filterCompanyOrder')?.value || 'recentes';
 
-  filteredCompanies = currentCompanies.filter(comp => {
+  const baseCompanies = getAllowedCompanies();
+
+  filteredCompanies = baseCompanies.filter(comp => {
     if (term) {
       const matchName = comp.name.toLowerCase().includes(term);
       const matchOwner = comp.owner.toLowerCase().includes(term);
@@ -1209,11 +1281,13 @@ function setupEvents() {
   const newCompanyForm = document.getElementById('newCompanyForm');
 
   const closeNewCompanyModal = () => newCompanyModal?.classList.remove('open');
+  const openNewCompanyModal = () => {
+    populateCompanyPartnerSelect();
+    newCompanyModal?.classList.add('open');
+  };
 
   if (btnOpenNewCompanyModal) {
-    btnOpenNewCompanyModal.addEventListener('click', () => {
-      newCompanyModal?.classList.add('open');
-    });
+    btnOpenNewCompanyModal.addEventListener('click', openNewCompanyModal);
   }
 
   if (btnCloseNewCompanyModal) btnCloseNewCompanyModal.addEventListener('click', closeNewCompanyModal);
@@ -1222,10 +1296,12 @@ function setupEvents() {
   if (newCompanyForm) {
     newCompanyForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      const currentUser = getCurrentUser();
       const name = document.getElementById('newCompanyName').value.trim();
       const owner = document.getElementById('newCompanyOwner').value.trim();
       const email = document.getElementById('newCompanyEmail').value.trim();
       const phone = document.getElementById('newCompanyPhone').value.trim();
+      const registeredBy = document.getElementById('newCompanyRegisteredBy')?.value || (currentUser?.id || 'USR-ADMIN');
       const status = document.getElementById('newCompanyStatus').value;
 
       const newComp = {
@@ -1235,126 +1311,40 @@ function setupEvents() {
         email: email.toLowerCase(),
         phone: phone || '(41) 99999-0000',
         createdAt: new Date().toLocaleDateString('pt-BR'),
-        status: status || 'Ativo'
+        status: status || 'Ativo',
+        registeredBy
       };
 
       currentCompanies.unshift(newComp);
-      filteredCompanies.unshift(newComp);
       newCompanyForm.reset();
       closeNewCompanyModal();
-      renderCompaniesTable();
+      filterCompanies();
+      updateDashboardStats();
       showToast(`Empresa "${newComp.name}" cadastrada com sucesso!`);
     });
   }
 
-  // Sort Table Columns (Geral)
-  document.querySelectorAll('.data-table th.sortable').forEach(th => {
-    th.addEventListener('click', () => {
-      const col = th.getAttribute('data-sort');
-      const table = th.closest('table');
+  // Admin Empresas Tabs Toggle (Lista de Empresas vs Árvore Genealógica da Rede)
+  const btnEmpresasTabList = document.getElementById('btnEmpresasTabList');
+  const btnEmpresasTabTree = document.getElementById('btnEmpresasTabTree');
+  const companiesListContainer = document.getElementById('companiesListContainer');
+  const companiesTreeContainer = document.getElementById('companiesTreeContainer');
 
-      if (table.id === 'companiesTable') {
-        if (companiesSort.column === col) {
-          companiesSort.order = companiesSort.order === 'asc' ? 'desc' : 'asc';
-        } else {
-          companiesSort.column = col;
-          companiesSort.order = 'asc';
-        }
-        renderCompaniesTable();
-      } else {
-        if (currentSort.column === col) {
-          currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
-        } else {
-          currentSort.column = col;
-          currentSort.order = 'asc';
-        }
-        renderTable();
-      }
+  if (btnEmpresasTabList && btnEmpresasTabTree) {
+    btnEmpresasTabList.addEventListener('click', () => {
+      btnEmpresasTabList.classList.add('active');
+      btnEmpresasTabTree.classList.remove('active');
+      if (companiesListContainer) companiesListContainer.style.display = 'block';
+      if (companiesTreeContainer) companiesTreeContainer.style.display = 'none';
+      filterCompanies();
     });
-  });
 
-  // Modal: Gerar Relatório
-  const reportModal = document.getElementById('reportModal');
-  const btnOpenReportModal = document.getElementById('btnOpenReportModal');
-  const btnCloseReportModal = document.getElementById('btnCloseReportModal');
-  const btnCancelReport = document.getElementById('btnCancelReport');
-  const btnConfirmReport = document.getElementById('btnConfirmReport');
-
-  const closeReportModal = () => reportModal?.classList.remove('open');
-
-  if (btnOpenReportModal) btnOpenReportModal.addEventListener('click', () => reportModal?.classList.add('open'));
-  if (btnCloseReportModal) btnCloseReportModal.addEventListener('click', closeReportModal);
-  if (btnCancelReport) btnCancelReport.addEventListener('click', closeReportModal);
-
-  if (btnConfirmReport) {
-    btnConfirmReport.addEventListener('click', () => {
-      const format = document.getElementById('reportFormat').value.toUpperCase();
-      closeReportModal();
-      showToast(`Relatório exportado em formato ${format} com sucesso!`);
-    });
-  }
-
-  // Modal: Detalhes
-  const detailsModal = document.getElementById('detailsModal');
-  const btnCloseDetailsModal = document.getElementById('btnCloseDetailsModal');
-  const btnCloseDetailsBtn = document.getElementById('btnCloseDetailsBtn');
-
-  const closeDetailsModal = () => detailsModal?.classList.remove('open');
-  if (btnCloseDetailsModal) btnCloseDetailsModal.addEventListener('click', closeDetailsModal);
-  if (btnCloseDetailsBtn) btnCloseDetailsBtn.addEventListener('click', closeDetailsModal);
-
-  // Modal: Supabase
-  const supabaseModal = document.getElementById('supabaseModal');
-  const btnOpenSupabaseModal = document.getElementById('btnOpenSupabaseModal');
-  const btnCloseSupabaseModal = document.getElementById('btnCloseSupabaseModal');
-  const btnCancelSupabase = document.getElementById('btnCancelSupabase');
-  const btnSaveSupabase = document.getElementById('btnSaveSupabase');
-  const inputSupabaseUrl = document.getElementById('inputSupabaseUrl');
-  const inputSupabaseKey = document.getElementById('inputSupabaseKey');
-
-  const closeSupabaseModal = () => supabaseModal?.classList.remove('open');
-
-  if (btnOpenSupabaseModal) {
-    btnOpenSupabaseModal.addEventListener('click', () => {
-      inputSupabaseUrl.value = SUPABASE_CONFIG.url || '';
-      inputSupabaseKey.value = SUPABASE_CONFIG.anonKey || '';
-      supabaseModal?.classList.add('open');
-    });
-  }
-
-  if (btnCloseSupabaseModal) btnCloseSupabaseModal.addEventListener('click', closeSupabaseModal);
-  if (btnCancelSupabase) btnCancelSupabase.addEventListener('click', closeSupabaseModal);
-
-  if (btnSaveSupabase) {
-    btnSaveSupabase.addEventListener('click', async () => {
-      const url = inputSupabaseUrl.value.trim();
-      const key = inputSupabaseKey.value.trim();
-      if (!url || !key) {
-        showToast('Preencha a URL e a Anon Key do Supabase.', 'success');
-        return;
-      }
-      setSupabaseCredentials(url, key);
-      closeSupabaseModal();
-      showToast('Credenciais salvas! Conectando ao banco...');
-      await loadInitialData();
-    });
-  }
-
-  // Close modals on backdrop click
-  const newNetworkUserModal = document.getElementById('newNetworkUserModal');
-  window.addEventListener('click', (e) => {
-    if (e.target === reportModal) closeReportModal();
-    if (e.target === detailsModal) closeDetailsModal();
-    if (e.target === supabaseModal) closeSupabaseModal();
-    if (e.target === newCompanyModal) closeNewCompanyModal();
-    if (e.target === newNetworkUserModal) closeNewNetworkUserModal();
-  });
-
-  // Network Navigation Link
-  if (navRede) {
-    navRede.addEventListener('click', (e) => {
-      e.preventDefault();
-      switchView('rede');
+    btnEmpresasTabTree.addEventListener('click', () => {
+      btnEmpresasTabTree.classList.add('active');
+      btnEmpresasTabList.classList.remove('active');
+      if (companiesListContainer) companiesListContainer.style.display = 'none';
+      if (companiesTreeContainer) companiesTreeContainer.style.display = 'block';
+      renderNetworkView();
     });
   }
 
@@ -1476,6 +1466,71 @@ function setupEvents() {
       showToast(`Usuário ${name} cadastrado com sucesso na sua rede!`);
     });
   }
+
+  // Sort Table Columns (Geral)
+  document.querySelectorAll('.data-table th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.getAttribute('data-sort');
+      const table = th.closest('table');
+
+      if (table.id === 'companiesTable') {
+        if (companiesSort.column === col) {
+          companiesSort.order = companiesSort.order === 'asc' ? 'desc' : 'asc';
+        } else {
+          companiesSort.column = col;
+          companiesSort.order = 'asc';
+        }
+        renderCompaniesTable();
+      } else {
+        if (currentSort.column === col) {
+          currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.column = col;
+          currentSort.order = 'asc';
+        }
+        renderTable();
+      }
+    });
+  });
+
+  // Modal: Gerar Relatório
+  const reportModal = document.getElementById('reportModal');
+  const btnOpenReportModal = document.getElementById('btnOpenReportModal');
+  const btnCloseReportModal = document.getElementById('btnCloseReportModal');
+  const btnCancelReport = document.getElementById('btnCancelReport');
+  const btnConfirmReport = document.getElementById('btnConfirmReport');
+
+  const closeReportModal = () => reportModal?.classList.remove('open');
+
+  if (btnOpenReportModal) btnOpenReportModal.addEventListener('click', () => reportModal?.classList.add('open'));
+  if (btnCloseReportModal) btnCloseReportModal.addEventListener('click', closeReportModal);
+  if (btnCancelReport) btnCancelReport.addEventListener('click', closeReportModal);
+
+  if (btnConfirmReport) {
+    btnConfirmReport.addEventListener('click', () => {
+      const format = document.getElementById('reportFormat').value.toUpperCase();
+      closeReportModal();
+      showToast(`Relatório exportado em formato ${format} com sucesso!`);
+    });
+  }
+
+  // Modal: Detalhes
+  const detailsModal = document.getElementById('detailsModal');
+  const btnCloseDetailsModal = document.getElementById('btnCloseDetailsModal');
+  const btnCloseDetailsBtn = document.getElementById('btnCloseDetailsBtn');
+
+  const closeDetailsModal = () => detailsModal?.classList.remove('open');
+  if (btnCloseDetailsModal) btnCloseDetailsModal.addEventListener('click', closeDetailsModal);
+  if (btnCloseDetailsBtn) btnCloseDetailsBtn.addEventListener('click', closeDetailsModal);
+
+  // Close modals on backdrop click
+  const newNetworkUserModal = document.getElementById('newNetworkUserModal');
+  window.addEventListener('click', (e) => {
+    if (e.target === reportModal) closeReportModal();
+    if (e.target === detailsModal) closeDetailsModal();
+    if (e.target === newCompanyModal) closeNewCompanyModal();
+    if (e.target === newNetworkUserModal) closeNewNetworkUserModal();
+  });
 
   // Dashboard Action Links
   document.getElementById('dashLinkEmpresas')?.addEventListener('click', () => switchView('empresas'));

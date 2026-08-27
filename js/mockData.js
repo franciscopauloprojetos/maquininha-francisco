@@ -260,7 +260,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "eliselima.06@gmail.com",
     phone: "(41) 98485-8140",
     createdAt: "11/08/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-001"
   },
   {
     id: "EMP-002",
@@ -269,7 +270,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "willyansoaresbarbosa70@gmail.com",
     phone: "(58) 84968-981",
     createdAt: "11/08/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-002"
   },
   {
     id: "EMP-003",
@@ -278,7 +280,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "alinerentadarosa155@gmail.com",
     phone: "(41) 98788-0938",
     createdAt: "11/08/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-001"
   },
   {
     id: "EMP-004",
@@ -287,7 +290,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "evandrocarniel23@gmail.com",
     phone: "(43) 99928-1144",
     createdAt: "10/08/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-004"
   },
   {
     id: "EMP-005",
@@ -296,7 +300,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "vhafumagalli@gmail.com",
     phone: "(41) 99746-2339",
     createdAt: "03/08/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-005"
   },
   {
     id: "EMP-006",
@@ -305,7 +310,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "contato@mirantebrisa.com.br",
     phone: "(41) 99122-3344",
     createdAt: "01/08/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-001"
   },
   {
     id: "EMP-007",
@@ -314,7 +320,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "financeiro@ksacafes.com.br",
     phone: "(41) 98877-6655",
     createdAt: "28/07/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-002"
   },
   {
     id: "EMP-008",
@@ -323,7 +330,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "drogaria.central@gmail.com",
     phone: "(41) 3344-5566",
     createdAt: "25/07/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-004"
   },
   {
     id: "EMP-009",
@@ -332,7 +340,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "compras@realsuper.com.br",
     phone: "(41) 98711-2233",
     createdAt: "20/07/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-ADMIN"
   },
   {
     id: "EMP-010",
@@ -341,7 +350,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "padariaestrela@hotmail.com",
     phone: "(41) 3211-9988",
     createdAt: "18/07/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-007"
   },
   {
     id: "EMP-011",
@@ -350,7 +360,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "bella.moda@gmail.com",
     phone: "(41) 99655-4433",
     createdAt: "15/07/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-007"
   },
   {
     id: "EMP-012",
@@ -359,7 +370,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "techprime@eletronicos.com",
     phone: "(41) 98400-1122",
     createdAt: "12/07/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-009"
   },
   {
     id: "EMP-013",
@@ -368,7 +380,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "otica.novavisao@gmail.com",
     phone: "(41) 3322-1100",
     createdAt: "10/07/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-006"
   },
   {
     id: "EMP-014",
@@ -377,7 +390,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "express.auto@gmail.com",
     phone: "(41) 98800-7788",
     createdAt: "05/07/2026",
-    status: "Inativo"
+    status: "Inativo",
+    registeredBy: "USR-002"
   },
   {
     id: "EMP-015",
@@ -386,7 +400,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "saborarte@restaurante.com",
     phone: "(41) 99111-2299",
     createdAt: "02/07/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-003"
   },
   {
     id: "EMP-016",
@@ -395,7 +410,8 @@ export const MOCK_COMPANIES_DATA = [
     email: "postoalvorada@gmail.com",
     phone: "(41) 3355-7799",
     createdAt: "01/07/2026",
-    status: "Ativo"
+    status: "Ativo",
+    registeredBy: "USR-ADMIN"
   }
 ];
 
