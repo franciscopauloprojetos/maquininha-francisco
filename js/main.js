@@ -934,7 +934,12 @@ function renderNetworkTree() {
     return html;
   }
 
-  container.innerHTML = buildNodeHTML(root);
+  container.innerHTML = `
+    <svg id="treeSvgOverlay"></svg>
+    <div style="position: relative; z-index: 2; display: flex; justify-content: center;">
+      ${buildNodeHTML(root)}
+    </div>
+  `;
 
   // Attach quick add buttons
   container.querySelectorAll('.btn-add-subnode').forEach(btn => {
@@ -946,6 +951,85 @@ function renderNetworkTree() {
   });
 
   refreshIcons();
+
+  // Draw clean aligned connectors
+  requestAnimationFrame(() => {
+    drawTreeConnectors();
+    setTimeout(drawTreeConnectors, 60);
+  });
+}
+
+// Draw mathematically aligned SVG connectors between parent and children nodes
+function drawTreeConnectors() {
+  const wrapper = document.getElementById('networkTreeWrapper');
+  const svg = document.getElementById('treeSvgOverlay');
+  if (!wrapper || !svg) return;
+
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const width = Math.max(wrapper.scrollWidth, wrapper.clientWidth, wrapperRect.width);
+  const height = Math.max(wrapper.scrollHeight, wrapper.clientHeight, wrapperRect.height);
+
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+  let paths = '';
+
+  const parentBranches = wrapper.querySelectorAll('.tree-branch');
+  parentBranches.forEach(branch => {
+    const parentNode = branch.querySelector(':scope > .tree-node');
+    const childrenContainer = branch.querySelector(':scope > .tree-children');
+    if (!parentNode || !childrenContainer) return;
+
+    const childBranches = childrenContainer.querySelectorAll(':scope > .tree-branch');
+    if (childBranches.length === 0) return;
+
+    const pRect = parentNode.getBoundingClientRect();
+    const parentX = Math.round(pRect.left + pRect.width / 2 - wrapperRect.left);
+    const parentY = Math.round(pRect.bottom - wrapperRect.top);
+
+    const childPoints = [];
+    childBranches.forEach(cb => {
+      const cNode = cb.querySelector(':scope > .tree-node');
+      if (cNode) {
+        const cRect = cNode.getBoundingClientRect();
+        childPoints.push({
+          x: Math.round(cRect.left + cRect.width / 2 - wrapperRect.left),
+          y: Math.round(cRect.top - wrapperRect.top)
+        });
+      }
+    });
+
+    if (childPoints.length === 0) return;
+
+    if (childPoints.length === 1) {
+      const c = childPoints[0];
+      if (Math.abs(parentX - c.x) < 4) {
+        paths += `<line x1="${parentX}" y1="${parentY}" x2="${c.x}" y2="${c.y}" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />`;
+      } else {
+        const midY = Math.round(parentY + (c.y - parentY) / 2);
+        paths += `<path d="M ${parentX} ${parentY} V ${midY} H ${c.x} V ${c.y}" stroke="#94a3b8" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round" />`;
+      }
+    } else {
+      const firstChildX = Math.min(...childPoints.map(p => p.x));
+      const lastChildX = Math.max(...childPoints.map(p => p.x));
+      const firstChildY = childPoints[0].y;
+      const midY = Math.round(parentY + (firstChildY - parentY) / 2);
+
+      // 1. Linha vertical reta do centro inferior do pai até o barramento
+      paths += `<line x1="${parentX}" y1="${parentY}" x2="${parentX}" y2="${midY}" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />`;
+
+      // 2. Barramento horizontal conectando exatamente do centro do 1º filho ao centro do último
+      paths += `<line x1="${firstChildX}" y1="${midY}" x2="${lastChildX}" y2="${midY}" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />`;
+
+      // 3. Linhas verticais retas descendo do barramento para o topo de cada filho
+      childPoints.forEach(c => {
+        paths += `<line x1="${c.x}" y1="${midY}" x2="${c.x}" y2="${c.y}" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />`;
+      });
+    }
+  });
+
+  svg.innerHTML = paths;
 }
 
 // Render network data table
@@ -1555,6 +1639,13 @@ function setupEvents() {
     logout();
     checkAuthState();
     showToast('Sessão encerrada com sucesso.');
+  });
+
+  // Redraw SVG connectors on window resize
+  window.addEventListener('resize', () => {
+    if (document.getElementById('companiesTreeContainer')?.style.display !== 'none') {
+      drawTreeConnectors();
+    }
   });
 }
 

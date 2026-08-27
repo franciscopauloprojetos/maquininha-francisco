@@ -272,95 +272,52 @@
 }
 
 /* ==========================================================================
-   CONECTORES DA ÁRVORE GENEALÓGICA / ORGANOGRAMA
+   CONECTORES DA ÁRVORE GENEALÓGICA / ORGANOGRAMA (SVG CANVAS PRECISION)
    ========================================================================== */
+.tree-container-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 36px 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  overflow-x: auto;
+  min-height: 480px;
+  position: relative;
+}
+
+.tree-wrapper {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 100%;
+  padding: 20px 30px 40px;
+  position: relative;
+}
+
+#treeSvgOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .tree-branch {
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
-  padding: 30px 14px 0 14px;
+  padding: 0 14px;
 }
 
-/* Linha vertical que sai de baixo do nó pai para a barra horizontal dos filhos */
-.tree-branch.has-children > .tree-node::after {
-  content: '';
-  position: absolute;
-  bottom: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 2px;
-  height: 30px;
-  background: #cbd5e1;
-  z-index: 1;
-}
-
-/* Container de nós filhos */
 .tree-children {
   display: flex;
   justify-content: center;
   position: relative;
-  padding: 0;
+  padding-top: 48px; /* Espaço para a linha de barramento horizontal */
   margin: 0;
-}
-
-/* Linhas horizontais e verticais superiores para conectar cada filho ao pai */
-.tree-children > .tree-branch::before,
-.tree-children > .tree-branch::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 50%;
-  border-top: 2px solid #cbd5e1;
-  width: 50%;
-  height: 30px;
-  z-index: 1;
-}
-
-.tree-children > .tree-branch::after {
-  right: auto;
-  left: 50%;
-  border-left: 2px solid #cbd5e1;
-}
-
-/* Caso especial: filho único (não desenha barra horizontal estendida) */
-.tree-children > .tree-branch:only-child::after,
-.tree-children > .tree-branch:only-child::before {
-  display: none;
-}
-
-.tree-children > .tree-branch:only-child {
-  padding-top: 30px;
-}
-
-.tree-children > .tree-branch:only-child > .tree-node::before {
-  content: '';
-  position: absolute;
-  top: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 2px;
-  height: 30px;
-  background: #cbd5e1;
-}
-
-/* Remove a linha excedente à esquerda no primeiro filho e à direita no último filho */
-.tree-children > .tree-branch:first-child::before {
-  border: none;
-}
-
-.tree-children > .tree-branch:last-child::after {
-  border: none;
-}
-
-/* Bordas arredondadas suaves nas curvas do organograma */
-.tree-children > .tree-branch:first-child::after {
-  border-top-left-radius: 8px;
-}
-
-.tree-children > .tree-branch:last-child::before {
-  border-top-right-radius: 8px;
-  border-right: 2px solid #cbd5e1;
+  gap: 16px;
 }
 
 /* ==========================================================================
