@@ -199,32 +199,35 @@
                   </div>
                 </div>
 
-                <!-- Linha 3 -->
-                <div class="filter-group">
-                  <label class="filter-label" for="filterSpread">Spread</label>
-                  <div class="input-wrapper">
-                    <select id="filterSpread" class="custom-select">
-                      <option value="">Todos os spreads</option>
-                    </select>
-                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                <!-- Linha 3: Spread, Valor e Botões de Ação perfeitamente alinhados -->
+                <div class="filters-row-3">
+                  <div class="filters-row-3-left">
+                    <div class="filter-group">
+                      <label class="filter-label" for="filterSpread">Spread</label>
+                      <div class="input-wrapper">
+                        <select id="filterSpread" class="custom-select">
+                          <option value="">Todos os spreads</option>
+                        </select>
+                        <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                      </div>
+                    </div>
+
+                    <div class="filter-group">
+                      <label class="filter-label" for="filterValor">Valor</label>
+                      <div class="input-wrapper">
+                        <input type="text" id="filterValor" class="custom-input" value="R$ 0,00">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="filter-actions">
+                    <button type="button" class="btn btn-ghost" id="btnClearFilters">Limpar Filtros</button>
+                    <button type="submit" class="btn btn-primary-green" id="btnApplyFilters">
+                      <i data-lucide="filter"></i>
+                      <span>Filtrar</span>
+                    </button>
                   </div>
                 </div>
-
-                <div class="filter-group">
-                  <label class="filter-label" for="filterValor">Valor</label>
-                  <div class="input-wrapper">
-                    <input type="text" id="filterValor" class="custom-input" value="R$ 0,00">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Botões de Ação do Filtro -->
-              <div class="filter-actions">
-                <button type="button" class="btn btn-ghost" id="btnClearFilters">Limpar Filtros</button>
-                <button type="submit" class="btn btn-primary-green" id="btnApplyFilters">
-                  <i data-lucide="filter"></i>
-                  <span>Filtrar</span>
-                </button>
               </div>
             </form>
           </section>
