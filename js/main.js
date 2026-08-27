@@ -112,28 +112,55 @@ function calculateKPIsFromTransactions(list) {
   };
 }
 
-// Get Card Brand SVG Icon
+// Get Card Brand SVG Icon (100% visible, centered and sharp)
 function getBrandIcon(brand) {
   const b = (brand || '').toLowerCase();
   if (b.includes('visa')) {
     return `
-      <svg width="26" height="16" viewBox="0 0 48 32" fill="none">
-        <text x="1" y="24" font-family="'Helvetica Neue', Arial, sans-serif" font-size="23" font-weight="900" font-style="italic" fill="#1434CB" letter-spacing="-1">VISA</text>
+      <svg width="32" height="13" viewBox="0 0 32 13" fill="none">
+        <text x="1" y="11" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="12.5" font-weight="900" font-style="italic" fill="#1434CB" letter-spacing="-0.5">VISA</text>
       </svg>
     `;
   }
   if (b.includes('master')) {
     return `
-      <svg width="22" height="16" viewBox="0 0 36 24" fill="none">
-        <circle cx="13" cy="12" r="10" fill="#EB001B"/>
-        <circle cx="23" cy="12" r="10" fill="#F79E1B" fill-opacity="0.9"/>
+      <svg width="24" height="16" viewBox="0 0 32 20" fill="none">
+        <circle cx="11" cy="10" r="9" fill="#EB001B"/>
+        <circle cx="21" cy="10" r="9" fill="#F79E1B" fill-opacity="0.88"/>
       </svg>
     `;
   }
   if (b.includes('elo')) {
-    return `<span style="font-size: 10px; font-weight: 800; color: #0f172a;">elo</span>`;
+    return `
+      <svg width="26" height="14" viewBox="0 0 28 14" fill="none">
+        <text x="14" y="11" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="11" font-weight="900" fill="#0f172a" text-anchor="middle" letter-spacing="-0.5">elo</text>
+      </svg>
+    `;
   }
-  return `<span style="font-size: 9px; font-weight: 700; color: #475569;">${brand}</span>`;
+  if (b.includes('hiper')) {
+    return `
+      <svg width="34" height="14" viewBox="0 0 36 14" fill="none">
+        <rect width="36" height="14" rx="2.5" fill="#B91C1C"/>
+        <text x="18" y="10.5" font-family="Arial, sans-serif" font-size="8" font-weight="800" font-style="italic" fill="#FFFFFF" text-anchor="middle">HIPER</text>
+      </svg>
+    `;
+  }
+  if (b.includes('pix')) {
+    return `
+      <svg width="22" height="14" viewBox="0 0 24 14" fill="none">
+        <path d="M7 2L3 7L7 12L12 7L7 2ZM17 2L12 7L17 12L21 7L17 2Z" fill="#32BCAD"/>
+      </svg>
+    `;
+  }
+  if (b.includes('amex') || b.includes('american')) {
+    return `
+      <svg width="30" height="14" viewBox="0 0 32 14" fill="none">
+        <rect width="32" height="14" rx="2" fill="#006FCF"/>
+        <text x="16" y="10" font-family="Arial, sans-serif" font-size="7.5" font-weight="900" fill="#FFFFFF" text-anchor="middle">AMEX</text>
+      </svg>
+    `;
+  }
+  return `<span style="font-size: 10px; font-weight: 700; color: #475569;">${brand}</span>`;
 }
 
 // Format badge based on status
