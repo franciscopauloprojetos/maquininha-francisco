@@ -14,6 +14,9 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <!-- Stylesheets -->
   <link rel="stylesheet" href="styles/variables.css">
   <link rel="stylesheet" href="styles/layout.css">
@@ -123,6 +126,12 @@
         </div>
 
         <div class="header-right">
+          <!-- Botão / Status Supabase -->
+          <button class="btn btn-ghost" id="btnOpenSupabaseModal" style="height: 32px; padding: 0 10px; font-size: 12px; gap: 6px;" title="Configurações do Supabase">
+            <span id="supabaseStatusDot" style="width: 8px; height: 8px; border-radius: 50%; background-color: #94a3b8;"></span>
+            <span id="supabaseStatusText">Supabase</span>
+          </button>
+
           <div class="header-user" id="userProfileBtn">
             <i data-lucide="user"></i>
             <span>Francisco</span>
@@ -437,6 +446,42 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-ghost" id="btnCloseDetailsBtn">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Conexão Supabase -->
+  <div class="modal-backdrop" id="supabaseModal">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Conexão com o Supabase</h3>
+        <button class="modal-close" id="btnCloseSupabaseModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 8px;">
+          Insira suas credenciais do projeto Supabase (disponíveis no painel em <strong>Project Settings > API</strong>) para carregar e salvar transações reais.
+        </p>
+
+        <div class="filter-group">
+          <label class="filter-label" for="inputSupabaseUrl">Project URL</label>
+          <div class="input-wrapper">
+            <input type="text" id="inputSupabaseUrl" class="custom-input" placeholder="https://xxxxxxxxxxxx.supabase.co">
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label" for="inputSupabaseKey">Anon Key (Public API Key)</label>
+          <div class="input-wrapper">
+            <input type="password" id="inputSupabaseKey" class="custom-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="btnCancelSupabase">Fechar</button>
+        <button class="btn btn-primary-green" id="btnSaveSupabase">
+          <i data-lucide="check"></i>
+          <span>Salvar & Conectar</span>
+        </button>
       </div>
     </div>
   </div>

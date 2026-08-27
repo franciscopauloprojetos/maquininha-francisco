@@ -12,6 +12,13 @@ import {
   MOCK_TRANSACTIONS
 } from './mockData.js';
 
+import {
+  getSupabaseClient,
+  setSupabaseCredentials,
+  fetchTransactionsFromSupabase,
+  SUPABASE_CONFIG
+} from './supabaseClient.js';
+
 // Application State
 let currentTransactions = [...MOCK_TRANSACTIONS];
 let filteredTransactions = [...MOCK_TRANSACTIONS];
@@ -455,10 +462,48 @@ function setupEvents() {
   btnCloseDetailsModal.addEventListener('click', closeDetailsModal);
   btnCloseDetailsBtn.addEventListener('click', closeDetailsModal);
 
+  // Modal: Supabase
+  const supabaseModal = document.getElementById('supabaseModal');
+  const btnOpenSupabaseModal = document.getElementById('btnOpenSupabaseModal');
+  const btnCloseSupabaseModal = document.getElementById('btnCloseSupabaseModal');
+  const btnCancelSupabase = document.getElementById('btnCancelSupabase');
+  const btnSaveSupabase = document.getElementById('btnSaveSupabase');
+  const inputSupabaseUrl = document.getElementById('inputSupabaseUrl');
+  const inputSupabaseKey = document.getElementById('inputSupabaseKey');
+
+  const closeSupabaseModal = () => supabaseModal.classList.remove('open');
+
+  if (btnOpenSupabaseModal) {
+    btnOpenSupabaseModal.addEventListener('click', () => {
+      inputSupabaseUrl.value = SUPABASE_CONFIG.url || '';
+      inputSupabaseKey.value = SUPABASE_CONFIG.anonKey || '';
+      supabaseModal.classList.add('open');
+    });
+  }
+
+  if (btnCloseSupabaseModal) btnCloseSupabaseModal.addEventListener('click', closeSupabaseModal);
+  if (btnCancelSupabase) btnCancelSupabase.addEventListener('click', closeSupabaseModal);
+
+  if (btnSaveSupabase) {
+    btnSaveSupabase.addEventListener('click', async () => {
+      const url = inputSupabaseUrl.value.trim();
+      const key = inputSupabaseKey.value.trim();
+      if (!url || !key) {
+        showToast('Preencha a URL e a Anon Key do Supabase.', 'success');
+        return;
+      }
+      setSupabaseCredentials(url, key);
+      closeSupabaseModal();
+      showToast('Credenciais salvas! Conectando ao banco...');
+      await loadInitialData();
+    });
+  }
+
   // Close modals on backdrop click
   window.addEventListener('click', (e) => {
     if (e.target === reportModal) closeReportModal();
     if (e.target === detailsModal) closeDetailsModal();
+    if (e.target === supabaseModal) closeSupabaseModal();
   });
 
   // Logout button simulation
@@ -467,11 +512,52 @@ function setupEvents() {
   });
 }
 
-// Initial Boot
-document.addEventListener('DOMContentLoaded', () => {
-  initFilters();
-  updateKPIs(INITIAL_KPIS);
+// Update Supabase UI Status Indicator
+function updateSupabaseStatus() {
+  const dot = document.getElementById('supabaseStatusDot');
+  const text = document.getElementById('supabaseStatusText');
+  const client = getSupabaseClient();
+
+  if (dot && text) {
+    if (client) {
+      dot.style.backgroundColor = '#00ba50';
+      dot.style.boxShadow = '0 0 6px rgba(0, 186, 80, 0.6)';
+      text.textContent = 'Supabase Conectado';
+      text.style.color = '#059669';
+      text.style.fontWeight = '600';
+    } else {
+      dot.style.backgroundColor = '#94a3b8';
+      dot.style.boxShadow = 'none';
+      text.textContent = 'Conectar Supabase';
+      text.style.color = '#64748b';
+      text.style.fontWeight = '500';
+    }
+  }
+}
+
+// Load Initial Data (from Supabase or Mock fallback)
+async function loadInitialData() {
+  updateSupabaseStatus();
+
+  const remoteTransactions = await fetchTransactionsFromSupabase();
+  if (remoteTransactions && remoteTransactions.length > 0) {
+    currentTransactions = remoteTransactions;
+    filteredTransactions = [...remoteTransactions];
+    showToast(`Conectado ao Supabase: ${remoteTransactions.length} transações carregadas!`);
+  } else {
+    currentTransactions = [...MOCK_TRANSACTIONS];
+    filteredTransactions = [...MOCK_TRANSACTIONS];
+  }
+
+  currentPage = 1;
   renderTable();
+  updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
+}
+
+// Initial Boot
+document.addEventListener('DOMContentLoaded', async () => {
+  initFilters();
   setupEvents();
+  await loadInitialData();
   refreshIcons();
 });
