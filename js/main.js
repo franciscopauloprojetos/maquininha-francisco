@@ -534,6 +534,11 @@ function switchView(viewName) {
   const currentUser = getCurrentUser();
   const isAdmin = currentUser?.isAdmin ?? true;
 
+  // Persist the current active view across page refreshes
+  try {
+    localStorage.setItem('konzpay_last_view', viewName);
+  } catch (e) {}
+
   // Reset active classes
   [navTransacoes, navEmpresas, navDashboard, navComissoes].forEach(el => el && el.classList.remove('active'));
 
@@ -1909,6 +1914,7 @@ function setupEvents() {
     btnEmpresasTabList.addEventListener('click', () => {
       btnEmpresasTabList.classList.add('active');
       btnEmpresasTabTree.classList.remove('active');
+      try { localStorage.setItem('konzpay_last_empresas_tab', 'list'); } catch (e) {}
       if (companiesListContainer) companiesListContainer.style.display = 'block';
       if (companiesTreeContainer) companiesTreeContainer.style.display = 'none';
       filterCompanies();
@@ -1917,6 +1923,7 @@ function setupEvents() {
     btnEmpresasTabTree.addEventListener('click', () => {
       btnEmpresasTabTree.classList.add('active');
       btnEmpresasTabList.classList.remove('active');
+      try { localStorage.setItem('konzpay_last_empresas_tab', 'tree'); } catch (e) {}
       if (companiesListContainer) companiesListContainer.style.display = 'none';
       if (companiesTreeContainer) companiesTreeContainer.style.display = 'block';
       renderNetworkView();
@@ -1933,6 +1940,7 @@ function setupEvents() {
     btnModeTree.addEventListener('click', () => {
       btnModeTree.classList.add('active');
       btnModeTable.classList.remove('active');
+      try { localStorage.setItem('konzpay_last_network_mode', 'tree'); } catch (e) {}
       if (treeViewContainer) treeViewContainer.style.display = 'block';
       if (networkTableViewContainer) networkTableViewContainer.style.display = 'none';
       currentNetworkViewMode = 'tree';
@@ -1941,6 +1949,7 @@ function setupEvents() {
     btnModeTable.addEventListener('click', () => {
       btnModeTable.classList.add('active');
       btnModeTree.classList.remove('active');
+      try { localStorage.setItem('konzpay_last_network_mode', 'table'); } catch (e) {}
       if (treeViewContainer) treeViewContainer.style.display = 'none';
       if (networkTableViewContainer) networkTableViewContainer.style.display = 'block';
       currentNetworkViewMode = 'table';
@@ -2285,6 +2294,48 @@ async function loadInitialData() {
   renderTable();
   renderCompaniesTable();
   updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
+
+  // Restore the last active view and sub-tab state when the page reloads / restarts
+  try {
+    const savedView = localStorage.getItem('konzpay_last_view') || 'transacoes';
+    const savedEmpresasTab = localStorage.getItem('konzpay_last_empresas_tab') || 'list';
+    const savedNetworkMode = localStorage.getItem('konzpay_last_network_mode') || 'tree';
+
+    // Restore empresas sub-tab (Lista vs Árvore)
+    const btnEmpresasTabList = document.getElementById('btnEmpresasTabList');
+    const btnEmpresasTabTree = document.getElementById('btnEmpresasTabTree');
+    if (savedEmpresasTab === 'tree') {
+      btnEmpresasTabList?.classList.remove('active');
+      btnEmpresasTabTree?.classList.add('active');
+    } else {
+      btnEmpresasTabList?.classList.add('active');
+      btnEmpresasTabTree?.classList.remove('active');
+    }
+
+    // Restore network sub-mode (Árvore Visual vs Tabela Detalhada)
+    const btnModeTree = document.getElementById('btnModeTree');
+    const btnModeTable = document.getElementById('btnModeTable');
+    const treeViewContainer = document.getElementById('treeViewContainer');
+    const networkTableViewContainer = document.getElementById('networkTableViewContainer');
+
+    if (savedNetworkMode === 'table') {
+      btnModeTree?.classList.remove('active');
+      btnModeTable?.classList.add('active');
+      if (treeViewContainer) treeViewContainer.style.display = 'none';
+      if (networkTableViewContainer) networkTableViewContainer.style.display = 'block';
+      currentNetworkViewMode = 'table';
+    } else {
+      btnModeTree?.classList.add('active');
+      btnModeTable?.classList.remove('active');
+      if (treeViewContainer) treeViewContainer.style.display = 'block';
+      if (networkTableViewContainer) networkTableViewContainer.style.display = 'none';
+      currentNetworkViewMode = 'tree';
+    }
+
+    switchView(savedView);
+  } catch (e) {
+    switchView('transacoes');
+  }
 }
 
 // Initial Boot
