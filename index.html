@@ -117,13 +117,19 @@
         <li class="sidebar-nav-item">
           <a href="#" class="sidebar-nav-link" id="nav-empresas">
             <i data-lucide="building-2"></i>
-            <span>Empresas</span>
+            <span>Pessoas/Empresas</span>
           </a>
         </li>
         <li class="sidebar-nav-item">
           <a href="#" class="sidebar-nav-link active" id="nav-transacoes">
             <i data-lucide="arrow-left-right"></i>
             <span>Transações</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item">
+          <a href="#" class="sidebar-nav-link" id="nav-comissoes">
+            <i data-lucide="coins"></i>
+            <span>Comissões</span>
           </a>
         </li>
       </ul>
@@ -746,6 +752,164 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- ================= VIEW 4: COMISSÕES (Extrato & Gestão de Repasses) ================= -->
+        <div id="view-comissoes" class="app-view" style="display: none;">
+          <!-- Grade de 4 Cards de Métricas de Comissões -->
+          <div class="commissions-metrics-grid">
+            <div class="com-metric-card">
+              <div class="com-metric-icon icon-emerald">
+                <i data-lucide="coins"></i>
+              </div>
+              <div class="com-metric-info">
+                <span class="com-metric-label">Total de Comissões Geradas</span>
+                <span class="com-metric-val" id="comValTotal">R$ 1.954,55</span>
+              </div>
+            </div>
+
+            <div class="com-metric-card">
+              <div class="com-metric-icon icon-blue">
+                <i data-lucide="award"></i>
+              </div>
+              <div class="com-metric-info">
+                <span class="com-metric-label">Comissões Diretas</span>
+                <span class="com-metric-val" id="comValDirect">R$ 1.861,04</span>
+              </div>
+            </div>
+
+            <div class="com-metric-card">
+              <div class="com-metric-icon icon-purple">
+                <i data-lucide="git-branch"></i>
+              </div>
+              <div class="com-metric-info">
+                <span class="com-metric-label">Comissões de Rede (Equipe)</span>
+                <span class="com-metric-val" id="comValNetwork">R$ 93,51</span>
+              </div>
+            </div>
+
+            <div class="com-metric-card">
+              <div class="com-metric-icon icon-amber">
+                <i data-lucide="clock"></i>
+              </div>
+              <div class="com-metric-info">
+                <span class="com-metric-label">Pendentes / Processando</span>
+                <span class="com-metric-val" id="comValPending">R$ 247,00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 1: Pesquisar e Filtrar Comissões -->
+          <section class="card companies-search-card">
+            <h2 class="card-title" style="margin-bottom: 16px;">Pesquisar Extrato de Comissões</h2>
+
+            <form id="commissionsFilterForm">
+              <div class="search-top-row">
+                <div class="input-wrapper search-main-input">
+                  <span class="input-icon-left"><i data-lucide="search"></i></span>
+                  <input type="text" id="inputSearchCommissions" class="custom-input" placeholder="Buscar por empresa, beneficiário, terminal ou ID...">
+                </div>
+                <div class="search-actions-group">
+                  <button type="submit" class="btn btn-primary-green" id="btnSearchCommissions">
+                    <i data-lucide="search"></i>
+                    <span>Buscar</span>
+                  </button>
+                  <button type="button" class="btn btn-ghost" id="btnClearCommissionsFilters">Limpar Filtros</button>
+                </div>
+              </div>
+
+              <div class="search-bottom-grid">
+                <div class="filter-group">
+                  <label class="filter-label" for="filterCommissionStatus">Status do Repasse</label>
+                  <div class="input-wrapper">
+                    <select id="filterCommissionStatus" class="custom-select">
+                      <option value="">Todos os status</option>
+                      <option value="Paga">Paga</option>
+                      <option value="Pendente">Pendente</option>
+                      <option value="Processando">Processando</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterCommissionType">Tipo de Ganho</label>
+                  <div class="input-wrapper">
+                    <select id="filterCommissionType" class="custom-select">
+                      <option value="">Todos os tipos</option>
+                      <option value="Direta">Venda Direta</option>
+                      <option value="Rede">Bônus de Rede / Equipe</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterCommissionOrder">Ordenar por</label>
+                  <div class="input-wrapper">
+                    <select id="filterCommissionOrder" class="custom-select">
+                      <option value="recentes">Mais recentes</option>
+                      <option value="maior_valor">Maior valor (R$)</option>
+                      <option value="menor_valor">Menor valor (R$)</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterCommissionBeneficiary">Beneficiário</label>
+                  <div class="input-wrapper">
+                    <select id="filterCommissionBeneficiary" class="custom-select">
+                      <option value="">Todos os beneficiários</option>
+                      <!-- Preenchido dinamicamente via JS -->
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </section>
+
+          <!-- CARD 2: Tabela de Extrato de Comissões -->
+          <section class="card companies-list-card" style="margin-top: 24px;">
+            <div class="companies-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+              <h2 class="card-title" id="commissionsListTitle">Extrato Detalhado de Comissões (12)</h2>
+              <button class="btn btn-primary-blue" id="btnExportCommissions" style="background-color: #1d68d8;">
+                <i data-lucide="download"></i>
+                <span>Exportar Extrato</span>
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table" id="commissionsTable">
+                <thead>
+                  <tr>
+                    <th class="sortable" data-sort="id">ID / Data</th>
+                    <th class="sortable" data-sort="saleAmount">Valor da Venda</th>
+                    <th class="sortable" data-sort="company">Pessoa / Empresa</th>
+                    <th class="sortable" data-sort="beneficiaryName">Beneficiário</th>
+                    <th class="sortable" data-sort="ratePercent">Taxa Aplicada</th>
+                    <th class="sortable" data-sort="commissionAmount">Valor Comissão</th>
+                    <th class="sortable" data-sort="type">Tipo de Ganho</th>
+                    <th class="sortable" data-sort="status">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="commissionsTableBody">
+                  <!-- Linhas renderizadas dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Paginação de Comissões -->
+            <div class="pagination-container" style="margin-top: 20px;">
+              <div class="pagination-info" id="commissionsPaginationInfo">
+                Página 1 de 1
+              </div>
+              <div class="pagination-controls" id="commissionsPaginationControls">
+                <!-- Botões de paginação -->
+              </div>
+            </div>
+          </section>
         </div>
       </main>
     </div>

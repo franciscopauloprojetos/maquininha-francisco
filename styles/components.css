@@ -1014,3 +1014,132 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     gap: 20px;
   }
 }
+
+/* ==========================================================================
+   SEÇÃO DE COMISSÕES (EXTRATO & GESTÃO DE REPASSES)
+   ========================================================================== */
+.commissions-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.com-metric-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.com-metric-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.com-metric-icon.icon-emerald {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.com-metric-icon.icon-blue {
+  background: #eff6ff;
+  color: #1d68d8;
+}
+
+.com-metric-icon.icon-purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.com-metric-icon.icon-amber {
+  background: #fefce8;
+  color: #d97706;
+}
+
+.com-metric-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.com-metric-label {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.com-metric-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-heading);
+}
+
+.badge-com-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.badge-com-type.direct {
+  background: #eff6ff;
+  color: #1d68d8;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-com-type.network {
+  background: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+}
+
+.badge-com-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.badge-com-status.paga {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.badge-com-status.pendente {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.badge-com-status.processando {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+@media (max-width: 1024px) {
+  .commissions-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .commissions-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}

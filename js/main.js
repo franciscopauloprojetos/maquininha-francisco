@@ -11,7 +11,8 @@ import {
   MOCK_SPREADS,
   MOCK_TRANSACTIONS,
   MOCK_COMPANIES_DATA,
-  MOCK_NETWORK_USERS
+  MOCK_NETWORK_USERS,
+  MOCK_COMMISSIONS_DATA
 } from './mockData.js';
 
 import {
@@ -47,6 +48,13 @@ let companiesCurrentPage = 1;
 const companiesPerPage = 8;
 let companiesSort = { column: 'createdAt', order: 'desc' };
 let selectedCompanyIds = new Set();
+
+// Application State - Comissões
+let currentCommissions = [...MOCK_COMMISSIONS_DATA];
+let filteredCommissions = [...MOCK_COMMISSIONS_DATA];
+let commissionsCurrentPage = 1;
+const commissionsPerPage = 8;
+let commissionsSort = { column: 'date', order: 'desc' };
 
 // Application State - Rede Hierárquica
 let currentNetworkUsers = getStoredNetworkUsers();
@@ -510,9 +518,11 @@ function switchView(viewName) {
   const viewTransacoes = document.getElementById('view-transacoes');
   const viewEmpresas = document.getElementById('view-empresas');
   const viewDashboard = document.getElementById('view-dashboard');
+  const viewComissoes = document.getElementById('view-comissoes');
   const navTransacoes = document.getElementById('nav-transacoes');
   const navEmpresas = document.getElementById('nav-empresas');
   const navDashboard = document.getElementById('nav-dashboard');
+  const navComissoes = document.getElementById('nav-comissoes');
   const pageTitle = document.getElementById('pageHeaderTitle');
 
   const adminCompaniesToggle = document.getElementById('adminCompaniesViewToggle');
@@ -525,11 +535,12 @@ function switchView(viewName) {
   const isAdmin = currentUser?.isAdmin ?? true;
 
   // Reset active classes
-  [navTransacoes, navEmpresas, navDashboard].forEach(el => el && el.classList.remove('active'));
+  [navTransacoes, navEmpresas, navDashboard, navComissoes].forEach(el => el && el.classList.remove('active'));
 
   if (viewName === 'empresas') {
     if (viewTransacoes) viewTransacoes.style.display = 'none';
     if (viewDashboard) viewDashboard.style.display = 'none';
+    if (viewComissoes) viewComissoes.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'block';
     if (navEmpresas) navEmpresas.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Pessoas / Empresas';
@@ -548,14 +559,27 @@ function switchView(viewName) {
   } else if (viewName === 'dashboard') {
     if (viewTransacoes) viewTransacoes.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'none';
+    if (viewComissoes) viewComissoes.style.display = 'none';
     if (viewDashboard) viewDashboard.style.display = 'block';
     if (navDashboard) navDashboard.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Dashboard';
     updateDashboardStats();
+  } else if (viewName === 'comissoes') {
+    if (viewTransacoes) viewTransacoes.style.display = 'none';
+    if (viewEmpresas) viewEmpresas.style.display = 'none';
+    if (viewDashboard) viewDashboard.style.display = 'none';
+    if (viewComissoes) viewComissoes.style.display = 'block';
+    if (navComissoes) navComissoes.classList.add('active');
+    if (pageTitle) pageTitle.textContent = 'Comissões & Extrato';
+
+    populateCommissionBeneficiarySelect();
+    filterCommissions();
+    renderCommissionsMetrics();
   } else {
     // Default: transacoes
     if (viewDashboard) viewDashboard.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'none';
+    if (viewComissoes) viewComissoes.style.display = 'none';
     if (viewTransacoes) viewTransacoes.style.display = 'block';
     if (navTransacoes) navTransacoes.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Transações';
@@ -820,6 +844,276 @@ function filterCompanies() {
 
   companiesCurrentPage = 1;
   renderCompaniesTable();
+}
+
+// ==========================================================================
+// MÓDULO DE COMISSÕES (EXTRATO, REPASSES E SPREAD DE REDE)
+// ==========================================================================
+
+// Get allowed commissions for current user based on hierarchy subtree
+function getAllowedCommissions() {
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+  if (isAdmin) return currentCommissions;
+
+  const allowedUserIds = getUserSubtreeIds(currentUser.id, currentNetworkUsers);
+  return currentCommissions.filter(c => allowedUserIds.includes(c.beneficiaryId));
+}
+
+// Render Commissions Top KPI Metrics
+function renderCommissionsMetrics() {
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+  const allowed = getAllowedCommissions();
+
+  const totalSum = allowed.reduce((acc, c) => acc + (c.commissionAmount || 0), 0);
+  
+  // Direct: commissions of the logged in user with type 'Direta' (or all direct if admin)
+  const directSum = allowed
+    .filter(c => c.type === 'Direta' && (isAdmin || c.beneficiaryId === currentUser.id))
+    .reduce((acc, c) => acc + (c.commissionAmount || 0), 0);
+
+  // Network: commissions of team bonus or downlines
+  const networkSum = allowed
+    .filter(c => c.type !== 'Direta' || (!isAdmin && c.beneficiaryId !== currentUser.id))
+    .reduce((acc, c) => acc + (c.commissionAmount || 0), 0);
+
+  // Pending / Processing
+  const pendingSum = allowed
+    .filter(c => c.status !== 'Paga')
+    .reduce((acc, c) => acc + (c.commissionAmount || 0), 0);
+
+  const elTotal = document.getElementById('comValTotal');
+  const elDirect = document.getElementById('comValDirect');
+  const elNetwork = document.getElementById('comValNetwork');
+  const elPending = document.getElementById('comValPending');
+
+  if (elTotal) elTotal.textContent = formatBRL(totalSum);
+  if (elDirect) elDirect.textContent = formatBRL(directSum);
+  if (elNetwork) elNetwork.textContent = formatBRL(networkSum);
+  if (elPending) elPending.textContent = formatBRL(pendingSum);
+}
+
+// Populate Beneficiary select options for filtering
+function populateCommissionBeneficiarySelect() {
+  const select = document.getElementById('filterCommissionBeneficiary');
+  if (!select) return;
+
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+  const allowedUserIds = isAdmin
+    ? currentNetworkUsers.map(u => u.id)
+    : getUserSubtreeIds(currentUser.id, currentNetworkUsers);
+
+  const allowedUsers = currentNetworkUsers.filter(u => allowedUserIds.includes(u.id));
+
+  select.innerHTML = `<option value="">Todos os beneficiários</option>` + allowedUsers.map(u => {
+    const isMe = u.id === currentUser?.id ? ' (Você)' : '';
+    return `<option value="${u.id}">${u.name}${isMe}</option>`;
+  }).join('');
+}
+
+// Render Commissions Table
+function renderCommissionsTable() {
+  const tbody = document.getElementById('commissionsTableBody');
+  const titleEl = document.getElementById('commissionsListTitle');
+  if (!tbody) return;
+
+  // Sorting
+  filteredCommissions.sort((a, b) => {
+    let valA = a[commissionsSort.column] || '';
+    let valB = b[commissionsSort.column] || '';
+
+    if (typeof valA === 'string') {
+      return commissionsSort.order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    }
+    return commissionsSort.order === 'asc' ? valA - valB : valB - valA;
+  });
+
+  const totalRecords = filteredCommissions.length;
+  const totalPages = Math.ceil(totalRecords / commissionsPerPage) || 1;
+  if (commissionsCurrentPage > totalPages) commissionsCurrentPage = totalPages;
+
+  const startIndex = (commissionsCurrentPage - 1) * commissionsPerPage;
+  const endIndex = Math.min(startIndex + commissionsPerPage, totalRecords);
+  const currentSlice = filteredCommissions.slice(startIndex, endIndex);
+
+  if (titleEl) {
+    titleEl.textContent = `Extrato Detalhado de Comissões (${totalRecords})`;
+  }
+
+  if (totalRecords === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
+          Nenhum registro de comissão encontrado para os filtros selecionados.
+        </td>
+      </tr>
+    `;
+    renderCommissionsPagination(totalPages);
+    return;
+  }
+
+  tbody.innerHTML = currentSlice.map(com => {
+    const isDirect = com.type === 'Direta';
+    const typeBadge = isDirect
+      ? `<span class="badge-com-type direct"><i data-lucide="zap" style="width:11px;height:11px;"></i> Venda Direta</span>`
+      : `<span class="badge-com-type network"><i data-lucide="git-branch" style="width:11px;height:11px;"></i> ${com.type}</span>`;
+
+    let statusClass = 'paga';
+    if (com.status === 'Pendente') statusClass = 'pendente';
+    else if (com.status === 'Processando') statusClass = 'processando';
+
+    const statusBadge = `<span class="badge-com-status ${statusClass}"><span class="badge-dot"></span> ${com.status}</span>`;
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 700; color: #0f172a; font-size: 13px;">${com.id}</div>
+          <div style="font-size: 11.5px; color: #94a3b8; font-family: monospace;">${com.date}</div>
+        </td>
+        <td>
+          <span style="font-weight: 600; color: #334155; font-size: 13.5px;">${formatBRL(com.saleAmount)}</span>
+          <div style="font-size: 11px; color: #94a3b8;">${com.terminal}</div>
+        </td>
+        <td class="cell-company-name"><strong>${com.company}</strong></td>
+        <td>
+          <div style="font-weight: 600; color: #0f172a; font-size: 13px;">${com.beneficiaryName}</div>
+          <div style="font-size: 11.5px; color: #64748b;">${com.beneficiaryRole || 'Parceiro'}</div>
+        </td>
+        <td>
+          <span class="badge-commission">${Number(com.ratePercent).toFixed(1)}%</span>
+        </td>
+        <td>
+          <strong style="color: #059669; font-size: 14.5px; font-weight: 800;">${formatBRL(com.commissionAmount)}</strong>
+        </td>
+        <td>${typeBadge}</td>
+        <td>${statusBadge}</td>
+      </tr>
+    `;
+  }).join('');
+
+  renderCommissionsPagination(totalPages);
+  refreshIcons();
+}
+
+// Render Commissions Pagination
+function renderCommissionsPagination(totalPages) {
+  const info = document.getElementById('commissionsPaginationInfo');
+  const controls = document.getElementById('commissionsPaginationControls');
+  if (!info || !controls) return;
+
+  info.textContent = `Página ${commissionsCurrentPage} de ${totalPages}`;
+
+  let buttonsHtml = `
+    <button class="page-btn" id="btnComPrevPage" ${commissionsCurrentPage === 1 ? 'disabled' : ''}>
+      <i data-lucide="chevron-left" style="width: 15px; height: 15px;"></i>
+    </button>
+  `;
+
+  for (let i = 1; i <= totalPages; i++) {
+    buttonsHtml += `
+      <button class="page-btn ${i === commissionsCurrentPage ? 'active' : ''}" data-com-page="${i}">
+        ${i}
+      </button>
+    `;
+  }
+
+  buttonsHtml += `
+    <button class="page-btn" id="btnComNextPage" ${commissionsCurrentPage === totalPages ? 'disabled' : ''}>
+      <i data-lucide="chevron-right" style="width: 15px; height: 15px;"></i>
+    </button>
+  `;
+
+  controls.innerHTML = buttonsHtml;
+
+  controls.querySelectorAll('.page-btn[data-com-page]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      commissionsCurrentPage = parseInt(btn.getAttribute('data-com-page'));
+      renderCommissionsTable();
+    });
+  });
+
+  const prev = document.getElementById('btnComPrevPage');
+  const next = document.getElementById('btnComNextPage');
+  if (prev) {
+    prev.addEventListener('click', () => {
+      if (commissionsCurrentPage > 1) {
+        commissionsCurrentPage--;
+        renderCommissionsTable();
+      }
+    });
+  }
+  if (next) {
+    next.addEventListener('click', () => {
+      if (commissionsCurrentPage < totalPages) {
+        commissionsCurrentPage++;
+        renderCommissionsTable();
+      }
+    });
+  }
+}
+
+// Filter Commissions Handler
+function filterCommissions() {
+  const term = document.getElementById('inputSearchCommissions')?.value.trim().toLowerCase() || '';
+  const status = document.getElementById('filterCommissionStatus')?.value || '';
+  const type = document.getElementById('filterCommissionType')?.value || '';
+  const order = document.getElementById('filterCommissionOrder')?.value || 'recentes';
+  const beneficiary = document.getElementById('filterCommissionBeneficiary')?.value || '';
+
+  const baseCommissions = getAllowedCommissions();
+
+  filteredCommissions = baseCommissions.filter(com => {
+    if (term) {
+      const matchComp = (com.company || '').toLowerCase().includes(term);
+      const matchBen = (com.beneficiaryName || '').toLowerCase().includes(term);
+      const matchTerm = (com.terminal || '').toLowerCase().includes(term);
+      const matchId = (com.id || '').toLowerCase().includes(term);
+      if (!matchComp && !matchBen && !matchTerm && !matchId) return false;
+    }
+    if (status && com.status !== status) return false;
+    if (type) {
+      if (type === 'Direta' && com.type !== 'Direta') return false;
+      if (type === 'Rede' && com.type === 'Direta') return false;
+    }
+    if (beneficiary && com.beneficiaryId !== beneficiary) return false;
+    return true;
+  });
+
+  if (order === 'maior_valor') {
+    commissionsSort = { column: 'commissionAmount', order: 'desc' };
+  } else if (order === 'menor_valor') {
+    commissionsSort = { column: 'commissionAmount', order: 'asc' };
+  } else {
+    commissionsSort = { column: 'date', order: 'desc' };
+  }
+
+  commissionsCurrentPage = 1;
+  renderCommissionsTable();
+  renderCommissionsMetrics();
+}
+
+// Export Commissions CSV
+function exportCommissions() {
+  const data = filteredCommissions;
+  if (data.length === 0) {
+    showToast('Nenhum dado para exportar.');
+    return;
+  }
+  let csv = 'ID;Data;Valor Venda;Empresa;Beneficiário;Taxa;Comissão;Tipo;Status\n';
+  data.forEach(c => {
+    csv += `${c.id};${c.date};${c.saleAmount};"${c.company}";"${c.beneficiaryName}";${c.ratePercent}%;${c.commissionAmount};"${c.type}";"${c.status}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `extrato_comissoes_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('Extrato de comissões exportado em CSV com sucesso!');
 }
 
 // ==========================================================================
@@ -1341,6 +1635,14 @@ function setupEvents() {
     });
   }
 
+  const navComissoes = document.getElementById('nav-comissoes');
+  if (navComissoes) {
+    navComissoes.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchView('comissoes');
+    });
+  }
+
   // Sidebar Toggle
   const sidebar = document.getElementById('sidebar');
   const sidebarToggle = document.getElementById('sidebarToggle');
@@ -1348,6 +1650,57 @@ function setupEvents() {
     sidebarToggle.addEventListener('click', () => {
       sidebar.classList.toggle('open');
     });
+  }
+
+  // Commissions Filter Form & Actions
+  const commissionsFilterForm = document.getElementById('commissionsFilterForm');
+  if (commissionsFilterForm) {
+    commissionsFilterForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      filterCommissions();
+    });
+  }
+
+  const btnClearCommissionsFilters = document.getElementById('btnClearCommissionsFilters');
+  if (btnClearCommissionsFilters) {
+    btnClearCommissionsFilters.addEventListener('click', () => {
+      const inputSearch = document.getElementById('inputSearchCommissions');
+      const selectStatus = document.getElementById('filterCommissionStatus');
+      const selectType = document.getElementById('filterCommissionType');
+      const selectOrder = document.getElementById('filterCommissionOrder');
+      const selectBeneficiary = document.getElementById('filterCommissionBeneficiary');
+
+      if (inputSearch) inputSearch.value = '';
+      if (selectStatus) selectStatus.value = '';
+      if (selectType) selectType.value = '';
+      if (selectOrder) selectOrder.value = 'recentes';
+      if (selectBeneficiary) selectBeneficiary.value = '';
+      filterCommissions();
+    });
+  }
+
+  const inputSearchCommissions = document.getElementById('inputSearchCommissions');
+  if (inputSearchCommissions) {
+    inputSearchCommissions.addEventListener('input', () => {
+      filterCommissions();
+    });
+  }
+
+  const selectFilterStatus = document.getElementById('filterCommissionStatus');
+  if (selectFilterStatus) selectFilterStatus.addEventListener('change', filterCommissions);
+
+  const selectFilterType = document.getElementById('filterCommissionType');
+  if (selectFilterType) selectFilterType.addEventListener('change', filterCommissions);
+
+  const selectFilterOrder = document.getElementById('filterCommissionOrder');
+  if (selectFilterOrder) selectFilterOrder.addEventListener('change', filterCommissions);
+
+  const selectFilterBeneficiary = document.getElementById('filterCommissionBeneficiary');
+  if (selectFilterBeneficiary) selectFilterBeneficiary.addEventListener('change', filterCommissions);
+
+  const btnExportCommissions = document.getElementById('btnExportCommissions');
+  if (btnExportCommissions) {
+    btnExportCommissions.addEventListener('click', exportCommissions);
   }
 
   // Filter Form Submit (Transações)
