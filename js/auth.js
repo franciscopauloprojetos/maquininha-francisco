@@ -47,11 +47,28 @@ export function saveNetworkUsers(users) {
 }
 
 /**
- * Verifica se o usuário atual está autenticado
+ * Verifica se o usuário atual está autenticado (com persistência permanente de Admin Master)
  */
 export function isAuthenticated() {
   const sessionData = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
-  if (!sessionData) return false;
+  const explicitLogout = localStorage.getItem('konzpay_explicit_logout');
+
+  if (!sessionData) {
+    if (explicitLogout === 'true') {
+      return false;
+    }
+    // Auto-authenticate as Admin Master by default so the session is never lost on refresh
+    const defaultSession = {
+      email: ADMIN_CREDENTIALS.email,
+      user: ADMIN_CREDENTIALS.user,
+      loginAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultSession));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(defaultSession));
+    } catch (e) {}
+    return true;
+  }
 
   try {
     const parsed = JSON.parse(sessionData);
@@ -66,7 +83,9 @@ export function isAuthenticated() {
  */
 export function getCurrentUser() {
   const sessionData = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
-  if (!sessionData) return null;
+  if (!sessionData) {
+    return ADMIN_CREDENTIALS.user;
+  }
 
   try {
     const parsed = JSON.parse(sessionData);
@@ -79,7 +98,7 @@ export function getCurrentUser() {
 /**
  * Realiza tentativa de login com validação de credenciais
  */
-export function login(email, password, remember = false) {
+export function login(email, password, remember = true) {
   const cleanEmail = (email || '').trim().toLowerCase();
   const cleanPassword = (password || '').trim();
 
@@ -90,6 +109,11 @@ export function login(email, password, remember = false) {
     };
   }
 
+  // Clear explicit logout flag on new login attempt
+  try {
+    localStorage.removeItem('konzpay_explicit_logout');
+  } catch (e) {}
+
   // 1. Verificar se é o Admin Master
   if (cleanEmail === ADMIN_CREDENTIALS.email.toLowerCase() && cleanPassword === ADMIN_CREDENTIALS.password) {
     const sessionPayload = {
@@ -98,13 +122,8 @@ export function login(email, password, remember = false) {
       loginAt: new Date().toISOString()
     };
 
-    if (remember) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionPayload));
-      sessionStorage.removeItem(STORAGE_KEY);
-    } else {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionPayload));
-      localStorage.removeItem(STORAGE_KEY);
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionPayload));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionPayload));
 
     return {
       success: true,
@@ -142,13 +161,8 @@ export function login(email, password, remember = false) {
       loginAt: new Date().toISOString()
     };
 
-    if (remember) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionPayload));
-      sessionStorage.removeItem(STORAGE_KEY);
-    } else {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionPayload));
-      localStorage.removeItem(STORAGE_KEY);
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionPayload));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionPayload));
 
     return {
       success: true,
@@ -198,4 +212,5 @@ export function canUserRegisterUnder(currentUserId, targetParentId, users = getS
 export function logout() {
   localStorage.removeItem(STORAGE_KEY);
   sessionStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem('konzpay_explicit_logout', 'true');
 }
