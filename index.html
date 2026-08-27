@@ -609,10 +609,36 @@
               </div>
             </div>
 
-            <!-- Visão em Árvore Interativa -->
+            <!-- Visão em Árvore Interativa com Controles de Zoom e Pan -->
             <div id="treeViewContainer" class="tree-container-card">
-              <div class="tree-wrapper" id="networkTreeWrapper">
-                <!-- Árvore gerada dinamicamente via JS -->
+              <!-- Barra Flutuante de Zoom & Pan -->
+              <div class="tree-zoom-toolbar">
+                <button type="button" class="btn-tree-zoom" id="btnTreeZoomIn" title="Aproximar (+)">
+                  <i data-lucide="zoom-in"></i>
+                </button>
+                <button type="button" class="btn-tree-zoom" id="btnTreeZoomReset" title="Resetar Zoom (100%)">
+                  <span id="treeZoomPercentText">100%</span>
+                </button>
+                <button type="button" class="btn-tree-zoom" id="btnTreeZoomOut" title="Afastar (-)">
+                  <i data-lucide="zoom-out"></i>
+                </button>
+                <div class="zoom-toolbar-divider"></div>
+                <button type="button" class="btn-tree-zoom" id="btnTreeZoomFit" title="Ajustar à Tela">
+                  <i data-lucide="maximize-2"></i>
+                </button>
+              </div>
+
+              <!-- Dica de Navegação -->
+              <div class="tree-canvas-hint">
+                <i data-lucide="move" style="width: 13px; height: 13px;"></i>
+                <span>Arraste para mover • Scroll para zoom</span>
+              </div>
+
+              <!-- Viewport com Pan e Zoom -->
+              <div class="tree-viewport" id="treeViewport">
+                <div class="tree-wrapper" id="networkTreeWrapper">
+                  <!-- Árvore gerada dinamicamente via JS -->
+                </div>
               </div>
             </div>
 

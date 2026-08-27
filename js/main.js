@@ -534,20 +534,13 @@ function switchView(viewName) {
     if (navEmpresas) navEmpresas.classList.add('active');
     if (pageTitle) pageTitle.textContent = 'Pessoas / Empresas';
 
-    // Configure Admin vs Partner view inside Empresas
-    if (isAdmin) {
-      if (adminCompaniesToggle) adminCompaniesToggle.style.display = 'flex';
-      if (btnEmpresasTabTree && btnEmpresasTabTree.classList.contains('active')) {
-        if (companiesListContainer) companiesListContainer.style.display = 'none';
-        if (companiesTreeContainer) companiesTreeContainer.style.display = 'block';
-        renderNetworkView();
-      } else {
-        if (companiesListContainer) companiesListContainer.style.display = 'block';
-        if (companiesTreeContainer) companiesTreeContainer.style.display = 'none';
-        filterCompanies();
-      }
+    // View toggle inside Pessoas/Empresas available for both Admin and Partners
+    if (adminCompaniesToggle) adminCompaniesToggle.style.display = 'flex';
+    if (btnEmpresasTabTree && btnEmpresasTabTree.classList.contains('active')) {
+      if (companiesListContainer) companiesListContainer.style.display = 'none';
+      if (companiesTreeContainer) companiesTreeContainer.style.display = 'block';
+      renderNetworkView();
     } else {
-      if (adminCompaniesToggle) adminCompaniesToggle.style.display = 'none';
       if (companiesListContainer) companiesListContainer.style.display = 'block';
       if (companiesTreeContainer) companiesTreeContainer.style.display = 'none';
       filterCompanies();
@@ -856,6 +849,7 @@ function renderNetworkView() {
   renderNetworkTree();
   renderNetworkTable();
   populateUplineSelect();
+  resetTreeZoom();
 }
 
 // Render network metrics
@@ -897,6 +891,104 @@ function renderNetworkMetrics() {
   }
 }
 
+// Tree Zoom & Pan State
+let treeZoomLevel = 1.0;
+let treePanX = 0;
+let treePanY = 0;
+let isTreeDragging = false;
+let treeDragStartX = 0;
+let treeDragStartY = 0;
+let treeInitialPanX = 0;
+let treeInitialPanY = 0;
+
+function updateTreeTransform(animated = false) {
+  const wrapper = document.getElementById('networkTreeWrapper');
+  const text = document.getElementById('treeZoomPercentText');
+  if (!wrapper) return;
+  wrapper.style.transition = animated ? 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)' : 'none';
+  wrapper.style.transform = `translate(${treePanX}px, ${treePanY}px) scale(${treeZoomLevel})`;
+  if (text) text.textContent = `${Math.round(treeZoomLevel * 100)}%`;
+}
+
+function setTreeZoom(newZoom, animated = true) {
+  treeZoomLevel = Math.min(2.0, Math.max(0.35, Math.round(newZoom * 100) / 100));
+  updateTreeTransform(animated);
+}
+
+function resetTreeZoom() {
+  treeZoomLevel = 1.0;
+  treePanX = 0;
+  treePanY = 0;
+  updateTreeTransform(true);
+}
+
+function fitTreeToView() {
+  const viewport = document.getElementById('treeViewport');
+  const wrapper = document.getElementById('networkTreeWrapper');
+  if (!viewport || !wrapper) return;
+
+  const vpW = viewport.clientWidth || 800;
+  const vpH = viewport.clientHeight || 560;
+  const contentW = wrapper.scrollWidth || 900;
+  const contentH = wrapper.scrollHeight || 500;
+
+  const scaleX = (vpW - 60) / contentW;
+  const scaleY = (vpH - 60) / contentH;
+  treeZoomLevel = Math.min(1.0, Math.max(0.4, Math.min(scaleX, scaleY)));
+  treePanX = 0;
+  treePanY = 0;
+  updateTreeTransform(true);
+}
+
+function setupTreePanAndZoom() {
+  const viewport = document.getElementById('treeViewport');
+  const btnIn = document.getElementById('btnTreeZoomIn');
+  const btnOut = document.getElementById('btnTreeZoomOut');
+  const btnReset = document.getElementById('btnTreeZoomReset');
+  const btnFit = document.getElementById('btnTreeZoomFit');
+
+  if (btnIn) btnIn.addEventListener('click', () => setTreeZoom(treeZoomLevel + 0.15));
+  if (btnOut) btnOut.addEventListener('click', () => setTreeZoom(treeZoomLevel - 0.15));
+  if (btnReset) btnReset.addEventListener('click', resetTreeZoom);
+  if (btnFit) btnFit.addEventListener('click', fitTreeToView);
+
+  if (!viewport) return;
+
+  // Mouse wheel zoom
+  viewport.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.12 : 0.88;
+    setTreeZoom(treeZoomLevel * zoomFactor, false);
+  }, { passive: false });
+
+  // Mouse drag to pan
+  viewport.addEventListener('mousedown', (e) => {
+    if (e.target.closest('button') || e.target.closest('.btn-add-subnode') || e.target.closest('input')) {
+      return;
+    }
+    isTreeDragging = true;
+    treeDragStartX = e.clientX;
+    treeDragStartY = e.clientY;
+    treeInitialPanX = treePanX;
+    treeInitialPanY = treePanY;
+    viewport.classList.add('is-dragging');
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isTreeDragging) return;
+    treePanX = treeInitialPanX + (e.clientX - treeDragStartX);
+    treePanY = treeInitialPanY + (e.clientY - treeDragStartY);
+    updateTreeTransform(false);
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (isTreeDragging) {
+      isTreeDragging = false;
+      viewport?.classList.remove('is-dragging');
+    }
+  });
+}
+
 // Render visual hierarchy tree (Recursive)
 function renderNetworkTree() {
   const container = document.getElementById('networkTreeWrapper');
@@ -914,9 +1006,12 @@ function renderNetworkTree() {
     return;
   }
 
+  const rootLevel = isAdmin ? 0 : calculateUserLevel(currentUser.id);
+
   function buildNodeHTML(user) {
     const isRoot = !user.parentId || user.id === 'USR-ADMIN' || (!isAdmin && user.id === currentUser.id);
     const level = calculateUserLevel(user.id);
+    const displayLevel = Math.max(0, level - rootLevel);
     const children = getUserDirectChildren(user.id);
     const initials = user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
     const isSelf = user.id === currentUser?.id;
@@ -934,7 +1029,7 @@ function renderNetworkTree() {
             </div>
           </div>
           <div class="tree-node-badges">
-            <span class="badge-level">Nível ${level}</span>
+            <span class="badge-level">Nível ${displayLevel}</span>
             <span class="badge-commission">${user.commissionRate}% Comiss.</span>
           </div>
           <div class="tree-node-footer">
@@ -1691,6 +1786,9 @@ function setupEvents() {
       drawTreeConnectors();
     }
   });
+
+  // Setup Pan & Zoom for the interactive network tree
+  setupTreePanAndZoom();
 }
 
 // Authentication State Controller
