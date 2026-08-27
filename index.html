@@ -72,7 +72,7 @@
           <button class="header-toggle-btn" id="sidebarToggle" title="Alternar Menu">
             <i data-lucide="sidebar"></i>
           </button>
-          <h1 class="header-title">Transações</h1>
+          <h1 class="header-title" id="pageHeaderTitle">Transações</h1>
         </div>
 
         <div class="header-right">
@@ -95,240 +95,351 @@
 
       <!-- Conteúdo da Página -->
       <main class="page-content">
-        <!-- ================= CARD 1: Filtros de Transação ================= -->
-        <section class="card filter-card">
-          <h2 class="card-title">Filtros de Transação</h2>
+        <!-- ================= VIEW 1: TRANSAÇÕES ================= -->
+        <div id="view-transacoes" class="app-view">
+          <!-- ================= CARD 1: Filtros de Transação ================= -->
+          <section class="card filter-card">
+            <h2 class="card-title">Filtros de Transação</h2>
 
-          <form id="filterForm">
-            <div class="filters-grid">
-              <!-- Linha 1 -->
-              <div class="filter-group">
-                <label class="filter-label" for="filterEmpresas">Empresas</label>
-                <div class="input-wrapper">
-                  <span class="input-icon-left"><i data-lucide="search"></i></span>
-                  <select id="filterEmpresas" class="custom-select">
-                    <option value="">Selecionar</option>
-                  </select>
-                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                </div>
-              </div>
-
-              <div class="filter-group">
-                <label class="filter-label" for="filterParceiro">Parceiro</label>
-                <div class="input-wrapper">
-                  <span class="input-icon-left"><i data-lucide="search"></i></span>
-                  <select id="filterParceiro" class="custom-select">
-                    <option value="">Todos os parceiros</option>
-                  </select>
-                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                </div>
-              </div>
-
-              <div class="filter-group">
-                <label class="filter-label" for="filterTerminal">Terminal</label>
-                <div class="input-wrapper">
-                  <span class="input-icon-left"><i data-lucide="search"></i></span>
-                  <select id="filterTerminal" class="custom-select">
-                    <option value="">Selecionar</option>
-                  </select>
-                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                </div>
-              </div>
-
-              <div class="filter-group">
-                <label class="filter-label" for="filterFormaPagamento">Forma de Pagamento</label>
-                <div class="input-wrapper">
-                  <select id="filterFormaPagamento" class="custom-select">
-                    <option value="">Todas</option>
-                  </select>
-                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                </div>
-              </div>
-
-              <div class="filter-group">
-                <label class="filter-label" for="filterParcelas">Parcelas</label>
-                <div class="input-wrapper">
-                  <select id="filterParcelas" class="custom-select">
-                    <option value="">Todas</option>
-                  </select>
-                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                </div>
-              </div>
-
-              <!-- Linha 2 -->
-              <div class="filter-group">
-                <label class="filter-label" for="filterBandeira">Bandeira</label>
-                <div class="input-wrapper">
-                  <select id="filterBandeira" class="custom-select">
-                    <option value="">Todas</option>
-                  </select>
-                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                </div>
-              </div>
-
-              <div class="filter-group">
-                <label class="filter-label" for="filterStatus">Status</label>
-                <div class="input-wrapper">
-                  <select id="filterStatus" class="custom-select">
-                    <option value="">Todos</option>
-                  </select>
-                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                </div>
-              </div>
-
-              <div class="filter-group">
-                <label class="filter-label" for="filterContaProvedor">Conta de Provedor</label>
-                <div class="input-wrapper">
-                  <span class="input-icon-left"><i data-lucide="search"></i></span>
-                  <select id="filterContaProvedor" class="custom-select">
-                    <option value="">Todas as contas</option>
-                  </select>
-                  <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                </div>
-              </div>
-
-              <div class="filter-group">
-                <label class="filter-label" for="filterDataInicio">Início</label>
-                <div class="input-wrapper">
-                  <span class="input-icon-left"><i data-lucide="calendar"></i></span>
-                  <input type="text" id="filterDataInicio" class="custom-input" value="01/07/2026" placeholder="01/07/2026">
-                </div>
-              </div>
-
-              <div class="filter-group">
-                <label class="filter-label" for="filterDataTermino">Término</label>
-                <div class="input-wrapper">
-                  <span class="input-icon-left"><i data-lucide="calendar"></i></span>
-                  <input type="text" id="filterDataTermino" class="custom-input" value="27/08/2026" placeholder="27/08/2026">
-                </div>
-              </div>
-
-              <!-- Linha 3: Spread, Valor e Botões de Ação -->
-              <div class="filters-row-3">
-                <div class="filters-row-3-left">
-                  <div class="filter-group">
-                    <label class="filter-label" for="filterSpread">Spread</label>
-                    <div class="input-wrapper">
-                      <select id="filterSpread" class="custom-select">
-                        <option value="">Todos os spreads</option>
-                      </select>
-                      <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                    </div>
-                  </div>
-
-                  <div class="filter-group">
-                    <label class="filter-label" for="filterValorMinimo">Valor (a partir de)</label>
-                    <div class="input-wrapper">
-                      <input type="text" id="filterValorMinimo" class="custom-input" value="R$ 0,00" placeholder="R$ 0,00">
-                    </div>
+            <form id="filterForm">
+              <div class="filters-grid">
+                <!-- Linha 1 -->
+                <div class="filter-group">
+                  <label class="filter-label" for="filterEmpresas">Empresas</label>
+                  <div class="input-wrapper">
+                    <span class="input-icon-left"><i data-lucide="search"></i></span>
+                    <select id="filterEmpresas" class="custom-select">
+                      <option value="">Selecionar</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
                   </div>
                 </div>
 
-                <div class="filter-actions">
-                  <button type="button" class="btn btn-ghost" id="btnClearFilters">Limpar Filtros</button>
-                  <button type="submit" class="btn btn-primary-green" id="btnApplyFilters">
+                <div class="filter-group">
+                  <label class="filter-label" for="filterParceiro">Parceiro</label>
+                  <div class="input-wrapper">
+                    <span class="input-icon-left"><i data-lucide="search"></i></span>
+                    <select id="filterParceiro" class="custom-select">
+                      <option value="">Todos os parceiros</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterTerminal">Terminal</label>
+                  <div class="input-wrapper">
+                    <span class="input-icon-left"><i data-lucide="search"></i></span>
+                    <select id="filterTerminal" class="custom-select">
+                      <option value="">Selecionar</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterFormaPagamento">Forma de Pagamento</label>
+                  <div class="input-wrapper">
+                    <select id="filterFormaPagamento" class="custom-select">
+                      <option value="">Todas</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterParcelas">Parcelas</label>
+                  <div class="input-wrapper">
+                    <select id="filterParcelas" class="custom-select">
+                      <option value="">Todas</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <!-- Linha 2 -->
+                <div class="filter-group">
+                  <label class="filter-label" for="filterBandeira">Bandeira</label>
+                  <div class="input-wrapper">
+                    <select id="filterBandeira" class="custom-select">
+                      <option value="">Todas</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterStatus">Status</label>
+                  <div class="input-wrapper">
+                    <select id="filterStatus" class="custom-select">
+                      <option value="">Todos</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterContaProvedor">Conta de Provedor</label>
+                  <div class="input-wrapper">
+                    <select id="filterContaProvedor" class="custom-select">
+                      <option value="">Todas as contas</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterDataInicio">Início</label>
+                  <div class="input-wrapper">
+                    <span class="input-icon-left"><i data-lucide="calendar"></i></span>
+                    <input type="text" id="filterDataInicio" class="custom-input" value="01/07/2026">
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterDataTermino">Término</label>
+                  <div class="input-wrapper">
+                    <span class="input-icon-left"><i data-lucide="calendar"></i></span>
+                    <input type="text" id="filterDataTermino" class="custom-input" value="27/08/2026">
+                  </div>
+                </div>
+
+                <!-- Linha 3 -->
+                <div class="filter-group">
+                  <label class="filter-label" for="filterSpread">Spread</label>
+                  <div class="input-wrapper">
+                    <select id="filterSpread" class="custom-select">
+                      <option value="">Todos os spreads</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterValor">Valor</label>
+                  <div class="input-wrapper">
+                    <input type="text" id="filterValor" class="custom-input" value="R$ 0,00">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botões de Ação do Filtro -->
+              <div class="filter-actions">
+                <button type="button" class="btn btn-ghost" id="btnClearFilters">Limpar Filtros</button>
+                <button type="submit" class="btn btn-primary-green" id="btnApplyFilters">
+                  <i data-lucide="filter"></i>
+                  <span>Filtrar</span>
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- ================= CARD 2: Totais / Métricas ================= -->
+          <section class="card kpi-card">
+            <div class="kpi-container">
+              <!-- Linha Superior: 4 Métricas Principais -->
+              <div class="kpi-row-top">
+                <div class="kpi-item">
+                  <span class="kpi-label">Total Faturamento</span>
+                  <span class="kpi-value kpi-val-dark" id="valTotalFaturamento">R$ 125.579,07</span>
+                </div>
+
+                <div class="kpi-item">
+                  <span class="kpi-label">Total Empresa</span>
+                  <span class="kpi-value kpi-val-dark" id="valTotalEmpresa">R$ 118.178,67</span>
+                </div>
+
+                <div class="kpi-item">
+                  <span class="kpi-label">Total Líquido</span>
+                  <span class="kpi-value kpi-val-blue" id="valTotalLiquido">R$ 2.177,38</span>
+                </div>
+
+                <div class="kpi-item">
+                  <span class="kpi-label">Total Parceiro</span>
+                  <span class="kpi-value kpi-val-green" id="valTotalParceiro">R$ 1.692,06</span>
+                </div>
+              </div>
+
+              <!-- Linha Inferior: 2 Métricas Auxiliares Centralizadas -->
+              <div class="kpi-row-bottom">
+                <div class="kpi-item kpi-small">
+                  <span class="kpi-label">Total Pago Clientes</span>
+                  <span class="kpi-value kpi-val-amber" id="valTotalPagoClientes">R$ 425,13</span>
+                </div>
+
+                <div class="kpi-item kpi-small">
+                  <span class="kpi-label">Total Comissão Cliente</span>
+                  <span class="kpi-value kpi-val-green" id="valTotalComissaoCliente">R$ 0,05</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ================= CARD 3: Transações Detalhadas ================= -->
+          <section class="card transactions-card">
+            <div class="transactions-header">
+              <h2 class="card-title">Transações Detalhadas</h2>
+              <button class="btn btn-primary-blue" id="btnOpenReportModal">
+                <i data-lucide="file-text"></i>
+                <span>Gerar relatório</span>
+              </button>
+            </div>
+
+            <!-- Barra de busca e totalizador da tabela -->
+            <div class="table-toolbar">
+              <div class="table-search input-wrapper">
+                <span class="input-icon-left"><i data-lucide="search"></i></span>
+                <input type="text" id="tableSearchInput" class="custom-input" placeholder="Buscar por terminal, empresa...">
+              </div>
+              <div class="table-meta-count" id="tableRecordCount">
+                Exibindo <strong>9</strong> transações
+              </div>
+            </div>
+
+            <!-- Tabela de Transações -->
+            <div class="table-responsive">
+              <table class="data-table" id="transactionsTable">
+                <thead>
+                  <tr>
+                    <th class="sortable" data-sort="terminal">Terminal</th>
+                    <th class="sortable" data-sort="date">Data</th>
+                    <th class="sortable" data-sort="company">Empresa</th>
+                    <th>Pagamento</th>
+                    <th class="sortable" data-sort="status">Status</th>
+                    <th>Taxa</th>
+                    <th class="sortable" data-sort="grossAmount">Valor Bruto</th>
+                    <th class="sortable" data-sort="netAmount">Valor Líquido</th>
+                    <th class="sortable" data-sort="spread">Spread</th>
+                    <th>Valor pago cliente</th>
+                  </tr>
+                </thead>
+                <tbody id="transactionsTableBody">
+                  <!-- Linhas preenchidas dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Paginação -->
+            <div class="pagination-container">
+              <div class="pagination-info" id="paginationInfo">
+                Página 1 de 1
+              </div>
+              <div class="pagination-controls" id="paginationControls">
+                <!-- Botões de navegação -->
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- ================= VIEW 2: EMPRESAS ================= -->
+        <div id="view-empresas" class="app-view" style="display: none;">
+          <!-- CARD 1: Pesquisar Empresas -->
+          <section class="card companies-search-card">
+            <h2 class="card-title" style="margin-bottom: 16px;">Pesquisar Empresas</h2>
+
+            <form id="companiesFilterForm">
+              <!-- Linha Superior: Campo de busca + Botões Buscar e Limpar Filtros -->
+              <div class="search-top-row">
+                <div class="input-wrapper search-main-input">
+                  <span class="input-icon-left"><i data-lucide="search"></i></span>
+                  <input type="text" id="inputSearchCompany" class="custom-input" placeholder="Buscar por nome, email ou proprietário...">
+                </div>
+                <div class="search-actions-group">
+                  <button type="submit" class="btn btn-primary-green" id="btnSearchCompanies">
                     <i data-lucide="search"></i>
-                    <span>Filtrar</span>
+                    <span>Buscar</span>
                   </button>
+                  <button type="button" class="btn btn-ghost" id="btnClearCompaniesFilters">Limpar Filtros</button>
                 </div>
               </div>
-            </div>
-          </form>
-        </section>
 
-        <!-- ================= CARD 2: Totais / Métricas (KPIs) ================= -->
-        <section class="card kpi-container">
-          <!-- Linha Superior: 4 Métricas Principais -->
-          <div class="kpi-row-top">
-            <div class="kpi-item">
-              <span class="kpi-label">Total de Faturamento</span>
-              <span class="kpi-value kpi-val-dark" id="valTotalFaturamento">R$ 125.579,07</span>
+              <!-- Linha Inferior: 4 Filtros em Grid -->
+              <div class="search-bottom-grid">
+                <div class="filter-group">
+                  <label class="filter-label" for="filterCompanyStatus">Status</label>
+                  <div class="input-wrapper">
+                    <select id="filterCompanyStatus" class="custom-select">
+                      <option value="">Todos os status</option>
+                      <option value="Ativo">Ativo</option>
+                      <option value="Inativo">Inativo</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterCompanyOrder">Ordenar por</label>
+                  <div class="input-wrapper">
+                    <select id="filterCompanyOrder" class="custom-select">
+                      <option value="recentes">Mais recentes</option>
+                      <option value="antigos">Mais antigos</option>
+                      <option value="nome_asc">Nome (A-Z)</option>
+                      <option value="nome_desc">Nome (Z-A)</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterCompanyCreatedFrom">Criado de</label>
+                  <div class="input-wrapper">
+                    <span class="input-icon-left"><i data-lucide="calendar"></i></span>
+                    <input type="text" id="filterCompanyCreatedFrom" class="custom-input" placeholder="Data inicial">
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="filter-label" for="filterCompanyCreatedTo">Criado até</label>
+                  <div class="input-wrapper">
+                    <span class="input-icon-left"><i data-lucide="calendar"></i></span>
+                    <input type="text" id="filterCompanyCreatedTo" class="custom-input" placeholder="Data final">
+                  </div>
+                </div>
+              </div>
+            </form>
+          </section>
+
+          <!-- CARD 2: Lista de Empresas -->
+          <section class="card companies-list-card" style="margin-top: 24px;">
+            <div class="companies-header">
+              <h2 class="card-title" id="companiesListTitle">Lista de Empresas (16)</h2>
+              <button class="btn btn-primary-blue" id="btnOpenNewCompanyModal">
+                <i data-lucide="plus"></i>
+                <span>Nova Empresa</span>
+              </button>
             </div>
 
-            <div class="kpi-item">
-              <span class="kpi-label">Total Empresa</span>
-              <span class="kpi-value kpi-val-blue" id="valTotalEmpresa">R$ 118.178,67</span>
+            <!-- Tabela de Empresas -->
+            <div class="table-responsive">
+              <table class="data-table" id="companiesTable">
+                <thead>
+                  <tr>
+                    <th class="sortable" data-sort="name">Nome</th>
+                    <th class="sortable" data-sort="owner">Proprietário</th>
+                    <th class="sortable" data-sort="email">Email</th>
+                    <th>Contato</th>
+                    <th class="sortable" data-sort="createdAt">Criado em</th>
+                    <th class="sortable" data-sort="status">Status</th>
+                    <th style="text-align: center;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="companiesTableBody">
+                  <!-- Linhas de empresas preenchidas via JS -->
+                </tbody>
+              </table>
             </div>
 
-            <div class="kpi-item">
-              <span class="kpi-label">Total Líquido</span>
-              <span class="kpi-value kpi-val-green" id="valTotalLiquido">R$ 2.177,38</span>
+            <!-- Paginação de Empresas -->
+            <div class="pagination-container" style="margin-top: 20px;">
+              <div class="pagination-info" id="companiesPaginationInfo">
+                Página 1 de 2
+              </div>
+              <div class="pagination-controls" id="companiesPaginationControls">
+                <!-- Botões de paginação de empresas -->
+              </div>
             </div>
-
-            <div class="kpi-item">
-              <span class="kpi-label">Total Parceiro</span>
-              <span class="kpi-value kpi-val-blue" id="valTotalParceiro">R$ 1.692,06</span>
-            </div>
-          </div>
-
-          <!-- Linha Inferior: 2 Métricas de Clientes -->
-          <div class="kpi-row-bottom">
-            <div class="kpi-item kpi-small">
-              <span class="kpi-label">Total Pago Clientes</span>
-              <span class="kpi-value kpi-val-amber" id="valTotalPagoClientes">R$ 425,13</span>
-            </div>
-
-            <div class="kpi-item kpi-small">
-              <span class="kpi-label">Total Comissão Cliente</span>
-              <span class="kpi-value kpi-val-green" id="valTotalComissaoCliente">R$ 0,05</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- ================= CARD 3: Transações Detalhadas ================= -->
-        <section class="card transactions-card">
-          <div class="transactions-header">
-            <h2 class="card-title">Transações Detalhadas</h2>
-            <button class="btn btn-primary-blue" id="btnOpenReportModal">
-              <i data-lucide="file-text"></i>
-              <span>Gerar relatório</span>
-            </button>
-          </div>
-
-          <!-- Barra de busca e totalizador da tabela -->
-          <div class="table-toolbar">
-            <div class="table-search input-wrapper">
-              <span class="input-icon-left"><i data-lucide="search"></i></span>
-              <input type="text" id="tableSearchInput" class="custom-input" placeholder="Buscar por ID, empresa, terminal...">
-            </div>
-            <div class="table-meta-count" id="tableRecordCount">
-              Exibindo <strong>11</strong> transações
-            </div>
-          </div>
-
-          <!-- Tabela de Transações -->
-          <div class="table-responsive">
-            <table class="data-table" id="transactionsTable">
-              <thead>
-                <tr>
-                  <th class="sortable" data-sort="terminal">Terminal</th>
-                  <th class="sortable" data-sort="date">Data</th>
-                  <th class="sortable" data-sort="company">Empresa</th>
-                  <th>Pagamento</th>
-                  <th class="sortable" data-sort="status">Status</th>
-                  <th>Taxa</th>
-                  <th class="sortable" data-sort="grossAmount">Valor Bruto</th>
-                  <th class="sortable" data-sort="netAmount">Valor Líquido</th>
-                  <th class="sortable" data-sort="spread">Spread</th>
-                  <th>Valor pago cliente</th>
-                </tr>
-              </thead>
-              <tbody id="transactionsTableBody">
-                <!-- Linhas preenchidas dinamicamente via JS -->
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Paginação -->
-          <div class="pagination-container">
-            <div class="pagination-info" id="paginationInfo">
-              Página 1 de 1
-            </div>
-            <div class="pagination-controls" id="paginationControls">
-              <!-- Botões de navegação -->
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </main>
     </div>
   </div>
@@ -431,6 +542,65 @@
           <span>Salvar & Conectar</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nova Empresa -->
+  <div class="modal-backdrop" id="newCompanyModal">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Cadastrar Nova Empresa</h3>
+        <button class="modal-close" id="btnCloseNewCompanyModal">&times;</button>
+      </div>
+      <form id="newCompanyForm">
+        <div class="modal-body">
+          <div class="filter-group">
+            <label class="filter-label" for="newCompanyName">Nome da Empresa *</label>
+            <div class="input-wrapper">
+              <input type="text" id="newCompanyName" class="custom-input" placeholder="Ex: MIRANTE GASTRONOMIA LTDA" required>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newCompanyOwner">Proprietário / Responsável *</label>
+            <div class="input-wrapper">
+              <input type="text" id="newCompanyOwner" class="custom-input" placeholder="Ex: Roberto Silva" required>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newCompanyEmail">Email de Contato *</label>
+            <div class="input-wrapper">
+              <input type="email" id="newCompanyEmail" class="custom-input" placeholder="Ex: contato@empresa.com.br" required>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newCompanyPhone">Telefone / WhatsApp</label>
+            <div class="input-wrapper">
+              <input type="text" id="newCompanyPhone" class="custom-input" placeholder="Ex: (41) 99122-3344">
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newCompanyStatus">Status Inicial</label>
+            <div class="input-wrapper">
+              <select id="newCompanyStatus" class="custom-select">
+                <option value="Ativo">Ativo</option>
+                <option value="Inativo">Inativo</option>
+              </select>
+              <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="btnCancelNewCompany">Cancelar</button>
+          <button type="submit" class="btn btn-primary-blue" id="btnSaveNewCompany">
+            <i data-lucide="plus"></i>
+            <span>Cadastrar Empresa</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

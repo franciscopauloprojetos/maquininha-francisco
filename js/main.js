@@ -9,7 +9,8 @@ import {
   MOCK_STATUSES,
   MOCK_PROVIDER_ACCOUNTS,
   MOCK_SPREADS,
-  MOCK_TRANSACTIONS
+  MOCK_TRANSACTIONS,
+  MOCK_COMPANIES_DATA
 } from './mockData.js';
 
 import {
@@ -19,12 +20,19 @@ import {
   SUPABASE_CONFIG
 } from './supabaseClient.js';
 
-// Application State
+// Application State - Transações
 let currentTransactions = [...MOCK_TRANSACTIONS];
 let filteredTransactions = [...MOCK_TRANSACTIONS];
 let currentPage = 1;
 const recordsPerPage = 10;
 let currentSort = { column: 'date', order: 'desc' };
+
+// Application State - Empresas
+let currentCompanies = [...MOCK_COMPANIES_DATA];
+let filteredCompanies = [...MOCK_COMPANIES_DATA];
+let companiesCurrentPage = 1;
+const companiesPerPage = 8;
+let companiesSort = { column: 'createdAt', order: 'desc' };
 
 // Initialize Lucide Icons
 function refreshIcons() {
@@ -409,8 +417,242 @@ function showTransactionDetails(id) {
   refreshIcons();
 }
 
+// View Navigation Switcher
+function switchView(viewName) {
+  const viewTransacoes = document.getElementById('view-transacoes');
+  const viewEmpresas = document.getElementById('view-empresas');
+  const navTransacoes = document.getElementById('nav-transacoes');
+  const navEmpresas = document.getElementById('nav-empresas');
+  const navDashboard = document.getElementById('nav-dashboard');
+  const pageTitle = document.getElementById('pageHeaderTitle');
+
+  // Reset active classes
+  [navTransacoes, navEmpresas, navDashboard].forEach(el => el && el.classList.remove('active'));
+
+  if (viewName === 'empresas') {
+    if (viewTransacoes) viewTransacoes.style.display = 'none';
+    if (viewEmpresas) viewEmpresas.style.display = 'block';
+    if (navEmpresas) navEmpresas.classList.add('active');
+    if (pageTitle) pageTitle.textContent = 'Empresas';
+    renderCompaniesTable();
+  } else if (viewName === 'dashboard') {
+    if (viewEmpresas) viewEmpresas.style.display = 'none';
+    if (viewTransacoes) viewTransacoes.style.display = 'block';
+    if (navDashboard) navDashboard.classList.add('active');
+    if (pageTitle) pageTitle.textContent = 'Dashboard';
+  } else {
+    // Default: transacoes
+    if (viewEmpresas) viewEmpresas.style.display = 'none';
+    if (viewTransacoes) viewTransacoes.style.display = 'block';
+    if (navTransacoes) navTransacoes.classList.add('active');
+    if (pageTitle) pageTitle.textContent = 'Transações';
+  }
+  refreshIcons();
+}
+
+// Render Companies Table
+function renderCompaniesTable() {
+  const tbody = document.getElementById('companiesTableBody');
+  const titleEl = document.getElementById('companiesListTitle');
+  if (!tbody) return;
+
+  // Sorting
+  filteredCompanies.sort((a, b) => {
+    let valA = a[companiesSort.column] || '';
+    let valB = b[companiesSort.column] || '';
+
+    if (typeof valA === 'string') {
+      return companiesSort.order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    }
+    return companiesSort.order === 'asc' ? valA - valB : valB - valA;
+  });
+
+  const totalRecords = filteredCompanies.length;
+  const totalPages = Math.ceil(totalRecords / companiesPerPage) || 1;
+  if (companiesCurrentPage > totalPages) companiesCurrentPage = totalPages;
+
+  const startIndex = (companiesCurrentPage - 1) * companiesPerPage;
+  const endIndex = Math.min(startIndex + companiesPerPage, totalRecords);
+  const currentSlice = filteredCompanies.slice(startIndex, endIndex);
+
+  if (titleEl) {
+    titleEl.textContent = `Lista de Empresas (${totalRecords})`;
+  }
+
+  if (totalRecords === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+          Nenhuma empresa encontrada com os filtros pesquisados.
+        </td>
+      </tr>
+    `;
+    renderCompaniesPagination(totalPages);
+    return;
+  }
+
+  tbody.innerHTML = currentSlice.map(comp => {
+    const statusBadge = comp.status === 'Ativo'
+      ? `<span class="badge-company-active">Ativo</span>`
+      : `<span class="badge-company-inactive">Inativo</span>`;
+
+    return `
+      <tr>
+        <td class="cell-company-name">${comp.name}</td>
+        <td class="cell-owner">${comp.owner}</td>
+        <td class="cell-email">${comp.email}</td>
+        <td class="cell-contact">${comp.phone || '-'}</td>
+        <td class="cell-created-at">${comp.createdAt}</td>
+        <td>${statusBadge}</td>
+        <td style="text-align: center;">
+          <button class="btn-delete-company delete-comp-btn" data-id="${comp.id}" title="Excluir Empresa">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  renderCompaniesPagination(totalPages);
+  refreshIcons();
+
+  // Attach delete events
+  document.querySelectorAll('.delete-comp-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      deleteCompany(id);
+    });
+  });
+}
+
+// Render Companies Pagination
+function renderCompaniesPagination(totalPages) {
+  const info = document.getElementById('companiesPaginationInfo');
+  const controls = document.getElementById('companiesPaginationControls');
+  if (!info || !controls) return;
+
+  info.textContent = `Página ${companiesCurrentPage} de ${totalPages}`;
+
+  let buttonsHtml = `
+    <button class="page-btn" id="btnCompPrevPage" ${companiesCurrentPage === 1 ? 'disabled' : ''}>
+      <i data-lucide="chevron-left" style="width: 15px; height: 15px;"></i>
+    </button>
+  `;
+
+  for (let i = 1; i <= totalPages; i++) {
+    buttonsHtml += `
+      <button class="page-btn ${i === companiesCurrentPage ? 'active' : ''}" data-comp-page="${i}">
+        ${i}
+      </button>
+    `;
+  }
+
+  buttonsHtml += `
+    <button class="page-btn" id="btnCompNextPage" ${companiesCurrentPage === totalPages ? 'disabled' : ''}>
+      <i data-lucide="chevron-right" style="width: 15px; height: 15px;"></i>
+    </button>
+  `;
+
+  controls.innerHTML = buttonsHtml;
+
+  controls.querySelectorAll('.page-btn[data-comp-page]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      companiesCurrentPage = parseInt(btn.getAttribute('data-comp-page'));
+      renderCompaniesTable();
+    });
+  });
+
+  const prev = document.getElementById('btnCompPrevPage');
+  const next = document.getElementById('btnCompNextPage');
+  if (prev) {
+    prev.addEventListener('click', () => {
+      if (companiesCurrentPage > 1) {
+        companiesCurrentPage--;
+        renderCompaniesTable();
+      }
+    });
+  }
+  if (next) {
+    next.addEventListener('click', () => {
+      if (companiesCurrentPage < totalPages) {
+        companiesCurrentPage++;
+        renderCompaniesTable();
+      }
+    });
+  }
+}
+
+// Delete company
+function deleteCompany(id) {
+  const comp = currentCompanies.find(c => c.id === id);
+  const name = comp ? comp.name : 'Empresa';
+  if (confirm(`Deseja realmente excluir a empresa "${name}"?`)) {
+    currentCompanies = currentCompanies.filter(c => c.id !== id);
+    filteredCompanies = filteredCompanies.filter(c => c.id !== id);
+    renderCompaniesTable();
+    showToast(`Empresa "${name}" excluída com sucesso.`);
+  }
+}
+
+// Filter Companies Handler
+function filterCompanies() {
+  const term = document.getElementById('inputSearchCompany')?.value.trim().toLowerCase() || '';
+  const status = document.getElementById('filterCompanyStatus')?.value || '';
+  const order = document.getElementById('filterCompanyOrder')?.value || 'recentes';
+
+  filteredCompanies = currentCompanies.filter(comp => {
+    if (term) {
+      const matchName = comp.name.toLowerCase().includes(term);
+      const matchOwner = comp.owner.toLowerCase().includes(term);
+      const matchEmail = comp.email.toLowerCase().includes(term);
+      if (!matchName && !matchOwner && !matchEmail) return false;
+    }
+    if (status && comp.status !== status) return false;
+    return true;
+  });
+
+  if (order === 'nome_asc') {
+    companiesSort = { column: 'name', order: 'asc' };
+  } else if (order === 'nome_desc') {
+    companiesSort = { column: 'name', order: 'desc' };
+  } else if (order === 'antigos') {
+    companiesSort = { column: 'createdAt', order: 'asc' };
+  } else {
+    companiesSort = { column: 'createdAt', order: 'desc' };
+  }
+
+  companiesCurrentPage = 1;
+  renderCompaniesTable();
+}
+
 // Setup Event Listeners
 function setupEvents() {
+  // Sidebar View Switchers
+  const navDashboard = document.getElementById('nav-dashboard');
+  const navEmpresas = document.getElementById('nav-empresas');
+  const navTransacoes = document.getElementById('nav-transacoes');
+
+  if (navDashboard) {
+    navDashboard.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchView('dashboard');
+    });
+  }
+
+  if (navEmpresas) {
+    navEmpresas.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchView('empresas');
+    });
+  }
+
+  if (navTransacoes) {
+    navTransacoes.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchView('transacoes');
+    });
+  }
+
   // Sidebar Toggle
   const sidebar = document.getElementById('sidebar');
   const sidebarToggle = document.getElementById('sidebarToggle');
@@ -420,82 +662,175 @@ function setupEvents() {
     });
   }
 
-  // Filter Form Submit
+  // Filter Form Submit (Transações)
   const filterForm = document.getElementById('filterForm');
-  filterForm.addEventListener('submit', (e) => {
-    e.preventDefault();
+  if (filterForm) {
+    filterForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const empresa = document.getElementById('filterEmpresas').value;
+      const parceiro = document.getElementById('filterParceiro').value;
+      const terminal = document.getElementById('filterTerminal').value;
+      const metodo = document.getElementById('filterFormaPagamento').value;
+      const bandeira = document.getElementById('filterBandeira').value;
+      const status = document.getElementById('filterStatus').value;
 
-    const empresa = document.getElementById('filterEmpresas').value;
-    const parceiro = document.getElementById('filterParceiro').value;
-    const terminal = document.getElementById('filterTerminal').value;
-    const metodo = document.getElementById('filterFormaPagamento').value;
-    const bandeira = document.getElementById('filterBandeira').value;
-    const status = document.getElementById('filterStatus').value;
-
-    filteredTransactions = currentTransactions.filter(tx => {
-      if (empresa && tx.company !== empresa) return false;
-      if (parceiro && tx.partner !== parceiro) return false;
-      if (terminal && !tx.terminal.includes(terminal)) return false;
-      if (metodo && !tx.method.includes(metodo)) return false;
-      if (bandeira && tx.brand !== bandeira) return false;
-      if (status && tx.status !== status) return false;
-      return true;
-    });
-
-    currentPage = 1;
-    renderTable();
-    updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
-    showToast('Filtros aplicados com sucesso!');
-  });
-
-  // Clear Filters
-  const btnClearFilters = document.getElementById('btnClearFilters');
-  btnClearFilters.addEventListener('click', () => {
-    filterForm.reset();
-    document.getElementById('filterDataInicio').value = '01/07/2026';
-    document.getElementById('filterDataTermino').value = '27/08/2026';
-    document.getElementById('filterValorMinimo').value = 'R$ 0,00';
-
-    filteredTransactions = [...currentTransactions];
-    currentPage = 1;
-    renderTable();
-    updateKPIs(INITIAL_KPIS);
-    showToast('Filtros redefinidos para o padrão!');
-  });
-
-  // Table Search
-  const tableSearchInput = document.getElementById('tableSearchInput');
-  tableSearchInput.addEventListener('input', (e) => {
-    const term = e.target.value.toLowerCase().trim();
-    if (!term) {
-      filteredTransactions = [...currentTransactions];
-    } else {
       filteredTransactions = currentTransactions.filter(tx => {
-        return (
-          tx.id.toLowerCase().includes(term) ||
-          tx.company.toLowerCase().includes(term) ||
-          tx.partner.toLowerCase().includes(term) ||
-          tx.terminal.toLowerCase().includes(term) ||
-          tx.brand.toLowerCase().includes(term) ||
-          tx.status.toLowerCase().includes(term)
-        );
+        if (empresa && tx.company !== empresa) return false;
+        if (parceiro && tx.partner !== parceiro) return false;
+        if (terminal && !tx.terminal.includes(terminal)) return false;
+        if (metodo && !tx.method.includes(metodo)) return false;
+        if (bandeira && tx.brand !== bandeira) return false;
+        if (status && tx.status !== status) return false;
+        return true;
       });
-    }
-    currentPage = 1;
-    renderTable();
-  });
 
-  // Sort Table Columns
+      currentPage = 1;
+      renderTable();
+      updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
+      showToast(`Filtros aplicados! ${filteredTransactions.length} transações encontradas.`);
+    });
+  }
+
+  // Clear Filters (Transações)
+  const btnClearFilters = document.getElementById('btnClearFilters');
+  if (btnClearFilters) {
+    btnClearFilters.addEventListener('click', () => {
+      filterForm.reset();
+      filteredTransactions = [...currentTransactions];
+      currentPage = 1;
+      renderTable();
+      updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
+      showToast('Filtros de transação limpos.');
+    });
+  }
+
+  // Search Input (Transações)
+  const searchInput = document.getElementById('tableSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase().trim();
+      if (!term) {
+        filteredTransactions = [...currentTransactions];
+      } else {
+        filteredTransactions = currentTransactions.filter(tx => {
+          return (
+            tx.id.toLowerCase().includes(term) ||
+            tx.company.toLowerCase().includes(term) ||
+            (tx.partner && tx.partner.toLowerCase().includes(term)) ||
+            tx.terminal.toLowerCase().includes(term) ||
+            tx.brand.toLowerCase().includes(term) ||
+            tx.status.toLowerCase().includes(term)
+          );
+        });
+      }
+      currentPage = 1;
+      renderTable();
+    });
+  }
+
+  // Companies Search & Filters
+  const companiesFilterForm = document.getElementById('companiesFilterForm');
+  if (companiesFilterForm) {
+    companiesFilterForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      filterCompanies();
+      showToast(`Pesquisa de empresas realizada! ${filteredCompanies.length} encontradas.`);
+    });
+  }
+
+  const inputSearchCompany = document.getElementById('inputSearchCompany');
+  if (inputSearchCompany) {
+    inputSearchCompany.addEventListener('input', () => {
+      filterCompanies();
+    });
+  }
+
+  const filterCompanyStatus = document.getElementById('filterCompanyStatus');
+  if (filterCompanyStatus) filterCompanyStatus.addEventListener('change', filterCompanies);
+
+  const filterCompanyOrder = document.getElementById('filterCompanyOrder');
+  if (filterCompanyOrder) filterCompanyOrder.addEventListener('change', filterCompanies);
+
+  const btnClearCompaniesFilters = document.getElementById('btnClearCompaniesFilters');
+  if (btnClearCompaniesFilters) {
+    btnClearCompaniesFilters.addEventListener('click', () => {
+      if (companiesFilterForm) companiesFilterForm.reset();
+      filteredCompanies = [...currentCompanies];
+      companiesCurrentPage = 1;
+      renderCompaniesTable();
+      showToast('Filtros de empresas limpos.');
+    });
+  }
+
+  // Modal: Nova Empresa
+  const newCompanyModal = document.getElementById('newCompanyModal');
+  const btnOpenNewCompanyModal = document.getElementById('btnOpenNewCompanyModal');
+  const btnCloseNewCompanyModal = document.getElementById('btnCloseNewCompanyModal');
+  const btnCancelNewCompany = document.getElementById('btnCancelNewCompany');
+  const newCompanyForm = document.getElementById('newCompanyForm');
+
+  const closeNewCompanyModal = () => newCompanyModal?.classList.remove('open');
+
+  if (btnOpenNewCompanyModal) {
+    btnOpenNewCompanyModal.addEventListener('click', () => {
+      newCompanyModal?.classList.add('open');
+    });
+  }
+
+  if (btnCloseNewCompanyModal) btnCloseNewCompanyModal.addEventListener('click', closeNewCompanyModal);
+  if (btnCancelNewCompany) btnCancelNewCompany.addEventListener('click', closeNewCompanyModal);
+
+  if (newCompanyForm) {
+    newCompanyForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('newCompanyName').value.trim();
+      const owner = document.getElementById('newCompanyOwner').value.trim();
+      const email = document.getElementById('newCompanyEmail').value.trim();
+      const phone = document.getElementById('newCompanyPhone').value.trim();
+      const status = document.getElementById('newCompanyStatus').value;
+
+      const newComp = {
+        id: `EMP-${Date.now().toString().slice(-4)}`,
+        name: name.toUpperCase(),
+        owner: owner.toUpperCase(),
+        email: email.toLowerCase(),
+        phone: phone || '(41) 99999-0000',
+        createdAt: new Date().toLocaleDateString('pt-BR'),
+        status: status || 'Ativo'
+      };
+
+      currentCompanies.unshift(newComp);
+      filteredCompanies.unshift(newComp);
+      newCompanyForm.reset();
+      closeNewCompanyModal();
+      renderCompaniesTable();
+      showToast(`Empresa "${newComp.name}" cadastrada com sucesso!`);
+    });
+  }
+
+  // Sort Table Columns (Geral)
   document.querySelectorAll('.data-table th.sortable').forEach(th => {
     th.addEventListener('click', () => {
       const col = th.getAttribute('data-sort');
-      if (currentSort.column === col) {
-        currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+      const table = th.closest('table');
+
+      if (table.id === 'companiesTable') {
+        if (companiesSort.column === col) {
+          companiesSort.order = companiesSort.order === 'asc' ? 'desc' : 'asc';
+        } else {
+          companiesSort.column = col;
+          companiesSort.order = 'asc';
+        }
+        renderCompaniesTable();
       } else {
-        currentSort.column = col;
-        currentSort.order = 'asc';
+        if (currentSort.column === col) {
+          currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.column = col;
+          currentSort.order = 'asc';
+        }
+        renderTable();
       }
-      renderTable();
     });
   });
 
@@ -506,26 +841,28 @@ function setupEvents() {
   const btnCancelReport = document.getElementById('btnCancelReport');
   const btnConfirmReport = document.getElementById('btnConfirmReport');
 
-  const closeReportModal = () => reportModal.classList.remove('open');
+  const closeReportModal = () => reportModal?.classList.remove('open');
 
-  btnOpenReportModal.addEventListener('click', () => reportModal.classList.add('open'));
-  btnCloseReportModal.addEventListener('click', closeReportModal);
-  btnCancelReport.addEventListener('click', closeReportModal);
+  if (btnOpenReportModal) btnOpenReportModal.addEventListener('click', () => reportModal?.classList.add('open'));
+  if (btnCloseReportModal) btnCloseReportModal.addEventListener('click', closeReportModal);
+  if (btnCancelReport) btnCancelReport.addEventListener('click', closeReportModal);
 
-  btnConfirmReport.addEventListener('click', () => {
-    const format = document.getElementById('reportFormat').value.toUpperCase();
-    closeReportModal();
-    showToast(`Relatório exportado em formato ${format} com sucesso!`);
-  });
+  if (btnConfirmReport) {
+    btnConfirmReport.addEventListener('click', () => {
+      const format = document.getElementById('reportFormat').value.toUpperCase();
+      closeReportModal();
+      showToast(`Relatório exportado em formato ${format} com sucesso!`);
+    });
+  }
 
   // Modal: Detalhes
   const detailsModal = document.getElementById('detailsModal');
   const btnCloseDetailsModal = document.getElementById('btnCloseDetailsModal');
   const btnCloseDetailsBtn = document.getElementById('btnCloseDetailsBtn');
 
-  const closeDetailsModal = () => detailsModal.classList.remove('open');
-  btnCloseDetailsModal.addEventListener('click', closeDetailsModal);
-  btnCloseDetailsBtn.addEventListener('click', closeDetailsModal);
+  const closeDetailsModal = () => detailsModal?.classList.remove('open');
+  if (btnCloseDetailsModal) btnCloseDetailsModal.addEventListener('click', closeDetailsModal);
+  if (btnCloseDetailsBtn) btnCloseDetailsBtn.addEventListener('click', closeDetailsModal);
 
   // Modal: Supabase
   const supabaseModal = document.getElementById('supabaseModal');
@@ -536,13 +873,13 @@ function setupEvents() {
   const inputSupabaseUrl = document.getElementById('inputSupabaseUrl');
   const inputSupabaseKey = document.getElementById('inputSupabaseKey');
 
-  const closeSupabaseModal = () => supabaseModal.classList.remove('open');
+  const closeSupabaseModal = () => supabaseModal?.classList.remove('open');
 
   if (btnOpenSupabaseModal) {
     btnOpenSupabaseModal.addEventListener('click', () => {
       inputSupabaseUrl.value = SUPABASE_CONFIG.url || '';
       inputSupabaseKey.value = SUPABASE_CONFIG.anonKey || '';
-      supabaseModal.classList.add('open');
+      supabaseModal?.classList.add('open');
     });
   }
 
@@ -569,10 +906,11 @@ function setupEvents() {
     if (e.target === reportModal) closeReportModal();
     if (e.target === detailsModal) closeDetailsModal();
     if (e.target === supabaseModal) closeSupabaseModal();
+    if (e.target === newCompanyModal) closeNewCompanyModal();
   });
 
   // Logout button simulation
-  document.getElementById('logoutBtn').addEventListener('click', () => {
+  document.getElementById('logoutBtn')?.addEventListener('click', () => {
     showToast('Sessão encerrada com sucesso.', 'success');
   });
 }
@@ -616,6 +954,7 @@ async function loadInitialData() {
 
   currentPage = 1;
   renderTable();
+  renderCompaniesTable();
   updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
 }
 

@@ -620,8 +620,115 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* ==========================================================================
-   Modal de Relatório / Detalhes
+   Seção de Empresas
    ========================================================================== */
+.companies-search-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-top-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.search-main-input {
+  flex: 1;
+}
+
+.search-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.companies-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.cell-company-name {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.cell-owner {
+  color: #334155;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.cell-email {
+  color: #475569;
+  font-size: 13px;
+}
+
+.cell-contact {
+  color: #475569;
+  font-size: 13px;
+}
+
+.cell-created-at {
+  color: #334155;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.badge-company-active {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 14px;
+  background-color: #ecfdf5;
+  color: #059669;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-company-inactive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 14px;
+  background-color: #f1f5f9;
+  color: #64748b;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-delete-company {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: #ef4444;
+  transition: all var(--transition-fast);
+}
+
+.btn-delete-company:hover {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.btn-delete-company svg {
+  width: 16px;
+  height: 16px;
+}
 .modal-backdrop {
   position: fixed;
   top: 0;

@@ -14,6 +14,11 @@ export const INITIAL_KPIS = {
 
 export const MOCK_COMPANIES = [
   "Selecionar",
+  "ESSENCE BEAUTY MIND",
+  "WILLYAN",
+  "ALINE RENATA DA ROSA",
+  "EVANDRO CARNIEL",
+  "VICTOR HUGO ALVES",
   "MIRANTE BRISA MAR GASTRONOMIA",
   "K. SA CAFES ESPECIAIS LTDA",
   "Auto Posto Alvorada Ltda",
@@ -244,5 +249,152 @@ export const MOCK_TRANSACTIONS = [
     spread: 0.79,
     clientPaid: null,
     providerAccount: "001 - Banco do Brasil"
+  }
+];
+
+export const MOCK_COMPANIES_DATA = [
+  {
+    id: "EMP-001",
+    name: "ESSENCE BEAUTY MIND",
+    owner: "ESSENCE",
+    email: "eliselima.06@gmail.com",
+    phone: "(41) 98485-8140",
+    createdAt: "11/08/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-002",
+    name: "WILLYAN",
+    owner: "WILLYAN",
+    email: "willyansoaresbarbosa70@gmail.com",
+    phone: "(58) 84968-981",
+    createdAt: "11/08/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-003",
+    name: "ALINE RENATA DA ROSA",
+    owner: "ALINE",
+    email: "alinerentadarosa155@gmail.com",
+    phone: "(41) 98788-0938",
+    createdAt: "11/08/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-004",
+    name: "EVANDRO CARNIEL",
+    owner: "EVANDRO",
+    email: "evandrocarniel23@gmail.com",
+    phone: "(43) 99928-1144",
+    createdAt: "10/08/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-005",
+    name: "VICTOR HUGO ALVES",
+    owner: "Victor",
+    email: "vhafumagalli@gmail.com",
+    phone: "(41) 99746-2339",
+    createdAt: "03/08/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-006",
+    name: "MIRANTE BRISA MAR GASTRONOMIA",
+    owner: "ROBERTO",
+    email: "contato@mirantebrisa.com.br",
+    phone: "(41) 99122-3344",
+    createdAt: "01/08/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-007",
+    name: "K. SA CAFES ESPECIAIS LTDA",
+    owner: "KARINA",
+    email: "financeiro@ksacafes.com.br",
+    phone: "(41) 98877-6655",
+    createdAt: "28/07/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-008",
+    name: "DROGARIA CENTRAL POPULAR",
+    owner: "MARCOS",
+    email: "drogaria.central@gmail.com",
+    phone: "(41) 3344-5566",
+    createdAt: "25/07/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-009",
+    name: "SUPERMERCADO REAL SUPER",
+    owner: "FRANCISCO",
+    email: "compras@realsuper.com.br",
+    phone: "(41) 98711-2233",
+    createdAt: "20/07/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-010",
+    name: "PADARIA & CONFEITARIA ESTRELA",
+    owner: "ESTELA",
+    email: "padariaestrela@hotmail.com",
+    phone: "(41) 3211-9988",
+    createdAt: "18/07/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-011",
+    name: "BOUTIQUE BELLA MODA",
+    owner: "ISABELLA",
+    email: "bella.moda@gmail.com",
+    phone: "(41) 99655-4433",
+    createdAt: "15/07/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-012",
+    name: "TECH PRIME ELETRONICOS",
+    owner: "LUCAS",
+    email: "techprime@eletronicos.com",
+    phone: "(41) 98400-1122",
+    createdAt: "12/07/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-013",
+    name: "OTICA NOVA VISAO LTDA",
+    owner: "CLAUDIO",
+    email: "otica.novavisao@gmail.com",
+    phone: "(41) 3322-1100",
+    createdAt: "10/07/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-014",
+    name: "MECANICA EXPRESS AUTO",
+    owner: "PAULO",
+    email: "express.auto@gmail.com",
+    phone: "(41) 98800-7788",
+    createdAt: "05/07/2026",
+    status: "Inativo"
+  },
+  {
+    id: "EMP-015",
+    name: "RESTAURANTE SABOR & ARTE",
+    owner: "ARTHUR",
+    email: "saborarte@restaurante.com",
+    phone: "(41) 99111-2299",
+    createdAt: "02/07/2026",
+    status: "Ativo"
+  },
+  {
+    id: "EMP-016",
+    name: "AUTO POSTO ALVORADA LTDA",
+    owner: "ANTONIO",
+    email: "postoalvorada@gmail.com",
+    phone: "(41) 3355-7799",
+    createdAt: "01/07/2026",
+    status: "Ativo"
   }
 ];
