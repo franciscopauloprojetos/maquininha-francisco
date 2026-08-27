@@ -955,7 +955,6 @@ function renderRatesTable() {
       <tr>
         <td class="cell-company-name">
           <strong>${comp.name}</strong>
-          <div style="font-size: 11px; color: #94a3b8; font-family: monospace;">${comp.id} • Criado em ${comp.createdAt}</div>
         </td>
         <td class="cell-doc" style="font-family: monospace; font-size: 12px; color: #475569;">${comp.doc || '-'}</td>
         <td>
