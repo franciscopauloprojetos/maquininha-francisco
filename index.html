@@ -398,12 +398,12 @@
 
         <!-- ================= VIEW 2: EMPRESAS (Com Árvore Integrada para o Admin) ================= -->
         <div id="view-empresas" class="app-view" style="display: none;">
-          <!-- Alternador Exclusivo para o Admin (Empresas vs Árvore da Rede) -->
+          <!-- Alternador Exclusivo para o Admin (Pessoas/Empresas vs Árvore da Rede) -->
           <div id="adminCompaniesViewToggle" class="companies-admin-toggle-wrapper" style="display: none; margin-bottom: 20px;">
             <div class="view-mode-toggle">
               <button type="button" class="btn-toggle-mode active" id="btnEmpresasTabList">
                 <i data-lucide="building-2"></i>
-                <span>Lista de Empresas</span>
+                <span>Lista de Pessoas/Empresas</span>
               </button>
               <button type="button" class="btn-toggle-mode" id="btnEmpresasTabTree">
                 <i data-lucide="git-fork"></i>
@@ -412,18 +412,18 @@
             </div>
           </div>
 
-          <!-- CONTAINER 1: Lista de Empresas (Visão Padrão para todos) -->
+          <!-- CONTAINER 1: Lista de Pessoas/Empresas (Visão Padrão para todos) -->
           <div id="companiesListContainer">
-            <!-- CARD 1: Pesquisar Empresas -->
+            <!-- CARD 1: Pesquisar Pessoas/Empresas -->
             <section class="card companies-search-card">
-              <h2 class="card-title" style="margin-bottom: 16px;">Pesquisar Empresas</h2>
+              <h2 class="card-title" style="margin-bottom: 16px;">Pesquisar Pessoas/Empresas</h2>
 
               <form id="companiesFilterForm">
                 <!-- Linha Superior: Campo de busca + Botões Buscar e Limpar Filtros -->
                 <div class="search-top-row">
                   <div class="input-wrapper search-main-input">
                     <span class="input-icon-left"><i data-lucide="search"></i></span>
-                    <input type="text" id="inputSearchCompany" class="custom-input" placeholder="Buscar por nome, email ou proprietário...">
+                    <input type="text" id="inputSearchCompany" class="custom-input" placeholder="Buscar por nome, CPF/CNPJ, email ou telefone...">
                   </div>
                   <div class="search-actions-group">
                     <button type="submit" class="btn btn-primary-green" id="btnSearchCompanies">
@@ -480,11 +480,11 @@
               </form>
             </section>
 
-            <!-- CARD 2: Lista de Empresas -->
+            <!-- CARD 2: Lista de Pessoas/Empresas -->
             <section class="card companies-list-card" style="margin-top: 24px;">
               <div class="companies-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
                 <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-                  <h2 class="card-title" id="companiesListTitle">Lista de Empresas (16)</h2>
+                  <h2 class="card-title" id="companiesListTitle">Lista de Pessoas/Empresas (16)</h2>
                   <!-- Barra de Ações em Massa (Exclusão em Massa) -->
                   <div id="companiesBulkActionBar" style="display: none; align-items: center; gap: 8px;">
                     <button type="button" class="btn btn-danger" id="btnDeleteSelectedCompanies" style="background-color: #ef4444; color: #ffffff; height: 34px; padding: 0 14px; font-size: 12.5px; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; box-shadow: 0 1px 3px rgba(239, 68, 68, 0.25);">
@@ -499,11 +499,11 @@
 
                 <button class="btn btn-primary-blue" id="btnOpenNewCompanyModal">
                   <i data-lucide="plus"></i>
-                  <span>Nova Empresa</span>
+                  <span>Nova Pessoa/Empresa</span>
                 </button>
               </div>
 
-              <!-- Tabela de Empresas -->
+              <!-- Tabela de Pessoas/Empresas -->
               <div class="table-responsive">
                 <table class="data-table" id="companiesTable">
                   <thead>
@@ -512,9 +512,9 @@
                         <input type="checkbox" id="checkAllCompanies" title="Selecionar / Deselecionar todas" style="cursor: pointer; width: 16px; height: 16px; accent-color: #1d68d8;">
                       </th>
                       <th class="sortable" data-sort="name">Nome</th>
-                      <th class="sortable" data-sort="owner">Proprietário</th>
+                      <th class="sortable" data-sort="doc">CPF/CNPJ</th>
                       <th class="sortable" data-sort="email">Email</th>
-                      <th>Contato</th>
+                      <th>Número de Telefone</th>
                       <th class="sortable" data-sort="createdAt">Criado em</th>
                       <th class="sortable" data-sort="status">Status</th>
                       <th style="text-align: center;">Ações</th>
@@ -830,36 +830,36 @@
   <div class="modal-backdrop" id="newCompanyModal">
     <div class="modal-card" style="max-width: 520px;">
       <div class="modal-header">
-        <h3 class="modal-title">Cadastrar Nova Empresa</h3>
+        <h3 class="modal-title">Cadastrar Nova Pessoa/Empresa</h3>
         <button class="modal-close" id="btnCloseNewCompanyModal">&times;</button>
       </div>
       <form id="newCompanyForm">
         <div class="modal-body">
           <div class="filter-group">
-            <label class="filter-label" for="newCompanyName">Nome da Empresa *</label>
+            <label class="filter-label" for="newCompanyName">Nome: *</label>
             <div class="input-wrapper">
-              <input type="text" id="newCompanyName" class="custom-input" placeholder="Ex: MIRANTE GASTRONOMIA LTDA" required>
+              <input type="text" id="newCompanyName" class="custom-input" placeholder="Digite o nome completo ou razão social" required>
             </div>
           </div>
 
           <div class="filter-group">
-            <label class="filter-label" for="newCompanyOwner">Proprietário / Responsável *</label>
+            <label class="filter-label" for="newCompanyDoc">CPF/CNPJ: *</label>
             <div class="input-wrapper">
-              <input type="text" id="newCompanyOwner" class="custom-input" placeholder="Ex: Roberto Silva" required>
+              <input type="text" id="newCompanyDoc" class="custom-input" placeholder="000.000.000-00 ou 00.000.000/0000-00" maxlength="18" required>
             </div>
           </div>
 
           <div class="filter-group">
-            <label class="filter-label" for="newCompanyEmail">Email de Contato *</label>
+            <label class="filter-label" for="newCompanyPhone">Número de Telefone: *</label>
             <div class="input-wrapper">
-              <input type="email" id="newCompanyEmail" class="custom-input" placeholder="Ex: contato@empresa.com.br" required>
+              <input type="text" id="newCompanyPhone" class="custom-input" placeholder="( ) 9999-9999" maxlength="15" required>
             </div>
           </div>
 
           <div class="filter-group">
-            <label class="filter-label" for="newCompanyPhone">Telefone / WhatsApp</label>
+            <label class="filter-label" for="newCompanyEmail">E-mail: *</label>
             <div class="input-wrapper">
-              <input type="text" id="newCompanyPhone" class="custom-input" placeholder="Ex: (41) 99122-3344">
+              <input type="email" id="newCompanyEmail" class="custom-input" placeholder="nome@exemplo.com" required>
             </div>
           </div>
 
@@ -888,7 +888,7 @@
           <button type="button" class="btn btn-ghost" id="btnCancelNewCompany">Cancelar</button>
           <button type="submit" class="btn btn-primary-blue" id="btnSaveNewCompany">
             <i data-lucide="plus"></i>
-            <span>Cadastrar Empresa</span>
+            <span>Cadastrar Pessoa/Empresa</span>
           </button>
         </div>
       </form>

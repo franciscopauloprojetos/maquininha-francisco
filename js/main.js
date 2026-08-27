@@ -437,6 +437,32 @@ function showTransactionDetails(id) {
 }
 
 // View Navigation Switcher
+// Mask and formatting helpers
+function formatCpfCnpj(value) {
+  const digits = (value || '').replace(/\D/g, '').slice(0, 14);
+  if (digits.length <= 11) {
+    return digits
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  } else {
+    return digits
+      .replace(/^(\d{2})(\d)/, '$1.$2')
+      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+  }
+}
+
+function formatPhone(value) {
+  const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+}
+
 // Get companies allowed for the current logged-in user (Lineage based)
 function getAllowedCompanies() {
   const currentUser = getCurrentUser();
@@ -506,7 +532,7 @@ function switchView(viewName) {
     if (viewDashboard) viewDashboard.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'block';
     if (navEmpresas) navEmpresas.classList.add('active');
-    if (pageTitle) pageTitle.textContent = 'Empresas';
+    if (pageTitle) pageTitle.textContent = 'Pessoas / Empresas';
 
     // Configure Admin vs Partner view inside Empresas
     if (isAdmin) {
@@ -630,14 +656,14 @@ function renderCompaniesTable() {
   const currentSlice = filteredCompanies.slice(startIndex, endIndex);
 
   if (titleEl) {
-    titleEl.textContent = `Lista de Empresas (${totalRecords})`;
+    titleEl.textContent = `Lista de Pessoas/Empresas (${totalRecords})`;
   }
 
   if (totalRecords === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
-          Nenhuma empresa encontrada com os filtros pesquisados.
+          Nenhum registro encontrado com os filtros pesquisados.
         </td>
       </tr>
     `;
@@ -658,14 +684,14 @@ function renderCompaniesTable() {
         <td style="text-align: center; width: 44px;">
           <input type="checkbox" class="check-company-item" data-id="${comp.id}" ${isChecked} style="cursor: pointer; width: 16px; height: 16px; accent-color: #1d68d8;">
         </td>
-        <td class="cell-company-name">${comp.name}</td>
-        <td class="cell-owner">${comp.owner}</td>
+        <td class="cell-company-name"><strong>${comp.name}</strong></td>
+        <td class="cell-doc" style="font-family: monospace; font-size: 12px; color: #475569;">${comp.doc || '-'}</td>
         <td class="cell-email">${comp.email}</td>
         <td class="cell-contact">${comp.phone || '-'}</td>
         <td class="cell-created-at">${comp.createdAt}</td>
         <td>${statusBadge}</td>
         <td style="text-align: center;">
-          <button class="btn-delete-company delete-comp-btn" data-id="${comp.id}" title="Excluir Empresa">
+          <button class="btn-delete-company delete-comp-btn" data-id="${comp.id}" title="Excluir Registro">
             <i data-lucide="trash-2"></i>
           </button>
         </td>
@@ -759,12 +785,12 @@ function renderCompaniesPagination(totalPages) {
 // Delete company
 function deleteCompany(id) {
   const comp = currentCompanies.find(c => c.id === id);
-  const name = comp ? comp.name : 'Empresa';
-  if (confirm(`Deseja realmente excluir a empresa "${name}"?`)) {
+  const name = comp ? comp.name : 'Registro';
+  if (confirm(`Deseja realmente excluir "${name}"?`)) {
     currentCompanies = currentCompanies.filter(c => c.id !== id);
     filteredCompanies = filteredCompanies.filter(c => c.id !== id);
     renderCompaniesTable();
-    showToast(`Empresa "${name}" excluída com sucesso.`);
+    showToast(`"${name}" excluído(a) com sucesso.`);
   }
 }
 
@@ -778,10 +804,12 @@ function filterCompanies() {
 
   filteredCompanies = baseCompanies.filter(comp => {
     if (term) {
-      const matchName = comp.name.toLowerCase().includes(term);
-      const matchOwner = comp.owner.toLowerCase().includes(term);
-      const matchEmail = comp.email.toLowerCase().includes(term);
-      if (!matchName && !matchOwner && !matchEmail) return false;
+      const matchName = (comp.name || '').toLowerCase().includes(term);
+      const matchDoc = (comp.doc || '').toLowerCase().includes(term);
+      const matchOwner = (comp.owner || '').toLowerCase().includes(term);
+      const matchEmail = (comp.email || '').toLowerCase().includes(term);
+      const matchPhone = (comp.phone || '').toLowerCase().includes(term);
+      if (!matchName && !matchDoc && !matchOwner && !matchEmail && !matchPhone) return false;
     }
     if (status && comp.status !== status) return false;
     return true;
@@ -1356,12 +1384,27 @@ function setupEvents() {
     });
   }
 
-  // Modal: Nova Empresa
+  // Modal: Nova Pessoa/Empresa
   const newCompanyModal = document.getElementById('newCompanyModal');
   const btnOpenNewCompanyModal = document.getElementById('btnOpenNewCompanyModal');
   const btnCloseNewCompanyModal = document.getElementById('btnCloseNewCompanyModal');
   const btnCancelNewCompany = document.getElementById('btnCancelNewCompany');
   const newCompanyForm = document.getElementById('newCompanyForm');
+  const inputNewCompDoc = document.getElementById('newCompanyDoc');
+  const inputNewCompPhone = document.getElementById('newCompanyPhone');
+
+  // Máscaras de entrada para CPF/CNPJ e Telefone
+  if (inputNewCompDoc) {
+    inputNewCompDoc.addEventListener('input', (e) => {
+      e.target.value = formatCpfCnpj(e.target.value);
+    });
+  }
+
+  if (inputNewCompPhone) {
+    inputNewCompPhone.addEventListener('input', (e) => {
+      e.target.value = formatPhone(e.target.value);
+    });
+  }
 
   const closeNewCompanyModal = () => newCompanyModal?.classList.remove('open');
   const openNewCompanyModal = () => {
@@ -1381,18 +1424,19 @@ function setupEvents() {
       e.preventDefault();
       const currentUser = getCurrentUser();
       const name = document.getElementById('newCompanyName').value.trim();
-      const owner = document.getElementById('newCompanyOwner').value.trim();
-      const email = document.getElementById('newCompanyEmail').value.trim();
+      const doc = document.getElementById('newCompanyDoc').value.trim();
       const phone = document.getElementById('newCompanyPhone').value.trim();
+      const email = document.getElementById('newCompanyEmail').value.trim();
       const registeredBy = document.getElementById('newCompanyRegisteredBy')?.value || (currentUser?.id || 'USR-ADMIN');
       const status = document.getElementById('newCompanyStatus').value;
 
       const newComp = {
         id: `EMP-${Date.now().toString().slice(-4)}`,
         name: name.toUpperCase(),
-        owner: owner.toUpperCase(),
+        doc: doc || '-',
+        owner: name.split(' ')[0].toUpperCase(),
         email: email.toLowerCase(),
-        phone: phone || '(41) 99999-0000',
+        phone: phone || '( ) 9999-9999',
         createdAt: new Date().toLocaleDateString('pt-BR'),
         status: status || 'Ativo',
         registeredBy
@@ -1403,7 +1447,7 @@ function setupEvents() {
       closeNewCompanyModal();
       filterCompanies();
       updateDashboardStats();
-      showToast(`Empresa "${newComp.name}" cadastrada com sucesso!`);
+      showToast(`"${newComp.name}" cadastrado(a) com sucesso!`);
     });
   }
 

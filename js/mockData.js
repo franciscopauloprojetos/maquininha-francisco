@@ -256,6 +256,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-001",
     name: "ESSENCE BEAUTY MIND",
+    doc: "14.283.912/0001-44",
     owner: "ESSENCE",
     email: "eliselima.06@gmail.com",
     phone: "(41) 98485-8140",
@@ -265,10 +266,11 @@ export const MOCK_COMPANIES_DATA = [
   },
   {
     id: "EMP-002",
-    name: "WILLYAN",
+    name: "WILLYAN SILVA",
+    doc: "049.281.939-20",
     owner: "WILLYAN",
     email: "willyansoaresbarbosa70@gmail.com",
-    phone: "(58) 84968-981",
+    phone: "(58) 84968-9810",
     createdAt: "11/08/2026",
     status: "Ativo",
     registeredBy: "USR-002"
@@ -276,6 +278,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-003",
     name: "ALINE RENATA DA ROSA",
+    doc: "078.432.199-55",
     owner: "ALINE",
     email: "alinerentadarosa155@gmail.com",
     phone: "(41) 98788-0938",
@@ -286,6 +289,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-004",
     name: "EVANDRO CARNIEL",
+    doc: "091.223.849-01",
     owner: "EVANDRO",
     email: "evandrocarniel23@gmail.com",
     phone: "(43) 99928-1144",
@@ -296,6 +300,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-005",
     name: "VICTOR HUGO ALVES",
+    doc: "102.948.372-88",
     owner: "Victor",
     email: "vhafumagalli@gmail.com",
     phone: "(41) 99746-2339",
@@ -306,6 +311,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-006",
     name: "MIRANTE BRISA MAR GASTRONOMIA",
+    doc: "29.481.039/0001-92",
     owner: "ROBERTO",
     email: "contato@mirantebrisa.com.br",
     phone: "(41) 99122-3344",
@@ -316,6 +322,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-007",
     name: "K. SA CAFES ESPECIAIS LTDA",
+    doc: "33.918.274/0001-08",
     owner: "KARINA",
     email: "financeiro@ksacafes.com.br",
     phone: "(41) 98877-6655",
@@ -326,6 +333,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-008",
     name: "DROGARIA CENTRAL POPULAR",
+    doc: "19.827.364/0001-52",
     owner: "MARCOS",
     email: "drogaria.central@gmail.com",
     phone: "(41) 3344-5566",
@@ -336,6 +344,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-009",
     name: "SUPERMERCADO REAL SUPER",
+    doc: "08.372.194/0001-83",
     owner: "FRANCISCO",
     email: "compras@realsuper.com.br",
     phone: "(41) 98711-2233",
@@ -346,6 +355,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-010",
     name: "PADARIA & CONFEITARIA ESTRELA",
+    doc: "42.109.382/0001-19",
     owner: "ESTELA",
     email: "padariaestrela@hotmail.com",
     phone: "(41) 3211-9988",
@@ -356,6 +366,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-011",
     name: "BOUTIQUE BELLA MODA",
+    doc: "38.920.174/0001-71",
     owner: "ISABELLA",
     email: "bella.moda@gmail.com",
     phone: "(41) 99655-4433",
@@ -366,6 +377,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-012",
     name: "TECH PRIME ELETRONICOS",
+    doc: "51.829.301/0001-63",
     owner: "LUCAS",
     email: "techprime@eletronicos.com",
     phone: "(41) 98400-1122",
@@ -376,6 +388,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-013",
     name: "OTICA NOVA VISAO LTDA",
+    doc: "27.491.028/0001-49",
     owner: "CLAUDIO",
     email: "otica.novavisao@gmail.com",
     phone: "(41) 3322-1100",
@@ -386,6 +399,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-014",
     name: "MECANICA EXPRESS AUTO",
+    doc: "18.392.019/0001-37",
     owner: "PAULO",
     email: "express.auto@gmail.com",
     phone: "(41) 98800-7788",
@@ -396,6 +410,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-015",
     name: "RESTAURANTE SABOR & ARTE",
+    doc: "45.029.183/0001-20",
     owner: "ARTHUR",
     email: "saborarte@restaurante.com",
     phone: "(41) 99111-2299",
@@ -406,6 +421,7 @@ export const MOCK_COMPANIES_DATA = [
   {
     id: "EMP-016",
     name: "AUTO POSTO ALVORADA LTDA",
+    doc: "06.918.273/0001-95",
     owner: "ANTONIO",
     email: "postoalvorada@gmail.com",
     phone: "(41) 3355-7799",
