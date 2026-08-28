@@ -1214,8 +1214,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  font-weight: 600;
-  color: #1d68d8;
+  font-weight: 700;
+  color: #d97706;
   text-decoration: none;
   cursor: pointer;
   transition: gap 0.2s ease, color var(--transition-fast);
@@ -1225,13 +1225,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .dash-card-link:hover {
-  color: #1551b0;
+  color: #b45309;
   gap: 9px;
 }
 
 .dash-card-link svg {
   width: 14px;
   height: 14px;
+  color: #d97706;
+  stroke: #d97706;
+}
+
+.dash-card-link:hover svg {
+  color: #b45309;
+  stroke: #b45309;
 }
 .modal-backdrop {
   position: fixed;
