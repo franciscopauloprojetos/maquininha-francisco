@@ -963,15 +963,13 @@ function renderRatesTable() {
         </td>
         <td>${statusBadge}</td>
         <td style="text-align: center;">
-          <div class="rate-badge-editor" data-id="${comp.id}">
-            <div class="rate-field-pill" title="Clique para editar a comissão da empresa">
-              <span class="rate-pill-icon"><i data-lucide="percent"></i></span>
-              <input type="number" step="0.1" min="0" max="100" class="rate-pill-input" data-id="${comp.id}" data-original="${rate}" value="${rate}">
-              <span class="rate-pill-tag">%</span>
-              <span class="rate-pill-edit-icon" title="Editar"><i data-lucide="edit-2"></i></span>
+          <div class="inline-rate-cell" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+            <div class="rate-input-box">
+              <input type="number" step="0.1" min="0" max="100" class="inline-rate-input" data-id="${comp.id}" data-original="${rate}" value="${rate}" title="Clique para editar a alíquota">
+              <span class="rate-symbol">%</span>
             </div>
-            <button type="button" class="btn-rate-save-action" data-id="${comp.id}" style="display: none;" title="Salvar alteração">
-              <i data-lucide="check"></i>
+            <button type="button" class="btn btn-sm btn-primary-green btn-save-inline-rate" data-id="${comp.id}" style="display: none;" title="Salvar alteração">
+              <i data-lucide="check" style="width: 13px; height: 13px;"></i>
               <span>Salvar</span>
             </button>
           </div>
@@ -984,19 +982,16 @@ function renderRatesTable() {
   refreshIcons();
 
   // Attach dynamic input change & save events
-  tbody.querySelectorAll('.rate-pill-input').forEach(input => {
+  tbody.querySelectorAll('.inline-rate-input').forEach(input => {
     const id = input.getAttribute('data-id');
     const row = input.closest('tr');
-    const saveBtn = row?.querySelector(`.btn-rate-save-action[data-id="${id}"]`);
+    const saveBtn = row?.querySelector(`.btn-save-inline-rate[data-id="${id}"]`);
 
     const checkChange = () => {
       const original = parseFloat(input.getAttribute('data-original'));
       const current = parseFloat(input.value);
       if (!isNaN(current) && current !== original) {
-        if (saveBtn) {
-          saveBtn.style.display = 'inline-flex';
-          refreshIcons();
-        }
+        if (saveBtn) saveBtn.style.display = 'inline-flex';
       } else {
         if (saveBtn) saveBtn.style.display = 'none';
       }
@@ -1027,10 +1022,10 @@ function renderRatesTable() {
     });
   });
 
-  tbody.querySelectorAll('.btn-rate-save-action').forEach(btn => {
+  tbody.querySelectorAll('.btn-save-inline-rate').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
-      const input = tbody.querySelector(`.rate-pill-input[data-id="${id}"]`);
+      const input = tbody.querySelector(`.inline-rate-input[data-id="${id}"]`);
       if (input) {
         const val = parseFloat(input.value);
         if (isNaN(val) || val < 0 || val > 100) {
