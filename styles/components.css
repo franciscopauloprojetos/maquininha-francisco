@@ -456,7 +456,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .data-table td {
-  padding: 16px 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid #edf2f7;
   color: #334155;
   white-space: nowrap;
@@ -465,10 +465,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .data-table tbody tr {
   transition: background-color var(--transition-fast);
-  height: 68px;
+  height: 64px;
 }
 
 .data-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.data-table tbody tr:hover td {
   background-color: #f8fafc;
 }
 
@@ -481,9 +485,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-weight: 700;
   color: #0f172a;
   font-size: 13.5px;
-  display: flex;
-  align-items: center;
-  height: 100%;
+  vertical-align: middle;
 }
 
 .cell-company {
@@ -492,9 +494,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 13px;
   max-width: 240px;
   white-space: normal;
-  line-height: 1.25;
-  display: flex;
-  align-items: center;
+  line-height: 1.3;
+  vertical-align: middle;
 }
 
 .cell-date {
@@ -503,6 +504,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   justify-content: center;
   gap: 2px;
   line-height: 1.2;
+  vertical-align: middle;
 }
 
 .date-day {
@@ -517,12 +519,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .cell-payment {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   width: 175px;
   min-width: 175px;
+  vertical-align: middle;
 }
 
 .payment-info {
