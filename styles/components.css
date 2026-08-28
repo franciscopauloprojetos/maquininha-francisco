@@ -228,69 +228,165 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* ==========================================================================
-   Card de Totais (KPIs)
+   Card de Totais (KPIs Fintech Modern Grid)
    ========================================================================== */
-.kpi-container {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  padding: 30px 28px;
+.kpi-card {
+  padding: 16px 20px !important;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
-.kpi-row-top {
+.kpi-fintech-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  text-align: center;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
 }
 
-.kpi-row-bottom {
-  display: flex;
-  justify-content: center;
-  gap: 120px;
-  text-align: center;
-}
-
-.kpi-item {
+.kpi-fintech-tile {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 14px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.kpi-fintech-tile:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.kpi-tile-top {
+  display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.kpi-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #64748b;
-  letter-spacing: 0.01em;
+.kpi-tile-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.kpi-value {
-  font-size: 26px;
+.kpi-tile-icon svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.2;
+}
+
+.kpi-tile-icon.icon-slate {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.kpi-tile-icon.icon-blue {
+  background: #dbeafe;
+  color: #1d68d8;
+}
+
+.kpi-tile-icon.icon-emerald {
+  background: #dcfce7;
+  color: #059669;
+}
+
+.kpi-tile-icon.icon-amber {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.kpi-tile-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kpi-tile-value {
+  font-size: 18.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.kpi-val-dark {
+.kpi-tile-value.val-slate {
   color: #0f172a;
 }
 
-.kpi-val-blue {
-  color: var(--primary-blue);
+.kpi-tile-value.val-blue {
+  color: #1d68d8;
 }
 
-.kpi-val-green {
-  color: var(--primary-green);
+.kpi-tile-value.val-emerald {
+  color: #059669;
 }
 
-.kpi-val-amber {
-  color: var(--primary-amber);
+.kpi-tile-value.val-amber {
+  color: #d97706;
 }
 
-/* Small KPI adjustments */
-.kpi-small .kpi-value {
-  font-size: 23px;
+/* Subtle Highlights */
+.kpi-fintech-tile.highlight-blue {
+  background: #f8faff;
+  border-color: #dbeafe;
+}
+.kpi-fintech-tile.highlight-blue:hover {
+  border-color: #bfdbfe;
+}
+
+.kpi-fintech-tile.highlight-emerald {
+  background: #f6fdf9;
+  border-color: #dcfce7;
+}
+.kpi-fintech-tile.highlight-emerald:hover {
+  border-color: #bbf7d0;
+}
+
+.kpi-fintech-tile.highlight-amber {
+  background: #fffdf5;
+  border-color: #fef3c7;
+}
+.kpi-fintech-tile.highlight-amber:hover {
+  border-color: #fde68a;
+}
+
+/* Responsiveness */
+@media (max-width: 1400px) {
+  .kpi-fintech-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-fintech-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-fintech-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ==========================================================================

@@ -305,43 +305,61 @@
             </form>
           </section>
 
-          <!-- ================= CARD 2: Totais / Métricas ================= -->
+          <!-- ================= CARD 2: Totais / Métricas (Estilo Fintech) ================= -->
           <section class="card kpi-card">
-            <div class="kpi-container">
-              <!-- Linha Superior: 4 Métricas Principais -->
-              <div class="kpi-row-top">
-                <div class="kpi-item">
-                  <span class="kpi-label">Total Faturamento</span>
-                  <span class="kpi-value kpi-val-dark" id="valTotalFaturamento">R$ 125.579,07</span>
+            <div class="kpi-fintech-grid">
+              <!-- Item 1: Total Faturamento -->
+              <div class="kpi-fintech-tile">
+                <div class="kpi-tile-top">
+                  <span class="kpi-tile-icon icon-slate"><i data-lucide="bar-chart-3"></i></span>
+                  <span class="kpi-tile-label">Total Faturamento</span>
                 </div>
-
-                <div class="kpi-item">
-                  <span class="kpi-label">Total Empresa</span>
-                  <span class="kpi-value kpi-val-dark" id="valTotalEmpresa">R$ 118.178,67</span>
-                </div>
-
-                <div class="kpi-item">
-                  <span class="kpi-label">Total Líquido</span>
-                  <span class="kpi-value kpi-val-blue" id="valTotalLiquido">R$ 2.177,38</span>
-                </div>
-
-                <div class="kpi-item">
-                  <span class="kpi-label">Total Parceiro</span>
-                  <span class="kpi-value kpi-val-green" id="valTotalParceiro">R$ 1.692,06</span>
-                </div>
+                <div class="kpi-tile-value val-slate" id="valTotalFaturamento">R$ 125.579,07</div>
               </div>
 
-              <!-- Linha Inferior: 2 Métricas Auxiliares Centralizadas -->
-              <div class="kpi-row-bottom">
-                <div class="kpi-item kpi-small">
-                  <span class="kpi-label">Total Pago Clientes</span>
-                  <span class="kpi-value kpi-val-amber" id="valTotalPagoClientes">R$ 425,13</span>
+              <!-- Item 2: Total Empresa -->
+              <div class="kpi-fintech-tile">
+                <div class="kpi-tile-top">
+                  <span class="kpi-tile-icon icon-slate"><i data-lucide="building-2"></i></span>
+                  <span class="kpi-tile-label">Total Empresa</span>
                 </div>
+                <div class="kpi-tile-value val-slate" id="valTotalEmpresa">R$ 118.178,67</div>
+              </div>
 
-                <div class="kpi-item kpi-small">
-                  <span class="kpi-label">Total Comissão Cliente</span>
-                  <span class="kpi-value kpi-val-green" id="valTotalComissaoCliente">R$ 0,05</span>
+              <!-- Item 3: Total Líquido -->
+              <div class="kpi-fintech-tile highlight-blue">
+                <div class="kpi-tile-top">
+                  <span class="kpi-tile-icon icon-blue"><i data-lucide="wallet"></i></span>
+                  <span class="kpi-tile-label">Total Líquido</span>
                 </div>
+                <div class="kpi-tile-value val-blue" id="valTotalLiquido">R$ 2.177,38</div>
+              </div>
+
+              <!-- Item 4: Total Parceiro -->
+              <div class="kpi-fintech-tile highlight-emerald">
+                <div class="kpi-tile-top">
+                  <span class="kpi-tile-icon icon-emerald"><i data-lucide="trending-up"></i></span>
+                  <span class="kpi-tile-label">Total Parceiro</span>
+                </div>
+                <div class="kpi-tile-value val-emerald" id="valTotalParceiro">R$ 1.692,06</div>
+              </div>
+
+              <!-- Item 5: Total Pago Clientes -->
+              <div class="kpi-fintech-tile highlight-amber">
+                <div class="kpi-tile-top">
+                  <span class="kpi-tile-icon icon-amber"><i data-lucide="credit-card"></i></span>
+                  <span class="kpi-tile-label">Total Pago Clientes</span>
+                </div>
+                <div class="kpi-tile-value val-amber" id="valTotalPagoClientes">R$ 425,13</div>
+              </div>
+
+              <!-- Item 6: Total Comissão Cliente -->
+              <div class="kpi-fintech-tile highlight-emerald">
+                <div class="kpi-tile-top">
+                  <span class="kpi-tile-icon icon-emerald"><i data-lucide="coins"></i></span>
+                  <span class="kpi-tile-label">Total Comissão Cliente</span>
+                </div>
+                <div class="kpi-tile-value val-emerald" id="valTotalComissaoCliente">R$ 0,05</div>
               </div>
             </div>
           </section>
