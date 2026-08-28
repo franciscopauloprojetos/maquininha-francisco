@@ -61,6 +61,7 @@
   padding: 0 12px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(15, 23, 42, 0.02);
   transition: all var(--transition-fast);
+  cursor: pointer;
 }
 
 .input-wrapper:hover {
@@ -69,7 +70,8 @@
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06), 0 0 0 1px #cbd5e1;
 }
 
-.input-wrapper:focus-within {
+.input-wrapper:focus-within,
+.input-wrapper.is-dropdown-open {
   background-color: #ffffff;
   border-color: var(--primary-blue);
   box-shadow: 0 0 0 3.5px rgba(29, 104, 216, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -85,7 +87,8 @@
   transition: color var(--transition-fast);
 }
 
-.input-wrapper:focus-within .input-icon-left {
+.input-wrapper:focus-within .input-icon-left,
+.input-wrapper.is-dropdown-open .input-icon-left {
   color: var(--primary-blue);
 }
 
@@ -116,26 +119,168 @@
   color: #475569;
 }
 
-.input-wrapper:focus-within .input-icon-right {
+.input-wrapper:focus-within .input-icon-right,
+.input-wrapper.is-dropdown-open .input-icon-right {
   color: var(--primary-blue);
   transform: rotate(180deg);
 }
 
-.custom-select {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background: transparent;
+/* Custom Dropdown Trigger Display Text */
+.custom-select-trigger-text {
+  flex: 1;
   font-size: 13.5px;
   font-weight: 600;
   color: #0f172a;
-  outline: none;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
   cursor: pointer;
-  padding-right: 20px;
+}
+
+.custom-select-trigger-text.is-placeholder {
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Floating Custom Dropdown Menu */
+.custom-select-floating-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  min-width: 200px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14), 0 4px 10px rgba(15, 23, 42, 0.05);
+  padding: 6px;
+  z-index: 1100;
+  animation: dropdownPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@keyframes dropdownPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Search Box inside Custom Dropdown */
+.custom-select-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 34px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.custom-select-search-box svg {
+  width: 14px;
+  height: 14px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.custom-select-search-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #0f172a;
+  outline: none;
   font-family: inherit;
+}
+
+.custom-select-search-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Options List Container */
+.custom-select-options-list {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 2px;
+}
+
+.custom-select-options-list::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-select-options-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+.custom-select-options-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.custom-select-options-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Custom Option Item */
+.custom-select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.custom-select-item:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.custom-select-item.is-selected {
+  background-color: #eff6ff;
+  color: #1d68d8;
+  font-weight: 700;
+}
+
+.custom-select-item .custom-item-check {
+  display: none;
+  width: 14px;
+  height: 14px;
+  color: #1d68d8;
+}
+
+.custom-select-item.is-selected .custom-item-check {
+  display: inline-flex;
+}
+
+.custom-select-empty-msg {
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.custom-select {
+  display: none !important;
 }
 
 .custom-select option {

@@ -76,6 +76,170 @@ function formatBRL(value) {
   }).format(value);
 }
 
+// ==========================================================================
+// MOTOR DE DROPDOWNS CUSTOMIZADOS FINTECH (CUSTOM SELECT SYSTEM)
+// ==========================================================================
+
+function initCustomSelects() {
+  const selects = document.querySelectorAll('select.custom-select');
+
+  selects.forEach(select => {
+    const wrapper = select.closest('.input-wrapper');
+    if (!wrapper) return;
+
+    // Check if trigger text element already exists
+    let triggerText = wrapper.querySelector('.custom-select-trigger-text');
+    if (!triggerText) {
+      triggerText = document.createElement('span');
+      triggerText.className = 'custom-select-trigger-text';
+      const leftIcon = wrapper.querySelector('.input-icon-left');
+      if (leftIcon) {
+        leftIcon.insertAdjacentElement('afterend', triggerText);
+      } else {
+        wrapper.insertAdjacentElement('afterbegin', triggerText);
+      }
+    }
+
+    // Check if floating menu already exists
+    let menu = wrapper.querySelector('.custom-select-floating-menu');
+    if (!menu) {
+      menu = document.createElement('div');
+      menu.className = 'custom-select-floating-menu';
+      menu.style.display = 'none';
+      wrapper.appendChild(menu);
+    }
+
+    // Function to render / update menu options
+    const renderOptions = (filterSearch = '') => {
+      const options = Array.from(select.options);
+      const selectedIndex = select.selectedIndex >= 0 ? select.selectedIndex : 0;
+      const currentSelectedOption = options[selectedIndex];
+
+      // Update trigger text
+      if (currentSelectedOption) {
+        triggerText.textContent = currentSelectedOption.textContent || 'Selecionar';
+        if (currentSelectedOption.value === '') {
+          triggerText.classList.add('is-placeholder');
+        } else {
+          triggerText.classList.remove('is-placeholder');
+        }
+      }
+
+      // Build menu HTML
+      let html = '';
+
+      // Include search box if more than 4 options
+      if (options.length > 4) {
+        html += `
+          <div class="custom-select-search-box">
+            <i data-lucide="search"></i>
+            <input type="text" class="custom-select-search-input" placeholder="Buscar opção..." value="${filterSearch}">
+          </div>
+        `;
+      }
+
+      const filteredOptions = filterSearch.trim() === ''
+        ? options
+        : options.filter(opt => opt.textContent.toLowerCase().includes(filterSearch.toLowerCase()));
+
+      html += `<div class="custom-select-options-list">`;
+
+      if (filteredOptions.length === 0) {
+        html += `<div class="custom-select-empty-msg">Nenhuma opção encontrada</div>`;
+      } else {
+        filteredOptions.forEach(opt => {
+          const isSelected = opt.value === select.value;
+          html += `
+            <div class="custom-select-item ${isSelected ? 'is-selected' : ''}" data-val="${opt.value}">
+              <span>${opt.textContent}</span>
+              <i data-lucide="check" class="custom-item-check"></i>
+            </div>
+          `;
+        });
+      }
+
+      html += `</div>`;
+      menu.innerHTML = html;
+      refreshIcons();
+
+      // Attach search event
+      const searchInput = menu.querySelector('.custom-select-search-input');
+      if (searchInput) {
+        searchInput.addEventListener('click', (e) => e.stopPropagation());
+        searchInput.addEventListener('input', (e) => {
+          renderOptions(e.target.value);
+          const newSearchInput = menu.querySelector('.custom-select-search-input');
+          if (newSearchInput) {
+            newSearchInput.focus();
+            newSearchInput.setSelectionRange(newSearchInput.value.length, newSearchInput.value.length);
+          }
+        });
+      }
+
+      // Attach item click event
+      menu.querySelectorAll('.custom-select-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const val = item.getAttribute('data-val');
+          select.value = val;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          closeAllCustomSelects();
+          syncAllCustomSelects();
+        });
+      });
+    };
+
+    renderOptions();
+
+    // Attach click listener on wrapper to toggle open/close
+    if (!wrapper.dataset.customSelectAttached) {
+      wrapper.dataset.customSelectAttached = 'true';
+
+      wrapper.addEventListener('click', (e) => {
+        if (menu.contains(e.target)) return;
+
+        const isOpen = menu.style.display === 'flex';
+        closeAllCustomSelects();
+
+        if (!isOpen) {
+          renderOptions();
+          menu.style.display = 'flex';
+          wrapper.classList.add('is-dropdown-open');
+          const searchInput = menu.querySelector('.custom-select-search-input');
+          if (searchInput) {
+            setTimeout(() => searchInput.focus(), 50);
+          }
+        }
+      });
+    }
+  });
+}
+
+function closeAllCustomSelects() {
+  document.querySelectorAll('.custom-select-floating-menu').forEach(menu => {
+    menu.style.display = 'none';
+  });
+  document.querySelectorAll('.input-wrapper.is-dropdown-open').forEach(w => {
+    w.classList.remove('is-dropdown-open');
+  });
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.input-wrapper')) {
+    closeAllCustomSelects();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeAllCustomSelects();
+  }
+});
+
+function syncAllCustomSelects() {
+  initCustomSelects();
+}
+
 // Populate dropdown options
 function populateSelect(elementId, options) {
   const select = document.getElementById(elementId);
@@ -88,6 +252,8 @@ function populateSelect(elementId, options) {
     option.textContent = opt;
     select.appendChild(option);
   });
+
+  syncAllCustomSelects();
 }
 
 // Initialize all filters dropdowns
@@ -101,6 +267,7 @@ function initFilters() {
   populateSelect('filterStatus', MOCK_STATUSES);
   populateSelect('filterContaProvedor', MOCK_PROVIDER_ACCOUNTS);
   populateSelect('filterSpread', MOCK_SPREADS);
+  initCustomSelects();
 }
 
 // Update KPI UI elements
@@ -889,6 +1056,8 @@ function populateRatePartnerSelect() {
   select.innerHTML = `<option value="">Todos os parceiros</option>` + partners.map(p => {
     return `<option value="${p.id}">${p.name} - ${p.role}</option>`;
   }).join('');
+
+  syncAllCustomSelects();
 }
 
 // Render Rates Table
@@ -1834,6 +2003,7 @@ function setupEvents() {
       currentPage = 1;
       renderTable();
       updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
+      syncAllCustomSelects();
       showToast('Filtros de transação limpos.');
     });
   }
