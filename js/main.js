@@ -963,13 +963,14 @@ function renderRatesTable() {
         </td>
         <td>${statusBadge}</td>
         <td style="text-align: center;">
-          <div class="inline-rate-cell" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-            <div class="rate-input-box">
-              <input type="number" step="0.1" min="0" max="100" class="inline-rate-input" data-id="${comp.id}" data-original="${rate}" value="${rate}" title="Clique para editar a alíquota">
-              <span class="rate-symbol">%</span>
+          <div class="premium-rate-control" data-id="${comp.id}">
+            <div class="rate-badge-capsule" title="Clique para editar a alíquota da empresa">
+              <span class="rate-prefix-dot"></span>
+              <input type="number" step="0.1" min="0" max="100" class="rate-core-input" data-id="${comp.id}" data-original="${rate}" value="${rate}">
+              <span class="rate-suffix-badge">%</span>
             </div>
-            <button type="button" class="btn btn-sm btn-primary-green btn-save-inline-rate" data-id="${comp.id}" style="display: none;" title="Salvar alteração">
-              <i data-lucide="check" style="width: 13px; height: 13px;"></i>
+            <button type="button" class="btn-rate-save-pulse" data-id="${comp.id}" style="display: none;" title="Salvar alteração">
+              <i data-lucide="check" style="width: 14px; height: 14px;"></i>
               <span>Salvar</span>
             </button>
           </div>
@@ -982,16 +983,19 @@ function renderRatesTable() {
   refreshIcons();
 
   // Attach dynamic input change & save events
-  tbody.querySelectorAll('.inline-rate-input').forEach(input => {
+  tbody.querySelectorAll('.rate-core-input').forEach(input => {
     const id = input.getAttribute('data-id');
     const row = input.closest('tr');
-    const saveBtn = row?.querySelector(`.btn-save-inline-rate[data-id="${id}"]`);
+    const saveBtn = row?.querySelector(`.btn-rate-save-pulse[data-id="${id}"]`);
 
     const checkChange = () => {
       const original = parseFloat(input.getAttribute('data-original'));
       const current = parseFloat(input.value);
       if (!isNaN(current) && current !== original) {
-        if (saveBtn) saveBtn.style.display = 'inline-flex';
+        if (saveBtn) {
+          saveBtn.style.display = 'inline-flex';
+          refreshIcons();
+        }
       } else {
         if (saveBtn) saveBtn.style.display = 'none';
       }
@@ -1022,10 +1026,10 @@ function renderRatesTable() {
     });
   });
 
-  tbody.querySelectorAll('.btn-save-inline-rate').forEach(btn => {
+  tbody.querySelectorAll('.btn-rate-save-pulse').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
-      const input = tbody.querySelector(`.inline-rate-input[data-id="${id}"]`);
+      const input = tbody.querySelector(`.rate-core-input[data-id="${id}"]`);
       if (input) {
         const val = parseFloat(input.value);
         if (isNaN(val) || val < 0 || val > 100) {
