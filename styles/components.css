@@ -521,10 +521,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .cell-payment {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  width: 175px;
-  min-width: 175px;
+  gap: 12px;
+  min-width: 220px;
   vertical-align: middle;
 }
 
@@ -560,7 +558,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
   padding: 2px 4px;
-  margin-left: auto;
   overflow: hidden;
   box-sizing: border-box;
 }
