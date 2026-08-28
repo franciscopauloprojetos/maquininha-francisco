@@ -255,23 +255,23 @@
   color: #0f172a;
 }
 
-/* Item SELECIONADO / MARCADO: fundo cinza suave, letra em negrito preto, check amarelo escuro */
+/* Item SELECIONADO / MARCADO: fundo preto suave, letra em destaque branca, check amarelo */
 .custom-select-item.is-selected {
-  background-color: #f1f5f9;
-  color: #0f172a;
-  font-weight: 800;
+  background-color: #1e293b;
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .custom-select-item.is-selected:hover {
-  background-color: #e2e8f0;
-  color: #000000;
+  background-color: #0f172a;
+  color: #ffffff;
 }
 
 .custom-select-item .custom-item-check {
   display: none;
   width: 15px;
   height: 15px;
-  color: #d97706;
+  color: #fbbf24;
   stroke-width: 2.8;
 }
 
