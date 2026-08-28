@@ -97,21 +97,33 @@
   font-size: 13px;
   font-weight: 600;
   color: #64748b;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
+.btn-toggle-mode:hover:not(.active) {
+  color: #0f172a;
+  background: #e2e8f0;
+}
+
 .btn-toggle-mode.active {
-  background: #ffffff;
-  color: var(--primary-blue);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: #facc15;
+  color: #0f172a;
+  font-weight: 700;
+  border: 1px solid #eab308;
+  box-shadow: 0 2px 5px rgba(234, 179, 8, 0.3);
 }
 
 .btn-toggle-mode svg {
   width: 15px;
   height: 15px;
+}
+
+.btn-toggle-mode.active svg {
+  color: #0f172a;
+  stroke: #0f172a;
 }
 
 /* ==========================================================================
@@ -174,18 +186,24 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1d68d8 0%, #3b82f6 100%);
-  color: #ffffff;
-  font-weight: 700;
+  background: #0f172a;
+  color: #facc15;
+  border: 1px solid #1e293b;
+  font-weight: 800;
   font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .tree-node.is-root .tree-node-avatar {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: #facc15;
+  color: #0f172a;
+  border: 1px solid #ca8a04;
+  font-weight: 800;
+  box-shadow: 0 1px 4px rgba(202, 138, 4, 0.35);
 }
 
 .tree-node-title-group {
@@ -421,9 +439,10 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #e2e8f0;
-  color: #334155;
-  font-weight: 700;
+  background: #0f172a;
+  color: #facc15;
+  border: 1px solid #1e293b;
+  font-weight: 800;
   font-size: 12px;
   display: flex;
   align-items: center;
