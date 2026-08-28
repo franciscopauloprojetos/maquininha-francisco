@@ -1142,70 +1142,175 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .commissions-metrics-grid {
     grid-template-columns: 1fr;
   }
-/* Rate Input Box & Dynamic Save Button */
-.rate-input-box {
-  position: relative;
+/* ==========================================================================
+   CAMPO DE ALÍQUOTA DE COMISSÃO (DESIGN PREMIUM & IDENTIDADE VISUAL KONZPAY)
+   ========================================================================== */
+
+.rate-badge-editor {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.inline-rate-input {
-  width: 84px;
-  height: 34px;
-  padding: 4px 22px 4px 8px;
-  border-radius: var(--radius-md);
-  border: 1.5px solid #cbd5e1;
-  background-color: #f8fafc;
-  color: #0f172a;
-  font-size: 13.5px;
+.rate-field-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: var(--radius-full);
+  padding: 3px 10px 3px 8px;
+  box-shadow: 0 1px 3px rgba(5, 150, 105, 0.08);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  position: relative;
+}
+
+.rate-field-pill:hover {
+  background: #ffffff;
+  border-color: #10b981;
+  box-shadow: 0 3px 12px rgba(5, 150, 105, 0.16);
+  transform: translateY(-1px);
+}
+
+.rate-field-pill:focus-within {
+  background: #ffffff;
+  border-color: #059669;
+  box-shadow: 0 0 0 3.5px rgba(5, 150, 105, 0.18), 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.rate-pill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: #dcfce7;
+  color: #059669;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.rate-pill-icon svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.5;
+}
+
+.rate-pill-input {
+  width: 58px;
+  height: 28px;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  color: #047857;
+  font-size: 14.5px;
   font-weight: 800;
   text-align: center;
   outline: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.rate-field-pill:focus-within .rate-pill-input {
+  cursor: text;
+  color: #065f46;
+}
+
+/* Chrome, Safari, Edge, Opera: remove setas do input number */
+.rate-pill-input::-webkit-outer-spin-button,
+.rate-pill-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+.rate-pill-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.rate-pill-tag {
+  font-size: 12px;
+  font-weight: 800;
+  color: #059669;
+  margin-left: 2px;
+  user-select: none;
+}
+
+.rate-pill-edit-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  margin-left: 6px;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+}
+
+.rate-pill-edit-icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.rate-field-pill:hover .rate-pill-edit-icon {
+  opacity: 1;
+  color: #059669;
+}
+
+.rate-field-pill:focus-within .rate-pill-edit-icon {
+  display: none;
+}
+
+/* Botão Salvar Dinâmico com Animação Vibrante */
+.btn-rate-save-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(5, 150, 105, 0.35);
   cursor: pointer;
   transition: all var(--transition-fast);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  animation: popInSpring 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.inline-rate-input:hover {
-  border-color: #94a3b8;
-  background-color: #ffffff;
+.btn-rate-save-action:hover {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45);
+  transform: translateY(-1px) scale(1.02);
 }
 
-.inline-rate-input:focus {
-  border-color: #059669;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
-  cursor: text;
+.btn-rate-save-action:active {
+  transform: translateY(0) scale(0.98);
 }
 
-.rate-symbol {
-  position: absolute;
-  right: 8px;
-  font-weight: 800;
-  font-size: 12px;
-  color: #64748b;
-  pointer-events: none;
+.btn-rate-save-action svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.5;
 }
 
-.btn-save-inline-rate {
-  padding: 4px 12px !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  gap: 5px !important;
-  border-radius: var(--radius-md) !important;
-  height: 34px !important;
-  animation: fadeInPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes fadeInPop {
-  from {
+@keyframes popInSpring {
+  0% {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.85) translateX(-4px);
   }
-  to {
+  70% {
+    transform: scale(1.05) translateX(1px);
+  }
+  100% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateX(0);
   }
 }
+
 
 
