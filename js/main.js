@@ -2506,8 +2506,8 @@ function setupEvents() {
         const result = await extractTransactionsWithGemini(
           selectedGeminiFile,
           apiKey,
-          (progress) => {
-            if (geminiProgressText) geminiProgressText.textContent = progress.message;
+          () => {
+            if (geminiProgressText) geminiProgressText.textContent = 'Importando';
           }
         );
 

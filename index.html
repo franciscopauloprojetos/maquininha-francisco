@@ -368,16 +368,10 @@
           <section class="card transactions-card">
             <div class="transactions-header">
               <h2 class="card-title">Transações Detalhadas</h2>
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <button class="btn btn-primary-green" id="btnOpenGeminiImportModal" style="background: #0f172a; color: #facc15; border: 1px solid #1e293b;">
-                  <i data-lucide="sparkles" style="color: #facc15;"></i>
-                  <span>Importar com Gemini AI</span>
-                </button>
-                <button class="btn btn-primary-blue" id="btnOpenReportModal">
-                  <i data-lucide="file-text"></i>
-                  <span>Gerar relatório</span>
-                </button>
-              </div>
+              <button class="btn btn-primary-blue" id="btnOpenGeminiImportModal">
+                <i data-lucide="upload-cloud"></i>
+                <span>Importar Relatório</span>
+              </button>
             </div>
 
             <!-- Barra de busca e totalizador da tabela -->
@@ -1257,14 +1251,13 @@
   <!-- Modal: Importação com Gemini AI -->
   <div class="modal-backdrop" id="geminiImportModal">
     <div class="modal-card" style="max-width: 780px; width: 95%;">
-      <div class="modal-header" style="background: #0f172a; color: #ffffff; border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg); padding: 18px 24px;">
+      <div class="modal-header" style="background: #0f172a; color: #ffffff; border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg); padding: 16px 24px;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(250, 204, 21, 0.15); border: 1px solid rgba(250, 204, 21, 0.3); display: flex; align-items: center; justify-content: center;">
             <i data-lucide="sparkles" style="color: #facc15; width: 18px; height: 18px;"></i>
           </div>
           <div>
-            <h3 class="modal-title" style="color: #ffffff; font-size: 16px; font-weight: 700;">Importação Inteligente com Gemini 3.7 Flash</h3>
-            <p style="font-size: 11.5px; color: #94a3b8; margin: 0;">Leitura e extração automática de relatórios em PDF, Imagens ou CSV</p>
+            <h3 class="modal-title" style="color: #ffffff; font-size: 16px; font-weight: 700;">Importar</h3>
           </div>
         </div>
         <button class="modal-close" id="btnCloseGeminiModal" style="color: #94a3b8;">&times;</button>
@@ -1316,10 +1309,9 @@
         </div>
 
         <!-- Estado de Carregamento / Processamento do Gemini -->
-        <div id="geminiLoadingBox" style="display: none; text-align: center; padding: 30px 20px;">
+        <div id="geminiLoadingBox" style="display: none; text-align: center; padding: 36px 20px;">
           <div class="spinner-ai" style="width: 44px; height: 44px; border: 4px solid #f1f5f9; border-top-color: #facc15; border-radius: 50%; margin: 0 auto 16px; animation: spin 0.8s linear infinite;"></div>
-          <h4 id="geminiProgressText" style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">O Gemini 3.7 Flash está processando o relatório...</h4>
-          <p style="font-size: 12px; color: #64748b;">Isso pode levar alguns segundos dependendo da quantidade de páginas.</p>
+          <h4 id="geminiProgressText" style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0;">Importando</h4>
         </div>
 
         <!-- Pré-visualização dos Resultados Extraídos -->
