@@ -1201,7 +1201,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .rate-core-input {
-  width: 48px;
+  width: 56px;
   height: 28px;
   padding: 0 2px;
   border: none;

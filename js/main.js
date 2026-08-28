@@ -871,9 +871,9 @@ function renderRateMetrics() {
   const count = companies.length;
   const rates = companies.map(c => Number(c.commissionRate !== undefined ? c.commissionRate : 5.0));
 
-  const avg = count > 0 ? (rates.reduce((a, b) => a + b, 0) / count).toFixed(1) : '0.0';
-  const max = count > 0 ? Math.max(...rates).toFixed(1) : '0.0';
-  const min = count > 0 ? Math.min(...rates).toFixed(1) : '0.0';
+  const avg = count > 0 ? (rates.reduce((a, b) => a + b, 0) / count).toFixed(2) : '0.00';
+  const max = count > 0 ? Math.max(...rates).toFixed(2) : '0.00';
+  const min = count > 0 ? Math.min(...rates).toFixed(2) : '0.00';
 
   const elTotal = document.getElementById('rateStatTotal');
   const elAvg = document.getElementById('rateStatAvg');
@@ -944,7 +944,7 @@ function renderRatesTable() {
   }
 
   tbody.innerHTML = currentSlice.map(comp => {
-    const rate = Number(comp.commissionRate !== undefined ? comp.commissionRate : 5.0).toFixed(1);
+    const rate = Number(comp.commissionRate !== undefined ? comp.commissionRate : 5.0).toFixed(2);
     const partner = currentNetworkUsers.find(u => u.id === comp.registeredBy);
     const partnerName = partner ? partner.name : '👑 Admin Master';
     const statusBadge = comp.status === 'Ativo'
@@ -966,7 +966,7 @@ function renderRatesTable() {
           <div class="premium-rate-control" data-id="${comp.id}">
             <div class="rate-badge-capsule" title="Clique para editar a alíquota da empresa">
               <span class="rate-prefix-dot"></span>
-              <input type="number" step="0.1" min="0" max="100" class="rate-core-input" data-id="${comp.id}" data-original="${rate}" value="${rate}">
+              <input type="number" step="0.01" min="0" max="100" class="rate-core-input" data-id="${comp.id}" data-original="${rate}" value="${rate}">
               <span class="rate-suffix-badge">%</span>
             </div>
             <button type="button" class="btn-rate-save-pulse" data-id="${comp.id}" style="display: none;" title="Salvar alteração">
@@ -1015,7 +1015,7 @@ function renderRatesTable() {
           return;
         }
         updateCompanyCommissionRate(id, val);
-        input.setAttribute('data-original', val.toFixed(1));
+        input.setAttribute('data-original', val.toFixed(2));
         if (saveBtn) saveBtn.style.display = 'none';
         input.blur();
       } else if (e.key === 'Escape') {
@@ -1037,7 +1037,7 @@ function renderRatesTable() {
           return;
         }
         updateCompanyCommissionRate(id, val);
-        input.setAttribute('data-original', val.toFixed(1));
+        input.setAttribute('data-original', val.toFixed(2));
         btn.style.display = 'none';
       }
     });
@@ -1148,10 +1148,10 @@ function updateCompanyCommissionRate(companyId, newRate) {
   const comp = currentCompanies.find(c => c.id === companyId);
   if (!comp) return;
 
-  comp.commissionRate = parseFloat(newRate);
+  comp.commissionRate = parseFloat(parseFloat(newRate).toFixed(2));
   renderRatesTable();
   renderRateMetrics();
-  showToast(`Alíquota da empresa "${comp.name}" atualizada para ${comp.commissionRate}% com sucesso!`);
+  showToast(`Alíquota da empresa "${comp.name}" atualizada para ${comp.commissionRate.toFixed(2)}% com sucesso!`);
 }
 
 // Open Edit Rate Modal
@@ -1168,7 +1168,7 @@ function openEditRateModal(companyId) {
   if (idInput) idInput.value = comp.id;
   if (nameEl) nameEl.textContent = comp.name;
   if (docEl) docEl.textContent = comp.doc || '-';
-  if (rateInput) rateInput.value = comp.commissionRate !== undefined ? comp.commissionRate : 5.0;
+  if (rateInput) rateInput.value = (comp.commissionRate !== undefined ? Number(comp.commissionRate) : 5.0).toFixed(2);
 
   modal?.classList.add('open');
 }
