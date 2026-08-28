@@ -872,18 +872,12 @@ function renderRateMetrics() {
   const rates = companies.map(c => Number(c.commissionRate !== undefined ? c.commissionRate : 5.0));
 
   const avg = count > 0 ? (rates.reduce((a, b) => a + b, 0) / count).toFixed(2) : '0.00';
-  const max = count > 0 ? Math.max(...rates).toFixed(2) : '0.00';
-  const min = count > 0 ? Math.min(...rates).toFixed(2) : '0.00';
 
   const elTotal = document.getElementById('rateStatTotal');
   const elAvg = document.getElementById('rateStatAvg');
-  const elMax = document.getElementById('rateStatMax');
-  const elMin = document.getElementById('rateStatMin');
 
   if (elTotal) elTotal.textContent = count;
   if (elAvg) elAvg.textContent = `${avg}%`;
-  if (elMax) elMax.textContent = `${max}%`;
-  if (elMin) elMin.textContent = `${min}%`;
 }
 
 // Populate Partner select in rates filter
