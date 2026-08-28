@@ -719,10 +719,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .cell-payment {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  width: 240px;
-  min-width: 240px;
+  width: 215px;
+  min-width: 215px;
   vertical-align: middle;
 }
 
@@ -732,7 +731,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   justify-content: center;
   gap: 2px;
   line-height: 1.2;
-  flex: 1;
+  width: 140px;
+  min-width: 140px;
+  flex-shrink: 0;
 }
 
 .payment-method-name {
@@ -740,6 +741,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: #0f172a;
   font-size: 13px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .payment-installments {
@@ -751,14 +754,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
+  width: 44px;
   height: 28px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
-  margin-left: auto;
   padding: 2px 4px;
   overflow: hidden;
   box-sizing: border-box;
