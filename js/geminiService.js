@@ -5,7 +5,6 @@
  */
 
 const GEMINI_STORAGE_KEY = 'konzpay_gemini_api_key';
-const GEMINI_MODEL_DEFAULT = 'gemini-2.5-flash'; // Compatível com 2.5/3.7 Flash endpoints
 
 /**
  * Retorna a chave de API do Gemini salva localmente
@@ -107,8 +106,8 @@ export async function extractTransactionsWithGemini(file, apiKey, onProgress = (
 
   onProgress({ step: 2, message: 'Enviando documento para o Gemini 3.7 Flash AI...' });
 
-  // Lista de modelos suportados para fallback caso o 3.7 ou 2.5 não esteja na conta
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  // Lista de modelos suportados (Gemini 3.7 Flash e 3.6 Flash)
+  const models = ['gemini-3.7-flash', 'gemini-3.6-flash'];
   let lastError = null;
   let responseData = null;
 
