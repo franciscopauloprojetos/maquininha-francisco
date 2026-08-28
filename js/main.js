@@ -34,6 +34,12 @@ import {
   canUserRegisterUnder
 } from './auth.js';
 
+import {
+  getStoredGeminiKey,
+  saveGeminiKey,
+  extractTransactionsWithGemini
+} from './geminiService.js';
+
 // Application State - Transações
 let currentTransactions = [...MOCK_TRANSACTIONS];
 let filteredTransactions = [...MOCK_TRANSACTIONS];
@@ -2365,6 +2371,235 @@ function setupEvents() {
   if (btnCloseDetailsModal) btnCloseDetailsModal.addEventListener('click', closeDetailsModal);
   if (btnCloseDetailsBtn) btnCloseDetailsBtn.addEventListener('click', closeDetailsModal);
 
+  // Modal: Importação Inteligente com Gemini AI
+  const geminiImportModal = document.getElementById('geminiImportModal');
+  const btnOpenGeminiImportModal = document.getElementById('btnOpenGeminiImportModal');
+  const btnCloseGeminiModal = document.getElementById('btnCloseGeminiModal');
+  const btnCancelGeminiModal = document.getElementById('btnCancelGeminiModal');
+  const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
+  const btnSaveGeminiKey = document.getElementById('btnSaveGeminiKey');
+  const geminiDropzone = document.getElementById('geminiDropzone');
+  const geminiFileInput = document.getElementById('geminiFileInput');
+  const geminiSelectedFileInfo = document.getElementById('geminiSelectedFileInfo');
+  const geminiSelectedFileName = document.getElementById('geminiSelectedFileName');
+  const geminiSelectedFileSize = document.getElementById('geminiSelectedFileSize');
+  const btnRemoveSelectedFile = document.getElementById('btnRemoveSelectedFile');
+  const geminiLoadingBox = document.getElementById('geminiLoadingBox');
+  const geminiProgressText = document.getElementById('geminiProgressText');
+  const geminiPreviewContainer = document.getElementById('geminiPreviewContainer');
+  const btnStartGeminiProcess = document.getElementById('btnStartGeminiProcess');
+  const btnConfirmGeminiImport = document.getElementById('btnConfirmGeminiImport');
+
+  let selectedGeminiFile = null;
+  let extractedGeminiData = null;
+
+  const closeGeminiModal = () => {
+    geminiImportModal?.classList.remove('open');
+    resetGeminiModalState();
+  };
+
+  const resetGeminiModalState = () => {
+    selectedGeminiFile = null;
+    extractedGeminiData = null;
+    if (geminiFileInput) geminiFileInput.value = '';
+    if (geminiDropzone) geminiDropzone.style.display = 'block';
+    if (geminiSelectedFileInfo) geminiSelectedFileInfo.style.display = 'none';
+    if (geminiLoadingBox) geminiLoadingBox.style.display = 'none';
+    if (geminiPreviewContainer) geminiPreviewContainer.style.display = 'none';
+    if (btnStartGeminiProcess) {
+      btnStartGeminiProcess.style.display = 'inline-flex';
+      btnStartGeminiProcess.disabled = false;
+    }
+    if (btnConfirmGeminiImport) btnConfirmGeminiImport.style.display = 'none';
+  };
+
+  const handleFileSelection = (file) => {
+    if (!file) return;
+    selectedGeminiFile = file;
+    if (geminiSelectedFileName) geminiSelectedFileName.textContent = file.name;
+    if (geminiSelectedFileSize) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      geminiSelectedFileSize.textContent = `(${sizeMB} MB)`;
+    }
+    if (geminiDropzone) geminiDropzone.style.display = 'none';
+    if (geminiSelectedFileInfo) geminiSelectedFileInfo.style.display = 'flex';
+    refreshIcons();
+  };
+
+  if (btnOpenGeminiImportModal) {
+    btnOpenGeminiImportModal.addEventListener('click', () => {
+      resetGeminiModalState();
+      if (geminiApiKeyInput) {
+        geminiApiKeyInput.value = getStoredGeminiKey();
+      }
+      geminiImportModal?.classList.add('open');
+      refreshIcons();
+    });
+  }
+
+  if (btnCloseGeminiModal) btnCloseGeminiModal.addEventListener('click', closeGeminiModal);
+  if (btnCancelGeminiModal) btnCancelGeminiModal.addEventListener('click', closeGeminiModal);
+
+  if (btnSaveGeminiKey) {
+    btnSaveGeminiKey.addEventListener('click', () => {
+      const key = geminiApiKeyInput?.value.trim();
+      saveGeminiKey(key);
+      showToast('Chave de API do Gemini salva com sucesso!');
+    });
+  }
+
+  if (geminiDropzone && geminiFileInput) {
+    geminiDropzone.addEventListener('click', () => geminiFileInput.click());
+
+    geminiDropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      geminiDropzone.style.borderColor = '#d97706';
+      geminiDropzone.style.backgroundColor = '#fffbeb';
+    });
+
+    geminiDropzone.addEventListener('dragleave', () => {
+      geminiDropzone.style.borderColor = '#cbd5e1';
+      geminiDropzone.style.backgroundColor = '#ffffff';
+    });
+
+    geminiDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      geminiDropzone.style.borderColor = '#cbd5e1';
+      geminiDropzone.style.backgroundColor = '#ffffff';
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleFileSelection(e.dataTransfer.files[0]);
+      }
+    });
+
+    geminiFileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleFileSelection(e.target.files[0]);
+      }
+    });
+  }
+
+  if (btnRemoveSelectedFile) {
+    btnRemoveSelectedFile.addEventListener('click', resetGeminiModalState);
+  }
+
+  // Start Gemini AI Extraction
+  if (btnStartGeminiProcess) {
+    btnStartGeminiProcess.addEventListener('click', async () => {
+      if (!selectedGeminiFile) {
+        showToast('Por favor, selecione um arquivo (PDF, imagem ou CSV) primeiro.', 'success');
+        return;
+      }
+
+      const apiKey = geminiApiKeyInput?.value.trim() || getStoredGeminiKey();
+      if (!apiKey) {
+        showToast('Por favor, insira sua chave da API do Google AI Studio.', 'success');
+        geminiApiKeyInput?.focus();
+        return;
+      }
+      saveGeminiKey(apiKey);
+
+      try {
+        if (geminiSelectedFileInfo) geminiSelectedFileInfo.style.display = 'none';
+        if (geminiLoadingBox) geminiLoadingBox.style.display = 'block';
+        if (btnStartGeminiProcess) btnStartGeminiProcess.disabled = true;
+
+        const result = await extractTransactionsWithGemini(
+          selectedGeminiFile,
+          apiKey,
+          (progress) => {
+            if (geminiProgressText) geminiProgressText.textContent = progress.message;
+          }
+        );
+
+        extractedGeminiData = result;
+
+        if (geminiLoadingBox) geminiLoadingBox.style.display = 'none';
+        if (geminiPreviewContainer) geminiPreviewContainer.style.display = 'block';
+
+        // Update preview KPIs
+        const prevCompany = document.getElementById('prevCompany');
+        const prevCount = document.getElementById('prevCount');
+        const prevGross = document.getElementById('prevGross');
+
+        const totalGross = result.transactions.reduce((acc, t) => acc + t.grossAmount, 0);
+
+        if (prevCompany) prevCompany.textContent = result.company;
+        if (prevCount) prevCount.textContent = `${result.transactions.length} transações`;
+        if (prevGross) prevGross.textContent = formatBRL(totalGross);
+
+        // Render preview table rows
+        const tbody = document.getElementById('geminiPreviewTableBody');
+        if (tbody) {
+          tbody.innerHTML = result.transactions.map(t => `
+            <tr>
+              <td><strong>${t.date}</strong> ${t.time}</td>
+              <td style="font-family: monospace;">${t.terminal}</td>
+              <td>${t.method} (${t.brand})</td>
+              <td><span class="badge-company-active" style="padding: 2px 6px; font-size: 11px;">${t.status}</span></td>
+              <td style="font-weight: 700;">${formatBRL(t.grossAmount)}</td>
+              <td style="color: #059669; font-weight: 700;">${formatBRL(t.netAmount)}</td>
+            </tr>
+          `).join('');
+        }
+
+        if (btnStartGeminiProcess) btnStartGeminiProcess.style.display = 'none';
+        if (btnConfirmGeminiImport) btnConfirmGeminiImport.style.display = 'inline-flex';
+        showToast(`Gemini extraiu ${result.transactions.length} transações com sucesso!`);
+      } catch (error) {
+        console.error('Erro na extração do Gemini:', error);
+        if (geminiLoadingBox) geminiLoadingBox.style.display = 'none';
+        if (geminiSelectedFileInfo) geminiSelectedFileInfo.style.display = 'flex';
+        if (btnStartGeminiProcess) btnStartGeminiProcess.disabled = false;
+        alert(`Erro ao processar com Gemini AI:\n${error.message}`);
+      }
+    });
+  }
+
+  // Confirm Import & Save
+  if (btnConfirmGeminiImport) {
+    btnConfirmGeminiImport.addEventListener('click', () => {
+      if (!extractedGeminiData || !extractedGeminiData.transactions.length) return;
+
+      const newTxs = extractedGeminiData.transactions;
+
+      // Injetar no início das transações
+      currentTransactions.unshift(...newTxs);
+      filteredTransactions = [...currentTransactions];
+
+      // Se a empresa extraída não estiver cadastrada, cadastrar automaticamente
+      const exists = currentCompanies.some(c => c.name.toUpperCase() === extractedGeminiData.company.toUpperCase());
+      if (!exists) {
+        const newComp = {
+          id: `EMP-${Date.now().toString().slice(-4)}`,
+          name: extractedGeminiData.company.toUpperCase(),
+          doc: '12.345.678/0001-90',
+          owner: extractedGeminiData.company.split(' ')[0],
+          email: 'contato@' + extractedGeminiData.company.toLowerCase().replace(/\s+/g, '') + '.com.br',
+          phone: '(41) 98888-7777',
+          createdAt: new Date().toLocaleDateString('pt-BR'),
+          status: 'Ativo',
+          registeredBy: 'USR-ADMIN'
+        };
+        currentCompanies.unshift(newComp);
+        filterCompanies();
+      }
+
+      // Atualizar lista de empresas no filtro se necessário
+      if (!MOCK_COMPANIES.includes(extractedGeminiData.company)) {
+        MOCK_COMPANIES.push(extractedGeminiData.company);
+        populateSelect('filterEmpresas', MOCK_COMPANIES);
+      }
+
+      currentPage = 1;
+      renderTable();
+      updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
+      updateDashboardStats();
+      closeGeminiModal();
+
+      showToast(`🎉 ${newTxs.length} transações de "${extractedGeminiData.company}" importadas com sucesso!`);
+    });
+  }
+
   // Close modals on backdrop click
   const newNetworkUserModal = document.getElementById('newNetworkUserModal');
   window.addEventListener('click', (e) => {
@@ -2374,6 +2609,7 @@ function setupEvents() {
     if (e.target === newNetworkUserModal) closeNewNetworkUserModal();
     if (e.target === editRateModal) closeEditRateModal();
     if (e.target === bulkRateModal) closeBulkRateModal();
+    if (e.target === geminiImportModal) closeGeminiModal();
   });
 
   // Dashboard Action Links
