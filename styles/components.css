@@ -384,15 +384,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .btn-primary-green {
-  background-color: var(--primary-green);
-  color: #ffffff;
+  background-color: #0f172a;
+  color: #facc15;
   padding: 0 22px;
-  box-shadow: 0 2px 4px rgba(0, 186, 80, 0.15);
+  font-weight: 700;
+  border: 1px solid #1e293b;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
 }
 
 .btn-primary-green:hover {
-  background-color: var(--primary-green-hover);
-  box-shadow: 0 4px 8px rgba(0, 186, 80, 0.25);
+  background-color: #1e293b;
+  color: #fde047;
+  border-color: #facc15;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
   transform: translateY(-1px);
 }
 
@@ -403,7 +407,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .btn-primary-green svg {
   width: 16px;
   height: 16px;
+  color: #facc15;
+  stroke: #facc15;
   stroke-width: 2.2;
+}
+
+.btn-primary-green:hover svg {
+  color: #fde047;
+  stroke: #fde047;
 }
 
 .btn-primary-blue {
@@ -1629,20 +1640,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   height: 36px;
   padding: 0 13px;
   border-radius: 8px;
-  border: 1px solid #059669;
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  color: #ffffff;
+  border: 1px solid #1e293b;
+  background: #0f172a;
+  color: #facc15;
   font-size: 12px;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   cursor: pointer;
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   animation: popInSpring 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-rate-save-pulse:hover {
-  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.45);
+  background: #1e293b;
+  color: #fde047;
+  border-color: #facc15;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   transform: translateY(-1px);
 }
 
@@ -1653,7 +1666,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .btn-rate-save-pulse svg {
   width: 14px;
   height: 14px;
+  color: #facc15;
+  stroke: #facc15;
   stroke-width: 2.5;
+}
+
+.btn-rate-save-pulse:hover svg {
+  color: #fde047;
+  stroke: #fde047;
 }
 
 @keyframes popInSpring {
