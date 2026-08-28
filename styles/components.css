@@ -1142,6 +1142,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .commissions-metrics-grid {
     grid-template-columns: 1fr;
   }
+}
+
 /* ==========================================================================
    CONTROLE DE ALÍQUOTA DE COMISSÃO (DESIGN PREMIUM & FINTECH LUXURY)
    ========================================================================== */
