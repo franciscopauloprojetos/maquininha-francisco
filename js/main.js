@@ -934,7 +934,7 @@ function renderRatesTable() {
   if (totalRecords === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+        <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">
           Nenhuma empresa encontrada com os filtros pesquisados.
         </td>
       </tr>
@@ -963,23 +963,16 @@ function renderRatesTable() {
         </td>
         <td>${statusBadge}</td>
         <td style="text-align: center;">
-          <span class="badge-commission" style="font-size: 13px; font-weight: 800; padding: 4px 10px;">${rate}%</span>
-        </td>
-        <td style="text-align: center;">
-          <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-            <input type="number" step="0.1" min="0" max="100" class="inline-rate-input" data-id="${comp.id}" value="${rate}">
-            <span style="font-weight: 700; color: #64748b; font-size: 13px;">%</span>
-            <button type="button" class="btn btn-sm btn-primary-green btn-save-inline-rate" data-id="${comp.id}" title="Salvar Alíquota">
+          <div class="inline-rate-cell" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+            <div class="rate-input-box">
+              <input type="number" step="0.1" min="0" max="100" class="inline-rate-input" data-id="${comp.id}" data-original="${rate}" value="${rate}" title="Clique para editar a alíquota">
+              <span class="rate-symbol">%</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary-green btn-save-inline-rate" data-id="${comp.id}" style="display: none;" title="Salvar alteração">
               <i data-lucide="check" style="width: 13px; height: 13px;"></i>
               <span>Salvar</span>
             </button>
           </div>
-        </td>
-        <td style="text-align: center;">
-          <button type="button" class="btn btn-sm btn-ghost btn-open-edit-rate" data-id="${comp.id}" title="Ajustar Alíquota no Modal" style="color: #1d68d8; font-weight: 600;">
-            <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
-            <span>Ajustar</span>
-          </button>
         </td>
       </tr>
     `;
@@ -988,7 +981,47 @@ function renderRatesTable() {
   renderRatesPagination(totalPages);
   refreshIcons();
 
-  // Attach inline save events
+  // Attach dynamic input change & save events
+  tbody.querySelectorAll('.inline-rate-input').forEach(input => {
+    const id = input.getAttribute('data-id');
+    const row = input.closest('tr');
+    const saveBtn = row?.querySelector(`.btn-save-inline-rate[data-id="${id}"]`);
+
+    const checkChange = () => {
+      const original = parseFloat(input.getAttribute('data-original'));
+      const current = parseFloat(input.value);
+      if (!isNaN(current) && current !== original) {
+        if (saveBtn) saveBtn.style.display = 'inline-flex';
+      } else {
+        if (saveBtn) saveBtn.style.display = 'none';
+      }
+    };
+
+    input.addEventListener('input', checkChange);
+    input.addEventListener('focus', () => {
+      input.select();
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const val = parseFloat(input.value);
+        if (isNaN(val) || val < 0 || val > 100) {
+          showToast('Informe uma alíquota válida entre 0% e 100%.');
+          return;
+        }
+        updateCompanyCommissionRate(id, val);
+        input.setAttribute('data-original', val.toFixed(1));
+        if (saveBtn) saveBtn.style.display = 'none';
+        input.blur();
+      } else if (e.key === 'Escape') {
+        input.value = input.getAttribute('data-original');
+        if (saveBtn) saveBtn.style.display = 'none';
+        input.blur();
+      }
+    });
+  });
+
   tbody.querySelectorAll('.btn-save-inline-rate').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
@@ -1000,15 +1033,9 @@ function renderRatesTable() {
           return;
         }
         updateCompanyCommissionRate(id, val);
+        input.setAttribute('data-original', val.toFixed(1));
+        btn.style.display = 'none';
       }
-    });
-  });
-
-  // Attach modal open events
-  tbody.querySelectorAll('.btn-open-edit-rate').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-id');
-      openEditRateModal(id);
     });
   });
 }

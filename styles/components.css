@@ -1142,58 +1142,70 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .commissions-metrics-grid {
     grid-template-columns: 1fr;
   }
+/* Rate Input Box & Dynamic Save Button */
+.rate-input-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
 }
 
-/* Inline Rate Input & Action Buttons */
 .inline-rate-input {
-  width: 74px;
-  height: 32px;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
+  width: 84px;
+  height: 34px;
+  padding: 4px 22px 4px 8px;
+  border-radius: var(--radius-md);
   border: 1.5px solid #cbd5e1;
-  background-color: #ffffff;
+  background-color: #f8fafc;
   color: #0f172a;
   font-size: 13.5px;
-  font-weight: 700;
+  font-weight: 800;
   text-align: center;
   outline: none;
+  cursor: pointer;
   transition: all var(--transition-fast);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .inline-rate-input:hover {
   border-color: #94a3b8;
+  background-color: #ffffff;
 }
 
 .inline-rate-input:focus {
   border-color: #059669;
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
   background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+  cursor: text;
+}
+
+.rate-symbol {
+  position: absolute;
+  right: 8px;
+  font-weight: 800;
+  font-size: 12px;
+  color: #64748b;
+  pointer-events: none;
 }
 
 .btn-save-inline-rate {
-  padding: 4px 10px !important;
-  font-size: 11.5px !important;
+  padding: 4px 12px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
-  gap: 4px !important;
-  border-radius: var(--radius-sm) !important;
-  height: 32px !important;
+  gap: 5px !important;
+  border-radius: var(--radius-md) !important;
+  height: 34px !important;
+  animation: fadeInPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.btn-open-edit-rate {
-  padding: 4px 10px !important;
-  font-size: 11.5px !important;
-  gap: 4px !important;
-  border-radius: var(--radius-sm) !important;
-  background-color: #eff6ff !important;
-  color: #1d68d8 !important;
-  font-weight: 700 !important;
-  border: 1px solid #bfdbfe !important;
-  height: 32px !important;
-}
-
-.btn-open-edit-rate:hover {
-  background-color: #dbeafe !important;
+@keyframes fadeInPop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 
