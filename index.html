@@ -16,6 +16,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <!-- PDF.js for fast client-side statement extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -260,7 +268,7 @@
                   <label class="filter-label" for="filterDataInicio">Início</label>
                   <div class="input-wrapper">
                     <span class="input-icon-left"><i data-lucide="calendar"></i></span>
-                    <input type="text" id="filterDataInicio" class="custom-input" value="01/07/2026">
+                    <input type="text" id="filterDataInicio" class="custom-input" placeholder="DD/MM/AAAA">
                   </div>
                 </div>
 
@@ -268,7 +276,7 @@
                   <label class="filter-label" for="filterDataTermino">Término</label>
                   <div class="input-wrapper">
                     <span class="input-icon-left"><i data-lucide="calendar"></i></span>
-                    <input type="text" id="filterDataTermino" class="custom-input" value="27/08/2026">
+                    <input type="text" id="filterDataTermino" class="custom-input" placeholder="DD/MM/AAAA">
                   </div>
                 </div>
 
@@ -314,7 +322,7 @@
                   <span class="kpi-tile-icon icon-slate"><i data-lucide="bar-chart-3"></i></span>
                   <span class="kpi-tile-label">Total Faturamento</span>
                 </div>
-                <div class="kpi-tile-value val-slate" id="valTotalFaturamento">R$ 125.579,07</div>
+                <div class="kpi-tile-value val-slate" id="valTotalFaturamento">R$ 0,00</div>
               </div>
 
               <!-- Item 2: Total Empresa -->
@@ -323,7 +331,7 @@
                   <span class="kpi-tile-icon icon-slate"><i data-lucide="building-2"></i></span>
                   <span class="kpi-tile-label">Total Empresa</span>
                 </div>
-                <div class="kpi-tile-value val-slate" id="valTotalEmpresa">R$ 118.178,67</div>
+                <div class="kpi-tile-value val-slate" id="valTotalEmpresa">R$ 0,00</div>
               </div>
 
               <!-- Item 3: Total Líquido -->
@@ -332,7 +340,7 @@
                   <span class="kpi-tile-icon icon-blue"><i data-lucide="wallet"></i></span>
                   <span class="kpi-tile-label">Total Líquido</span>
                 </div>
-                <div class="kpi-tile-value val-blue" id="valTotalLiquido">R$ 2.177,38</div>
+                <div class="kpi-tile-value val-blue" id="valTotalLiquido">R$ 0,00</div>
               </div>
 
               <!-- Item 4: Total Parceiro -->
@@ -341,7 +349,7 @@
                   <span class="kpi-tile-icon icon-emerald"><i data-lucide="trending-up"></i></span>
                   <span class="kpi-tile-label">Total Parceiro</span>
                 </div>
-                <div class="kpi-tile-value val-emerald" id="valTotalParceiro">R$ 1.692,06</div>
+                <div class="kpi-tile-value val-emerald" id="valTotalParceiro">R$ 0,00</div>
               </div>
 
               <!-- Item 5: Total Pago Clientes -->
@@ -350,7 +358,7 @@
                   <span class="kpi-tile-icon icon-amber"><i data-lucide="credit-card"></i></span>
                   <span class="kpi-tile-label">Total Pago Clientes</span>
                 </div>
-                <div class="kpi-tile-value val-amber" id="valTotalPagoClientes">R$ 425,13</div>
+                <div class="kpi-tile-value val-amber" id="valTotalPagoClientes">R$ 0,00</div>
               </div>
 
               <!-- Item 6: Total Comissão Cliente -->
@@ -359,7 +367,7 @@
                   <span class="kpi-tile-icon icon-emerald"><i data-lucide="coins"></i></span>
                   <span class="kpi-tile-label">Total Comissão Cliente</span>
                 </div>
-                <div class="kpi-tile-value val-emerald" id="valTotalComissaoCliente">R$ 0,05</div>
+                <div class="kpi-tile-value val-emerald" id="valTotalComissaoCliente">R$ 0,00</div>
               </div>
             </div>
           </section>
@@ -375,13 +383,19 @@
             </div>
 
             <!-- Barra de busca e totalizador da tabela -->
-            <div class="table-toolbar">
-              <div class="table-search input-wrapper">
+            <div class="table-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
+              <div class="table-search input-wrapper" style="flex: 1; max-width: 380px;">
                 <span class="input-icon-left"><i data-lucide="search"></i></span>
-                <input type="text" id="tableSearchInput" class="custom-input" placeholder="Buscar por terminal, empresa...">
+                <input type="text" id="tableSearchInput" class="custom-input" placeholder="Buscar por terminal, empresa, status...">
               </div>
-              <div class="table-meta-count" id="tableRecordCount">
-                Exibindo <strong>9</strong> transações
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="button" class="btn btn-ghost" id="btnClearTransactionsTable" style="height: 36px; padding: 0 12px; font-size: 12px; color: #ef4444; font-weight: 700; display: none; align-items: center; gap: 6px;">
+                  <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                  <span>Limpar Dados</span>
+                </button>
+                <div class="table-meta-count" id="tableRecordCount" style="font-size: 13px; color: #64748b;">
+                  Exibindo <strong>0</strong> transações
+                </div>
               </div>
             </div>
 
@@ -390,9 +404,9 @@
               <table class="data-table" id="transactionsTable">
                 <thead>
                   <tr>
-                    <th class="sortable" data-sort="terminal" style="min-width: 180px;">Terminal</th>
+                    <th class="sortable" data-sort="terminal" style="min-width: 160px;">Terminal</th>
                     <th class="sortable" data-sort="date" style="min-width: 110px;">Data</th>
-                    <th class="sortable" data-sort="company" style="min-width: 190px;">Empresa</th>
+                    <th class="sortable" data-sort="company" style="min-width: 180px; max-width: 220px;">Empresa</th>
                     <th style="min-width: 215px; width: 215px;">Pagamento</th>
                     <th class="sortable" data-sort="status" style="min-width: 120px;">Status</th>
                     <th style="min-width: 80px;">Taxa</th>
@@ -408,13 +422,24 @@
               </table>
             </div>
 
-            <!-- Paginação -->
-            <div class="pagination-container">
-              <div class="pagination-info" id="paginationInfo">
-                Página 1 de 1
+            <!-- Paginação com Seletor de Linhas (10, 50, 100, Todas) -->
+            <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #edf2f7;">
+              <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                <div class="pagination-info" id="paginationInfo" style="font-size: 13px; font-weight: 600; color: #64748b;">
+                  Página 1 de 1
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b;">
+                  <label for="selectRowsPerPage" style="font-weight: 700;">Exibir:</label>
+                  <select id="selectRowsPerPage" style="height: 32px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-size: 12px; font-weight: 700; color: #0f172a; cursor: pointer; outline: none;">
+                    <option value="10">10 linhas</option>
+                    <option value="50">50 linhas</option>
+                    <option value="100">100 linhas</option>
+                    <option value="all">Todas as linhas</option>
+                  </select>
+                </div>
               </div>
-              <div class="pagination-controls" id="paginationControls">
-                <!-- Botões de navegação -->
+              <div class="pagination-controls" id="paginationControls" style="display: flex; align-items: center; gap: 4px;">
+                <!-- Botões de navegação inteligentes -->
               </div>
             </div>
           </section>
@@ -1309,25 +1334,42 @@
         </div>
 
         <!-- Estado de Carregamento / Processamento do Gemini -->
-        <div id="geminiLoadingBox" style="display: none; text-align: center; padding: 36px 20px;">
-          <div class="spinner-ai" style="width: 44px; height: 44px; border: 4px solid #f1f5f9; border-top-color: #facc15; border-radius: 50%; margin: 0 auto 16px; animation: spin 0.8s linear infinite;"></div>
-          <h4 id="geminiProgressText" style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0;">Importando</h4>
+        <div id="geminiLoadingBox" style="display: none; text-align: center; padding: 28px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-top: 14px;">
+          <div style="position: relative; width: 54px; height: 54px; margin: 0 auto 14px;">
+            <div class="spinner-ai" style="width: 54px; height: 54px; border: 4px solid #e2e8f0; border-top-color: #facc15; border-right-color: #f59e0b; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="sparkles" style="width: 18px; height: 18px; color: #d97706;"></i>
+            </div>
+          </div>
+          <h4 id="geminiProgressTitle" style="font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Analisando Documento</h4>
+          <p id="geminiProgressText" style="font-size: 12.5px; color: #64748b; margin-bottom: 14px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.4;">Iniciando leitura inteligente do relatório com Gemini 3.5 Flash...</p>
+          
+          <!-- Barra de Progresso Visual -->
+          <div style="width: 100%; max-width: 400px; height: 7px; background: #e2e8f0; border-radius: 99px; margin: 0 auto 10px; overflow: hidden;">
+            <div id="geminiProgressBar" style="width: 20%; height: 100%; background: linear-gradient(90deg, #facc15, #f59e0b); border-radius: 99px; transition: width 0.3s ease;"></div>
+          </div>
+          
+          <div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11.5px; color: #64748b; font-weight: 600;">
+            <span id="geminiProgressStepBadge" style="background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 4px; font-weight: 700; border: 1px solid #dbeafe;">Etapa 1/3</span>
+            <span>•</span>
+            <span id="geminiProgressTimer">0.0s</span>
+          </div>
         </div>
 
         <!-- Pré-visualização dos Resultados Extraídos -->
-        <div id="geminiPreviewContainer" style="display: none; margin-top: 16px;">
+        <div id="geminiPreviewContainer" style="display: none; margin-top: 16px; width: 100%;">
           <!-- Mini resumo em cards -->
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px;">
-            <div style="padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-              <span style="font-size: 11px; color: #64748b; font-weight: 600;">Empresa Identificada</span>
-              <div id="prevCompany" style="font-size: 13px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; width: 100%;">
+            <div style="padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; min-width: 0; overflow: hidden;">
+              <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">Empresa Identificada</span>
+              <div id="prevCompany" style="font-size: 13px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Empresa">-</div>
             </div>
-            <div style="padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-              <span style="font-size: 11px; color: #64748b; font-weight: 600;">Total de Transações</span>
+            <div style="padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; min-width: 0; overflow: hidden;">
+              <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">Total de Transações</span>
               <div id="prevCount" style="font-size: 15px; font-weight: 800; color: #0f172a;">0</div>
             </div>
-            <div style="padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-              <span style="font-size: 11px; color: #64748b; font-weight: 600;">Faturamento Bruto</span>
+            <div style="padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; min-width: 0; overflow: hidden;">
+              <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">Faturamento Bruto</span>
               <div id="prevGross" style="font-size: 15px; font-weight: 800; color: #059669;">R$ 0,00</div>
             </div>
           </div>

@@ -55,8 +55,18 @@ export async function fetchTransactionsFromSupabase() {
       return null;
     }
 
+    const mockCompanies = [
+      'Auto Posto Alvorada Ltda', 'Supermercado Real Super', 'Restaurante Sabor & Arte',
+      'Boutique Bella Moda', 'Padaria & Confeitaria Estrela', 'Drogaria Central Popular',
+      'Tech Prime Eletrônicos', 'Francisco Comércio Varejista', 'Ótica Nova Visão',
+      'Mecânica Express Auto', 'ESSENCE BEAUTY MIND', 'WILLYAN', 'ALINE RENATA DA ROSA',
+      'EVANDRO CARNIEL', 'VICTOR HUGO ALVES', 'K. SA CAFES ESPECIAIS LTDA'
+    ];
+
+    const realRows = (data || []).filter(row => !mockCompanies.includes(row.company));
+
     // Normalizar nomes de colunas do banco para o padrão JS
-    return data.map(row => ({
+    return realRows.map(row => ({
       id: row.id,
       date: row.date,
       company: row.company,

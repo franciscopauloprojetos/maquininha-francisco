@@ -40,24 +40,133 @@ import {
   extractTransactionsWithGemini
 } from './geminiService.js';
 
-// Application State - Transações
-let currentTransactions = [...MOCK_TRANSACTIONS];
-let filteredTransactions = [...MOCK_TRANSACTIONS];
+// Limpeza automática de dados mocados herdados do cache local
+const MOCK_COMPANY_BLACKLIST = [
+  'Auto Posto Alvorada Ltda', 'Supermercado Real Super', 'Restaurante Sabor & Arte',
+  'Boutique Bella Moda', 'Padaria & Confeitaria Estrela', 'Drogaria Central Popular',
+  'Tech Prime Eletrônicos', 'Francisco Comércio Varejista', 'Ótica Nova Visão',
+  'Mecânica Express Auto', 'ESSENCE BEAUTY MIND', 'WILLYAN', 'ALINE RENATA DA ROSA',
+  'EVANDRO CARNIEL', 'VICTOR HUGO ALVES', 'K. SA CAFES ESPECIAIS LTDA'
+];
+
+(function purgeLegacyMockData() {
+  try {
+    const purgeKey = 'konzpay_mock_purged_v2';
+    if (!localStorage.getItem(purgeKey)) {
+      localStorage.removeItem('konzpay_saved_transactions');
+      localStorage.removeItem('konzpay_saved_companies');
+      localStorage.removeItem('konzpay_saved_commissions');
+      localStorage.removeItem('konzpay_network_users_list');
+      localStorage.setItem(purgeKey, 'true');
+    }
+  } catch (e) {}
+})();
+
+function isMockItem(item) {
+  if (!item) return false;
+  const name = item.company || item.name || '';
+  if (MOCK_COMPANY_BLACKLIST.includes(name)) return true;
+  if (item.id && (item.id.startsWith('TX-1') || item.id.startsWith('TX-MOCK') || item.id === 'EMP-001')) {
+    if (name !== 'MIRANTE BRISA MAR GASTRONOMIA') return true;
+  }
+  return false;
+}
+
+// LocalStorage helpers for real persistence
+export function getStoredTransactions() {
+  try {
+    const saved = localStorage.getItem('konzpay_saved_transactions');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const realOnly = parsed.filter(t => !isMockItem(t));
+        if (realOnly.length !== parsed.length) {
+          localStorage.setItem('konzpay_saved_transactions', JSON.stringify(realOnly));
+        }
+        return realOnly;
+      }
+    }
+  } catch (e) {}
+  return [];
+}
+
+export function saveTransactions(list) {
+  try {
+    const realOnly = (list || []).filter(t => !isMockItem(t));
+    localStorage.setItem('konzpay_saved_transactions', JSON.stringify(realOnly));
+  } catch (e) {}
+}
+
+// Application State - Transações (100% Real, sem dados mocados)
+let currentTransactions = getStoredTransactions();
+let filteredTransactions = [...currentTransactions];
 let currentPage = 1;
-const recordsPerPage = 10;
+let recordsPerPage = localStorage.getItem('konzpay_rows_per_page') === 'all'
+  ? Infinity
+  : (parseInt(localStorage.getItem('konzpay_rows_per_page')) || 10);
 let currentSort = { column: 'date', order: 'desc' };
 
-// Application State - Empresas
-let currentCompanies = [...MOCK_COMPANIES_DATA];
-let filteredCompanies = [...MOCK_COMPANIES_DATA];
+// LocalStorage helpers for companies persistence
+export function getStoredCompanies() {
+  try {
+    const saved = localStorage.getItem('konzpay_saved_companies');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const realOnly = parsed.filter(c => !isMockItem(c));
+        if (realOnly.length !== parsed.length) {
+          localStorage.setItem('konzpay_saved_companies', JSON.stringify(realOnly));
+        }
+        return realOnly;
+      }
+    }
+  } catch (e) {}
+  return [];
+}
+
+export function saveCompanies(list) {
+  try {
+    const realOnly = (list || []).filter(c => !isMockItem(c));
+    localStorage.setItem('konzpay_saved_companies', JSON.stringify(realOnly));
+  } catch (e) {}
+}
+
+// LocalStorage helpers for commissions persistence
+export function getStoredCommissions() {
+  try {
+    const saved = localStorage.getItem('konzpay_saved_commissions');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const realOnly = parsed.filter(c => !isMockItem(c));
+        if (realOnly.length !== parsed.length) {
+          localStorage.setItem('konzpay_saved_commissions', JSON.stringify(realOnly));
+        }
+        return realOnly;
+      }
+    }
+  } catch (e) {}
+  return [];
+}
+
+export function saveCommissions(list) {
+  try {
+    const realOnly = (list || []).filter(c => !isMockItem(c));
+    localStorage.setItem('konzpay_saved_commissions', JSON.stringify(realOnly));
+  } catch (e) {}
+}
+
+// Application State - Empresas (100% Real, sem dados mocados)
+let currentCompanies = getStoredCompanies();
+let filteredCompanies = [...currentCompanies];
 let companiesCurrentPage = 1;
 const companiesPerPage = 8;
 let companiesSort = { column: 'createdAt', order: 'desc' };
 let selectedCompanyIds = new Set();
 
-// Application State - Comissões
-let currentCommissions = [...MOCK_COMMISSIONS_DATA];
-let filteredCommissions = [...MOCK_COMMISSIONS_DATA];
+// Application State - Comissões (100% Real, sem dados mocados)
+let currentCommissions = getStoredCommissions();
+let filteredCommissions = [...currentCommissions];
 let commissionsCurrentPage = 1;
 const commissionsPerPage = 8;
 let commissionsSort = { column: 'date', order: 'desc' };
@@ -262,17 +371,51 @@ function populateSelect(elementId, options) {
   syncAllCustomSelects();
 }
 
+// Dynamic Transaction Filter Options Synchronizer
+function refreshTransactionFiltersOptions(txs = currentTransactions) {
+  const companies = ['Todas as empresas', ...Array.from(new Set(txs.map(t => t.company).filter(Boolean))).sort()];
+  const partners = ['Todos os parceiros', ...Array.from(new Set(txs.map(t => t.partner).filter(Boolean))).sort()];
+  const terminals = ['Todos os terminais', ...Array.from(new Set(txs.map(t => t.terminal).filter(Boolean))).sort()];
+  const methods = ['Todas as formas', ...Array.from(new Set(txs.map(t => t.method).filter(Boolean))).sort()];
+  const installments = ['Todas as parcelas', ...Array.from(new Set(txs.map(t => t.installments).filter(Boolean))).sort()];
+  const brands = ['Todas as bandeiras', ...Array.from(new Set(txs.map(t => t.brand).filter(Boolean))).sort()];
+  const statuses = ['Todos os status', ...Array.from(new Set(txs.map(t => t.status).filter(Boolean))).sort()];
+  const accounts = ['Todas as contas', ...Array.from(new Set(txs.map(t => t.providerAccount).filter(Boolean))).sort()];
+  const spreads = ['Todos os spreads', '0.50%', '0.70%', '0.90%', '1.20%'];
+
+  populateSelect('filterEmpresas', companies.length > 1 ? companies : ['Todas as empresas']);
+  populateSelect('filterParceiro', partners.length > 1 ? partners : ['Todos os parceiros', 'Alpha Soluções e Pagamentos']);
+  populateSelect('filterTerminal', terminals.length > 1 ? terminals : ['Todos os terminais']);
+  populateSelect('filterFormaPagamento', methods.length > 1 ? methods : ['Todas as formas', 'Débito', 'Crédito à Vista', 'Crédito Parcelado', 'PIX QR Code']);
+  populateSelect('filterParcelas', installments.length > 1 ? installments : ['Todas as parcelas', '1x', '2x', '3x', '4x', '5x', '6x']);
+  populateSelect('filterBandeira', brands.length > 1 ? brands : ['Todas as bandeiras', 'Mastercard', 'Visa', 'Elo', 'Maestro', 'Pix']);
+  populateSelect('filterStatus', statuses.length > 1 ? statuses : ['Todos os status', 'Aprovada', 'Rejeitada', 'Estornada']);
+  populateSelect('filterContaProvedor', accounts.length > 1 ? accounts : ['Todas as contas', 'American']);
+  populateSelect('filterSpread', spreads);
+
+  // Preencher datas de início e término com as datas limites do extrato
+  if (txs.length > 0) {
+    const dates = txs.map(t => {
+      const dStr = t.date ? t.date.split(' ')[0] : '';
+      if (!dStr || !dStr.includes('/')) return null;
+      const [d, m, y] = dStr.split('/').map(Number);
+      return { str: dStr, time: new Date(y, m - 1, d).getTime() };
+    }).filter(Boolean).sort((a, b) => a.time - b.time);
+
+    if (dates.length > 0) {
+      const minDate = dates[0].str;
+      const maxDate = dates[dates.length - 1].str;
+      const inputInicio = document.getElementById('filterDataInicio');
+      const inputFim = document.getElementById('filterDataTermino');
+      if (inputInicio && !inputInicio.value) inputInicio.value = minDate;
+      if (inputFim && !inputFim.value) inputFim.value = maxDate;
+    }
+  }
+}
+
 // Initialize all filters dropdowns
 function initFilters() {
-  populateSelect('filterEmpresas', MOCK_COMPANIES);
-  populateSelect('filterParceiro', MOCK_PARTNERS);
-  populateSelect('filterTerminal', MOCK_TERMINALS);
-  populateSelect('filterFormaPagamento', MOCK_PAYMENT_METHODS);
-  populateSelect('filterParcelas', MOCK_INSTALLMENTS);
-  populateSelect('filterBandeira', MOCK_BRANDS);
-  populateSelect('filterStatus', MOCK_STATUSES);
-  populateSelect('filterContaProvedor', MOCK_PROVIDER_ACCOUNTS);
-  populateSelect('filterSpread', MOCK_SPREADS);
+  refreshTransactionFiltersOptions(currentTransactions);
   initCustomSelects();
 }
 
@@ -288,7 +431,7 @@ function updateKPIs(kpis) {
 
 // Calculate KPIs based on a list of transactions
 function calculateKPIsFromTransactions(list) {
-  if (list.length === 0) {
+  if (!list || list.length === 0) {
     return {
       totalFaturamento: 0,
       totalEmpresa: 0,
@@ -299,16 +442,13 @@ function calculateKPIsFromTransactions(list) {
     };
   }
 
-  if (list.length === MOCK_TRANSACTIONS.length) {
-    return INITIAL_KPIS;
-  }
-
-  const faturamento = list.reduce((acc, tx) => acc + tx.grossAmount, 0);
-  const liquido = list.reduce((acc, tx) => acc + tx.netAmount, 0);
-  const parceiro = list.reduce((acc, tx) => acc + (tx.partnerCommission || 0), 0);
+  const faturamento = list.reduce((acc, tx) => acc + (tx.grossAmount || 0), 0);
+  const liquido = list.reduce((acc, tx) => acc + (tx.netAmount || 0), 0);
+  const spread = list.reduce((acc, tx) => acc + (tx.spread || 0), 0);
+  const parceiro = spread * 0.4;
   const empresa = liquido - parceiro;
   const pagoClientes = list.reduce((acc, tx) => acc + (tx.clientPaid || 0), 0);
-  const comissaoCliente = list.reduce((acc, tx) => acc + (tx.clientCommission || 0), 0);
+  const comissaoCliente = spread * 0.6;
 
   return {
     totalFaturamento: faturamento,
@@ -327,6 +467,14 @@ function getBrandIcon(brand) {
     return `
       <svg width="32" height="13" viewBox="0 0 32 13" fill="none">
         <text x="1" y="11" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="12.5" font-weight="900" font-style="italic" fill="#1434CB" letter-spacing="-0.5">VISA</text>
+      </svg>
+    `;
+  }
+  if (b.includes('maestro')) {
+    return `
+      <svg width="24" height="16" viewBox="0 0 32 20" fill="none">
+        <circle cx="11" cy="10" r="9" fill="#EB001B"/>
+        <circle cx="21" cy="10" r="9" fill="#00A2E8" fill-opacity="0.88"/>
       </svg>
     `;
   }
@@ -354,11 +502,7 @@ function getBrandIcon(brand) {
     `;
   }
   if (b.includes('pix')) {
-    return `
-      <svg width="22" height="14" viewBox="0 0 24 14" fill="none">
-        <path d="M7 2L3 7L7 12L12 7L7 2ZM17 2L12 7L17 12L21 7L17 2Z" fill="#32BCAD"/>
-      </svg>
-    `;
+    return `<img src="assets/logo%20pix%20bandeira.svg" alt="Pix" style="width: 20px; height: 20px; object-fit: contain; display: block;" onerror="this.src='assets/pix.svg'">`;
   }
   if (b.includes('amex') || b.includes('american')) {
     return `
@@ -406,28 +550,61 @@ function renderTable() {
     return currentSort.order === 'asc' ? valA - valB : valB - valA;
   });
 
-  // Pagination calculation
   const totalRecords = filteredTransactions.length;
-  const totalPages = Math.ceil(totalRecords / recordsPerPage) || 1;
-  if (currentPage > totalPages) currentPage = totalPages;
-
-  const startIndex = (currentPage - 1) * recordsPerPage;
-  const endIndex = Math.min(startIndex + recordsPerPage, totalRecords);
-  const currentSlice = filteredTransactions.slice(startIndex, endIndex);
-
   countEl.innerHTML = `Exibindo <strong>${totalRecords}</strong> transações`;
 
+  // Toggle botão Limpar Dados
+  const clearBtn = document.getElementById('btnClearTransactionsTable');
+  if (clearBtn) {
+    clearBtn.style.display = currentTransactions.length > 0 ? 'inline-flex' : 'none';
+  }
+
+  // Estado Vazio (Zero transações)
   if (totalRecords === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="10" style="text-align: center; padding: 40px; color: #94a3b8;">
-          Nenhuma transação encontrada com os filtros aplicados.
-        </td>
-      </tr>
-    `;
-    renderPagination(totalPages);
+    if (currentTransactions.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" style="text-align: center; padding: 60px 20px; background: #ffffff;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: #fffbeb; border: 1px solid #fef3c7; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+              <i data-lucide="inbox" style="width: 26px; height: 26px; color: #d97706;"></i>
+            </div>
+            <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Nenhuma transação carregada</h4>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 16px; max-width: 420px; margin-left: auto; margin-right: auto;">Importe um relatório de vendas em PDF ou imagem para analisar todas as transações, taxas e repasses.</p>
+            <button type="button" class="btn btn-primary-yellow" id="btnEmptyStateImport" style="background: #facc15; color: #0f172a; font-weight: 700; border: 1px solid #eab308; display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+              <i data-lucide="upload-cloud" style="width: 16px; height: 16px;"></i>
+              <span>Importar Primeiro Relatório</span>
+            </button>
+          </td>
+        </tr>
+      `;
+      const emptyImportBtn = document.getElementById('btnEmptyStateImport');
+      if (emptyImportBtn) {
+        emptyImportBtn.addEventListener('click', () => {
+          document.getElementById('btnOpenGeminiImportModal')?.click();
+        });
+      }
+    } else {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" style="text-align: center; padding: 40px; color: #94a3b8; background: #ffffff;">
+            Nenhuma transação encontrada com os filtros aplicados.
+          </td>
+        </tr>
+      `;
+    }
+    renderPagination(1);
+    refreshIcons();
     return;
   }
+
+  // Paginação e Modo de Visualização (10, 50, 100 ou Todas)
+  const isAllRows = recordsPerPage === Infinity;
+  const totalPages = isAllRows ? 1 : (Math.ceil(totalRecords / recordsPerPage) || 1);
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const startIndex = isAllRows ? 0 : (currentPage - 1) * recordsPerPage;
+  const endIndex = isAllRows ? totalRecords : Math.min(startIndex + recordsPerPage, totalRecords);
+  const currentSlice = filteredTransactions.slice(startIndex, endIndex);
 
   tbody.innerHTML = currentSlice.map(tx => {
     let dateOnly = tx.date;
@@ -450,7 +627,7 @@ function renderTable() {
             <span class="date-time">${timeOnly}</span>
           </div>
         </td>
-        <td class="cell-company">${tx.company}</td>
+        <td class="cell-company" title="${tx.company}">${tx.company}</td>
         <td>
           <div class="cell-payment">
             <div class="payment-info" title="${tx.method}">
@@ -478,29 +655,62 @@ function renderTable() {
   refreshIcons();
 }
 
-// Render Pagination controls
+// Render Pagination controls (com janela compacta e inteligente)
 function renderPagination(totalPages) {
   const info = document.getElementById('paginationInfo');
   const controls = document.getElementById('paginationControls');
+  if (!info || !controls) return;
 
-  info.textContent = `Página ${currentPage} de ${totalPages}`;
+  const totalRecords = filteredTransactions.length;
+  if (recordsPerPage === Infinity || totalRecords === 0) {
+    info.textContent = `Exibindo todas as ${totalRecords} transações`;
+    controls.innerHTML = '';
+    return;
+  }
+
+  info.textContent = `Página ${currentPage} de ${totalPages} (${totalRecords} transações)`;
+
+  if (totalPages <= 1) {
+    controls.innerHTML = '';
+    return;
+  }
 
   let buttonsHtml = `
-    <button class="page-btn" id="btnPrevPage" ${currentPage === 1 ? 'disabled' : ''}>
+    <button class="page-btn" id="btnPrevPage" ${currentPage === 1 ? 'disabled' : ''} title="Página Anterior">
       <i data-lucide="chevron-left" style="width: 15px; height: 15px;"></i>
     </button>
   `;
 
-  for (let p = 1; p <= totalPages; p++) {
-    buttonsHtml += `
-      <button class="page-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">
-        ${p}
-      </button>
-    `;
+  // Janela compacta inteligente (evita 32 botões)
+  const pages = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (currentPage > 3) pages.push('...');
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+    for (let i = start; i <= end; i++) {
+      if (!pages.includes(i)) pages.push(i);
+    }
+    if (currentPage < totalPages - 2) pages.push('...');
+    if (!pages.includes(totalPages)) pages.push(totalPages);
   }
 
+  pages.forEach(p => {
+    if (p === '...') {
+      buttonsHtml += `<span style="padding: 0 4px; color: #94a3b8; font-weight: 700; font-size: 13px;">...</span>`;
+    } else {
+      buttonsHtml += `
+        <button class="page-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">
+          ${p}
+        </button>
+      `;
+    }
+  });
+
   buttonsHtml += `
-    <button class="page-btn" id="btnNextPage" ${currentPage === totalPages ? 'disabled' : ''}>
+    <button class="page-btn" id="btnNextPage" ${currentPage === totalPages ? 'disabled' : ''} title="Próxima Página">
       <i data-lucide="chevron-right" style="width: 15px; height: 15px;"></i>
     </button>
   `;
@@ -508,7 +718,7 @@ function renderPagination(totalPages) {
   controls.innerHTML = buttonsHtml;
 
   // Add click handlers
-  document.querySelectorAll('#paginationControls button[data-page]').forEach(btn => {
+  controls.querySelectorAll('button[data-page]').forEach(btn => {
     btn.addEventListener('click', () => {
       currentPage = parseInt(btn.getAttribute('data-page'));
       renderTable();
@@ -989,6 +1199,7 @@ function deleteCompany(id) {
   if (confirm(`Deseja realmente excluir "${name}"?`)) {
     currentCompanies = currentCompanies.filter(c => c.id !== id);
     filteredCompanies = filteredCompanies.filter(c => c.id !== id);
+    saveCompanies(currentCompanies);
     renderCompaniesTable();
     showToast(`"${name}" excluído(a) com sucesso.`);
   }
@@ -2038,6 +2249,39 @@ function setupEvents() {
     });
   }
 
+  // Rows Per Page Selector (10, 50, 100, Todas)
+  const selectRowsPerPage = document.getElementById('selectRowsPerPage');
+  if (selectRowsPerPage) {
+    selectRowsPerPage.value = recordsPerPage === Infinity ? 'all' : recordsPerPage.toString();
+    selectRowsPerPage.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val === 'all') {
+        recordsPerPage = Infinity;
+      } else {
+        recordsPerPage = parseInt(val) || 10;
+      }
+      try { localStorage.setItem('konzpay_rows_per_page', val); } catch (err) {}
+      currentPage = 1;
+      renderTable();
+    });
+  }
+
+  // Clear Transactions Table Button
+  const btnClearTransactionsTable = document.getElementById('btnClearTransactionsTable');
+  if (btnClearTransactionsTable) {
+    btnClearTransactionsTable.addEventListener('click', () => {
+      if (confirm('Deseja realmente limpar todas as transações da tabela?')) {
+        currentTransactions = [];
+        filteredTransactions = [];
+        saveTransactions([]);
+        currentPage = 1;
+        renderTable();
+        updateKPIs(calculateKPIsFromTransactions([]));
+        showToast('Tabela de transações limpa com sucesso.');
+      }
+    });
+  }
+
   // Companies Search & Filters
   const companiesFilterForm = document.getElementById('companiesFilterForm');
   if (companiesFilterForm) {
@@ -2086,6 +2330,7 @@ function setupEvents() {
       if (confirm(`Deseja realmente excluir ${count} empresa(s) selecionada(s)? Esta ação é permanente.`)) {
         currentCompanies = currentCompanies.filter(c => !selectedCompanyIds.has(c.id));
         filteredCompanies = filteredCompanies.filter(c => !selectedCompanyIds.has(c.id));
+        saveCompanies(currentCompanies);
         selectedCompanyIds.clear();
         renderCompaniesTable();
         showToast(`${count} empresa(s) excluída(s) com sucesso.`);
@@ -2160,6 +2405,7 @@ function setupEvents() {
       };
 
       currentCompanies.unshift(newComp);
+      saveCompanies(currentCompanies);
       newCompanyForm.reset();
       closeNewCompanyModal();
       filterCompanies();
@@ -2482,6 +2728,12 @@ function setupEvents() {
     btnRemoveSelectedFile.addEventListener('click', resetGeminiModalState);
   }
 
+  const geminiProgressTitle = document.getElementById('geminiProgressTitle');
+  const geminiProgressBar = document.getElementById('geminiProgressBar');
+  const geminiProgressStepBadge = document.getElementById('geminiProgressStepBadge');
+  const geminiProgressTimer = document.getElementById('geminiProgressTimer');
+  let geminiTimerInterval = null;
+
   // Start Gemini AI Extraction
   if (btnStartGeminiProcess) {
     btnStartGeminiProcess.addEventListener('click', async () => {
@@ -2503,13 +2755,37 @@ function setupEvents() {
         if (geminiLoadingBox) geminiLoadingBox.style.display = 'block';
         if (btnStartGeminiProcess) btnStartGeminiProcess.disabled = true;
 
+        // Iniciar cronômetro em tempo real
+        const startTime = Date.now();
+        if (geminiProgressTimer) geminiProgressTimer.textContent = '0.0s';
+        if (geminiProgressBar) geminiProgressBar.style.width = '10%';
+        if (geminiProgressStepBadge) geminiProgressStepBadge.textContent = 'Etapa 1/3';
+        if (geminiProgressTitle) geminiProgressTitle.textContent = 'Lendo Documento...';
+        if (geminiProgressText) geminiProgressText.textContent = 'Preparando arquivo para análise com Gemini 3.5 Flash...';
+
+        if (geminiTimerInterval) clearInterval(geminiTimerInterval);
+        geminiTimerInterval = setInterval(() => {
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          if (geminiProgressTimer) geminiProgressTimer.textContent = `${elapsed}s`;
+        }, 100);
+
         const result = await extractTransactionsWithGemini(
           selectedGeminiFile,
           apiKey,
-          () => {
-            if (geminiProgressText) geminiProgressText.textContent = 'Importando';
+          (prog) => {
+            if (prog.title && geminiProgressTitle) geminiProgressTitle.textContent = prog.title;
+            if (prog.message && geminiProgressText) geminiProgressText.textContent = prog.message;
+            if (prog.percent && geminiProgressBar) geminiProgressBar.style.width = `${prog.percent}%`;
+            if (prog.step && geminiProgressStepBadge) {
+              geminiProgressStepBadge.textContent = `Etapa ${prog.step}/${prog.stepTotal || 3}`;
+            }
           }
         );
+
+        if (geminiTimerInterval) {
+          clearInterval(geminiTimerInterval);
+          geminiTimerInterval = null;
+        }
 
         extractedGeminiData = result;
 
@@ -2523,7 +2799,10 @@ function setupEvents() {
 
         const totalGross = result.transactions.reduce((acc, t) => acc + t.grossAmount, 0);
 
-        if (prevCompany) prevCompany.textContent = result.company;
+        if (prevCompany) {
+          prevCompany.textContent = result.company;
+          prevCompany.title = result.company;
+        }
         if (prevCount) prevCount.textContent = `${result.transactions.length} transações`;
         if (prevGross) prevGross.textContent = formatBRL(totalGross);
 
@@ -2546,6 +2825,10 @@ function setupEvents() {
         if (btnConfirmGeminiImport) btnConfirmGeminiImport.style.display = 'inline-flex';
         showToast(`Gemini extraiu ${result.transactions.length} transações com sucesso!`);
       } catch (error) {
+        if (geminiTimerInterval) {
+          clearInterval(geminiTimerInterval);
+          geminiTimerInterval = null;
+        }
         console.error('Erro na extração do Gemini:', error);
         if (geminiLoadingBox) geminiLoadingBox.style.display = 'none';
         if (geminiSelectedFileInfo) geminiSelectedFileInfo.style.display = 'flex';
@@ -2585,10 +2868,11 @@ function setupEvents() {
       }
 
       // Atualizar lista de empresas no filtro se necessário
-      if (!MOCK_COMPANIES.includes(extractedGeminiData.company)) {
-        MOCK_COMPANIES.push(extractedGeminiData.company);
-        populateSelect('filterEmpresas', MOCK_COMPANIES);
-      }
+      // Salvar transações persistentemente no navegador
+      saveTransactions(currentTransactions);
+
+      // Sincronizar dinamicamente todos os seletores de filtros com o novo extrato
+      refreshTransactionFiltersOptions(currentTransactions);
 
       currentPage = 1;
       renderTable();
@@ -2596,7 +2880,7 @@ function setupEvents() {
       updateDashboardStats();
       closeGeminiModal();
 
-      showToast(`🎉 ${newTxs.length} transações de "${extractedGeminiData.company}" importadas com sucesso!`);
+      showToast(`🎉 ${newTxs.length} transações de "${extractedGeminiData.company}" importadas e organizadas com sucesso!`);
     });
   }
 
@@ -2784,7 +3068,7 @@ function updateSupabaseStatus() {
   }
 }
 
-// Load Initial Data (from Supabase or Mock fallback)
+// Load Initial Data (from Supabase or LocalStorage real data)
 async function loadInitialData() {
   updateSupabaseStatus();
 
@@ -2792,15 +3076,25 @@ async function loadInitialData() {
   if (remoteTransactions && remoteTransactions.length > 0) {
     currentTransactions = remoteTransactions;
     filteredTransactions = [...remoteTransactions];
+    saveTransactions(currentTransactions);
   } else {
-    currentTransactions = [...MOCK_TRANSACTIONS];
-    filteredTransactions = [...MOCK_TRANSACTIONS];
+    const stored = getStoredTransactions();
+    currentTransactions = stored;
+    filteredTransactions = [...stored];
   }
 
   currentPage = 1;
+  currentCompanies = getStoredCompanies();
+  filteredCompanies = [...currentCompanies];
+  currentCommissions = getStoredCommissions();
+  filteredCommissions = [...currentCommissions];
+  currentNetworkUsers = getStoredNetworkUsers();
+  filteredNetworkUsers = [...currentNetworkUsers];
+
   renderTable();
   renderCompaniesTable();
   updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
+  refreshTransactionFiltersOptions(currentTransactions);
 
   // Restore the last active view and sub-tab state when the page reloads / restarts
   try {

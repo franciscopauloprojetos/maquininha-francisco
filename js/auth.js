@@ -3,8 +3,6 @@
  * Gerenciamento de credenciais de Administrador Master e Usuários da Rede
  */
 
-import { MOCK_NETWORK_USERS } from './mockData.js';
-
 const STORAGE_KEY = 'konzpay_admin_session';
 const NETWORK_USERS_KEY = 'konzpay_network_users_list';
 
@@ -23,19 +21,46 @@ export const ADMIN_CREDENTIALS = {
   }
 };
 
+export const DEFAULT_ROOT_USERS = [
+  {
+    id: 'USR-ADMIN',
+    name: 'Francisco Pereira Paulo',
+    shortName: 'Francisco',
+    email: 'franciscopereirapaulo@gmail.com',
+    role: 'Administrador Master',
+    parentId: null,
+    commissionRate: 100,
+    phone: '(41) 99999-9999',
+    doc: '00.000.000/0001-00',
+    createdAt: '01/01/2026',
+    status: 'Ativo',
+    isAdmin: true
+  }
+];
+
 /**
- * Retorna todos os usuários da rede (do storage ou fallback mock)
+ * Retorna todos os usuários da rede (apenas o Administrador Master por padrão)
  */
 export function getStoredNetworkUsers() {
+  const mockNames = ['Rafael Costa', 'Lucas Mendes', 'Juliana Silveira', 'Bruno Henrique', 'Camila Santos', 'Diego Martins', 'Eduardo Lima'];
   const data = localStorage.getItem(NETWORK_USERS_KEY);
   if (!data) {
-    localStorage.setItem(NETWORK_USERS_KEY, JSON.stringify(MOCK_NETWORK_USERS));
-    return [...MOCK_NETWORK_USERS];
+    localStorage.setItem(NETWORK_USERS_KEY, JSON.stringify(DEFAULT_ROOT_USERS));
+    return [...DEFAULT_ROOT_USERS];
   }
   try {
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (Array.isArray(parsed)) {
+      const realOnly = parsed.filter(u => !mockNames.includes(u.name));
+      if (!realOnly.some(u => u.id === 'USR-ADMIN')) {
+        realOnly.unshift(...DEFAULT_ROOT_USERS);
+      }
+      localStorage.setItem(NETWORK_USERS_KEY, JSON.stringify(realOnly));
+      return realOnly;
+    }
+    return [...DEFAULT_ROOT_USERS];
   } catch (e) {
-    return [...MOCK_NETWORK_USERS];
+    return [...DEFAULT_ROOT_USERS];
   }
 }
 
