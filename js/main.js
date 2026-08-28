@@ -447,8 +447,8 @@ function renderTable() {
         <td class="cell-company">${tx.company}</td>
         <td>
           <div class="cell-payment">
-            <div class="payment-info">
-              <span class="payment-method-name">${tx.method}</span>
+            <div class="payment-info" title="${tx.method}">
+              <span class="payment-method-name" data-tooltip="${tx.method}">${tx.method}</span>
               <span class="payment-installments">${tx.installments || '1x'}</span>
             </div>
             <div class="brand-badge" title="${tx.brand}">
