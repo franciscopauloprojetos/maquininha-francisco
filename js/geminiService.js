@@ -116,8 +116,8 @@ export async function extractTransactionsWithGemini(file, apiKey, onProgress = (
 
   onProgress({ step: 2, message: 'Enviando documento para o Gemini 3.7 Flash AI...' });
 
-  // Lista de modelos suportados (Gemini 3.7 Flash e 3.6 Flash)
-  const models = ['gemini-3.7-flash', 'gemini-3.6-flash'];
+  // Lista de modelos suportados por ordem de disponibilidade e velocidade
+  const models = ['gemini-3.6-flash', 'gemini-3.7-flash'];
   let lastError = null;
   let responseData = null;
 
