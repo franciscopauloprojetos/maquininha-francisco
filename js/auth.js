@@ -42,7 +42,13 @@ export const DEFAULT_ROOT_USERS = [
  * Retorna todos os usuários da rede (apenas o Administrador Master por padrão)
  */
 export function getStoredNetworkUsers() {
-  const mockNames = ['Rafael Costa', 'Lucas Mendes', 'Juliana Silveira', 'Bruno Henrique', 'Camila Santos', 'Diego Martins', 'Eduardo Lima'];
+  const purgeKey = 'konzpay_reset_tree_admin_only_v7';
+  if (!localStorage.getItem(purgeKey)) {
+    localStorage.setItem(NETWORK_USERS_KEY, JSON.stringify(DEFAULT_ROOT_USERS));
+    localStorage.setItem(purgeKey, 'true');
+    return [...DEFAULT_ROOT_USERS];
+  }
+
   const data = localStorage.getItem(NETWORK_USERS_KEY);
   if (!data) {
     localStorage.setItem(NETWORK_USERS_KEY, JSON.stringify(DEFAULT_ROOT_USERS));
@@ -51,12 +57,10 @@ export function getStoredNetworkUsers() {
   try {
     const parsed = JSON.parse(data);
     if (Array.isArray(parsed)) {
-      const realOnly = parsed.filter(u => !mockNames.includes(u.name));
-      if (!realOnly.some(u => u.id === 'USR-ADMIN')) {
-        realOnly.unshift(...DEFAULT_ROOT_USERS);
+      if (!parsed.some(u => u.id === 'USR-ADMIN')) {
+        parsed.unshift(...DEFAULT_ROOT_USERS);
       }
-      localStorage.setItem(NETWORK_USERS_KEY, JSON.stringify(realOnly));
-      return realOnly;
+      return parsed;
     }
     return [...DEFAULT_ROOT_USERS];
   } catch (e) {

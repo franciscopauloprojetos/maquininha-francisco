@@ -41,46 +41,79 @@ import {
   parseTxDateTime
 } from './geminiService.js';
 
-// Limpeza automática de dados mocados herdados do cache local
-const MOCK_COMPANY_BLACKLIST = [
-  'Auto Posto Alvorada Ltda', 'Supermercado Real Super', 'Restaurante Sabor & Arte',
-  'Boutique Bella Moda', 'Padaria & Confeitaria Estrela', 'Drogaria Central Popular',
-  'Tech Prime Eletrônicos', 'Francisco Comércio Varejista', 'Ótica Nova Visão',
-  'Mecânica Express Auto', 'ESSENCE BEAUTY MIND', 'WILLYAN', 'ALINE RENATA DA ROSA',
-  'EVANDRO CARNIEL', 'VICTOR HUGO ALVES', 'K. SA CAFES ESPECIAIS LTDA'
+// Blacklist e Identificadores de Dados Fictícios / Mock
+export const MOCK_SELLERS_BLACKLIST = [
+  'delta pay',
+  'nexus tech',
+  'alpha solu',
+  'francisco represent',
+  'beta intermed'
 ];
 
-(function purgeLegacyMockData() {
+export const LEGACY_MOCK_COMPANIES = [
+  'auto posto alvorada ltda',
+  'supermercado real super',
+  'restaurante sabor & arte', 'restaurante sabor e arte',
+  'boutique bella moda',
+  'padaria & confeitaria estrela', 'padaria e confeitaria estrela',
+  'drogaria central popular',
+  'tech prime eletrônicos', 'tech prime eletronicos',
+  'francisco comércio varejista', 'francisco comercio varejista',
+  'ótica nova visão', 'otica nova visao',
+  'mecânica express auto', 'mecanica express auto'
+];
+
+export function isMockSellerName(name) {
+  if (!name) return false;
+  const lower = String(name).toLowerCase().trim();
+  return MOCK_SELLERS_BLACKLIST.some(mock => lower.includes(mock));
+}
+
+export function isMockTransaction(tx) {
+  if (!tx) return false;
+  if (typeof tx.id === 'string' && (tx.id.startsWith('TX-100') || tx.id.startsWith('TX-MOCK'))) return true;
+  if (tx.company) {
+    const compLower = String(tx.company).toLowerCase().trim();
+    if (LEGACY_MOCK_COMPANIES.some(m => compLower.includes(m) || m.includes(compLower))) return true;
+  }
+  if (tx.partner && isMockSellerName(tx.partner)) return true;
+  return false;
+}
+
+export function isMockCompany(comp) {
+  if (!comp) return false;
+  if (comp.id && (comp.id === 'EMP-001' || comp.id === 'EMP-MOCK')) return true;
+  if (comp.name) {
+    const compLower = String(comp.name).toLowerCase().trim();
+    if (LEGACY_MOCK_COMPANIES.some(m => compLower.includes(m) || m.includes(compLower))) return true;
+    if (isMockSellerName(comp.name)) return true;
+  }
+  return false;
+}
+
+// Limpeza forçada de dados mocados gravados no LocalStorage do usuário
+// Limpeza total de dados mocados e reset para deixar apenas o Administrador Master (Francisco Pereira Paulo)
+(function purgeLegacyMocksFromStorage() {
   try {
-    const purgeKey = 'konzpay_mock_purged_v2';
+    const purgeKey = 'konzpay_reset_tree_admin_only_v7';
     if (!localStorage.getItem(purgeKey)) {
-      localStorage.removeItem('konzpay_saved_transactions');
-      localStorage.removeItem('konzpay_saved_companies');
-      localStorage.removeItem('konzpay_saved_commissions');
-      localStorage.removeItem('konzpay_network_users_list');
+      localStorage.setItem('konzpay_saved_transactions', JSON.stringify([]));
+      localStorage.setItem('konzpay_saved_companies', JSON.stringify([]));
+      localStorage.setItem('konzpay_saved_commissions', JSON.stringify([]));
+      localStorage.setItem('konzpay_network_users_list', JSON.stringify(DEFAULT_ROOT_USERS));
       localStorage.setItem(purgeKey, 'true');
     }
   } catch (e) {}
 })();
 
-function isMockItem(item) {
-  if (!item) return false;
-  const name = item.company || item.name || '';
-  if (MOCK_COMPANY_BLACKLIST.includes(name)) return true;
-  if (item.id && (item.id.startsWith('TX-1') || item.id.startsWith('TX-MOCK') || item.id === 'EMP-001')) {
-    if (name !== 'MIRANTE BRISA MAR GASTRONOMIA') return true;
-  }
-  return false;
-}
-
-// LocalStorage helpers for real persistence
+// LocalStorage helpers for real persistence (100% livre de dados mocados)
 export function getStoredTransactions() {
   try {
     const saved = localStorage.getItem('konzpay_saved_transactions');
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        const realOnly = parsed.filter(t => !isMockItem(t));
+        const realOnly = parsed.filter(t => !isMockTransaction(t));
         realOnly.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
         if (realOnly.length !== parsed.length) {
           localStorage.setItem('konzpay_saved_transactions', JSON.stringify(realOnly));
@@ -94,7 +127,7 @@ export function getStoredTransactions() {
 
 export function saveTransactions(list) {
   try {
-    const realOnly = (list || []).filter(t => !isMockItem(t));
+    const realOnly = (list || []).filter(t => !isMockTransaction(t));
     localStorage.setItem('konzpay_saved_transactions', JSON.stringify(realOnly));
   } catch (e) {}
 }
@@ -135,7 +168,7 @@ export function getStoredCompanies() {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        const realOnly = parsed.filter(c => !isMockItem(c));
+        const realOnly = parsed.filter(c => !isMockCompany(c));
         if (realOnly.length !== parsed.length) {
           localStorage.setItem('konzpay_saved_companies', JSON.stringify(realOnly));
         }
@@ -148,7 +181,7 @@ export function getStoredCompanies() {
 
 export function saveCompanies(list) {
   try {
-    const realOnly = (list || []).filter(c => !isMockItem(c));
+    const realOnly = (list || []).filter(c => !isMockCompany(c));
     localStorage.setItem('konzpay_saved_companies', JSON.stringify(realOnly));
   } catch (e) {}
 }
@@ -160,11 +193,7 @@ export function getStoredCommissions() {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        const realOnly = parsed.filter(c => !isMockItem(c));
-        if (realOnly.length !== parsed.length) {
-          localStorage.setItem('konzpay_saved_commissions', JSON.stringify(realOnly));
-        }
-        return realOnly;
+        return parsed;
       }
     }
   } catch (e) {}
@@ -173,8 +202,7 @@ export function getStoredCommissions() {
 
 export function saveCommissions(list) {
   try {
-    const realOnly = (list || []).filter(c => !isMockItem(c));
-    localStorage.setItem('konzpay_saved_commissions', JSON.stringify(realOnly));
+    localStorage.setItem('konzpay_saved_commissions', JSON.stringify(list || []));
   } catch (e) {}
 }
 
@@ -235,15 +263,15 @@ export function findCompanyMatch(rawName, companies = currentCompanies) {
 }
 
 // Helper: Obter dados da entidade Upline (seja usuário ou empresa parceira/vendedora)
-export function getUplineEntity(id) {
-  if (!id || id === 'USR-ADMIN') {
+export function getUplineEntity(id, networkUsers = currentNetworkUsers, companies = currentCompanies) {
+  if (!id || id === 'USR-ADMIN' || id === 'Francisco Pereira Paulo') {
     return { id: 'USR-ADMIN', name: 'Francisco Pereira Paulo', role: 'Administrador Master' };
   }
-  const user = currentNetworkUsers.find(u => u.id === id);
+  const user = networkUsers.find(u => u.id === id || u.name.toLowerCase() === id.toLowerCase());
   if (user) return user;
-  const comp = currentCompanies.find(c => c.id === id);
+  const comp = companies.find(c => c.id === id || c.name.toLowerCase() === id.toLowerCase());
   if (comp) return { id: comp.id, name: comp.name, role: 'Empresa Parceira / Vendedora', commissionRate: comp.commissionRate };
-  return { id, name: 'Francisco Pereira Paulo', role: 'Administrador' };
+  return { id, name: id, role: 'Vendedor / Parceiro' };
 }
 
 // Helper: Obter cadeia de uplines em cascata para repasse de comissões
@@ -254,28 +282,28 @@ export function getUplineChain(registeredById, networkUsers = currentNetworkUser
 
   while (currentId && !visited.has(currentId)) {
     visited.add(currentId);
-    let entity = networkUsers.find(u => u.id === currentId);
+    let entity = networkUsers.find(u => u.id === currentId || u.name.toLowerCase() === currentId.toLowerCase());
     if (!entity) {
-      const comp = companies.find(c => c.id === currentId);
+      const comp = companies.find(c => c.id === currentId || c.name.toLowerCase() === currentId.toLowerCase());
       if (comp) {
         entity = {
           id: comp.id,
           name: comp.name,
           role: 'Empresa Parceira / Vendedora',
           parentId: comp.registeredBy,
-          commissionRate: comp.commissionRate !== undefined ? comp.commissionRate : 0.5,
+          commissionRate: comp.commissionRate !== undefined ? comp.commissionRate : 0.2,
           isCompany: true
         };
       }
     }
 
     if (entity) {
-      if (entity.id !== 'USR-ADMIN') {
+      if (entity.id !== 'USR-ADMIN' && entity.name !== 'Francisco Pereira Paulo') {
         chain.push({
           id: entity.id,
           name: entity.name,
           role: entity.role || 'Vendedor',
-          rate: Number(entity.commissionRate !== undefined ? entity.commissionRate : 0.5),
+          rate: Number(entity.commissionRate !== undefined ? entity.commissionRate : 0.2),
           parentId: entity.parentId
         });
       }
@@ -1089,7 +1117,7 @@ function populateCompanyPartnerSelect(selectedId = null) {
     html += `<optgroup label="🏢 Empresas Parceiras (Vendedoras / Indicadoras)">`;
     partnerCompanies.forEach(c => {
       const isSelected = targetSelected === c.id ? 'selected' : '';
-      const rateDisplay = c.commissionRate !== undefined ? `${c.commissionRate}%` : '0.5%';
+      const rateDisplay = c.commissionRate !== undefined ? `${c.commissionRate}%` : '0.2%';
       html += `<option value="${c.id}" ${isSelected}>🏢 ${c.name} (${rateDisplay} comissão)</option>`;
     });
     html += `</optgroup>`;
@@ -1155,19 +1183,13 @@ function switchView(viewName) {
     if (pageTitle) pageTitle.textContent = 'Dashboard';
     updateDashboardStats();
   } else if (viewName === 'comissoes') {
-    if (!isAdmin) {
-      showToast('Acesso restrito ao Administrador Master.');
-      switchView('transacoes');
-      return;
-    }
     if (viewTransacoes) viewTransacoes.style.display = 'none';
     if (viewEmpresas) viewEmpresas.style.display = 'none';
     if (viewDashboard) viewDashboard.style.display = 'none';
     if (viewComissoes) viewComissoes.style.display = 'block';
     if (navComissoes) navComissoes.classList.add('active');
-    if (pageTitle) pageTitle.textContent = 'Alíquotas de Comissões por Empresa';
+    if (pageTitle) pageTitle.textContent = isAdmin ? 'Distribuição de Comissões da Rede' : 'Suas Comissões e Indicados';
 
-    populateRatePartnerSelect();
     filterRates();
     renderRateMetrics();
   } else {
@@ -1285,6 +1307,7 @@ function renderCompaniesTable() {
   }
 
   tbody.innerHTML = currentSlice.map(comp => {
+    const isPF = comp.personType === 'PF' || (comp.doc && comp.doc.replace(/\D/g, '').length === 11);
     const statusBadge = comp.status === 'Ativo'
       ? `<span class="badge-company-active">Ativo</span>`
       : `<span class="badge-company-inactive">Inativo</span>`;
@@ -1296,8 +1319,18 @@ function renderCompaniesTable() {
         <td style="text-align: center; width: 44px;">
           <input type="checkbox" class="check-company-item" data-id="${comp.id}" ${isChecked} style="cursor: pointer; width: 16px; height: 16px; accent-color: #1d68d8;">
         </td>
-        <td class="cell-company-name"><strong>${comp.name}</strong></td>
-        <td class="cell-doc" style="font-family: monospace; font-size: 12px; color: #475569;">${comp.doc || '-'}</td>
+        <td class="cell-company-name">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">${isPF ? '👤' : '🏢'}</span>
+            <div>
+              <strong>${comp.name}</strong>
+              <div style="font-size: 11px; color: ${isPF ? '#16a34a' : '#2563eb'}; font-weight: 600;">
+                ${isPF ? 'Pessoa Física (CPF)' : (comp.isSeller ? 'Empresa Parceira' : 'Pessoa Jurídica (CNPJ)')}
+              </div>
+            </div>
+          </div>
+        </td>
+        <td class="cell-doc" style="font-family: monospace; font-size: 12px; color: #475569;">${comp.doc ? formatCpfCnpj(comp.doc) : '-'}</td>
         <td class="cell-email">${comp.email}</td>
         <td class="cell-contact">${comp.phone || '-'}</td>
         <td class="cell-created-at">${comp.createdAt}</td>
@@ -1458,26 +1491,45 @@ export function getAvailableSellers() {
   const currentUser = getCurrentUser();
   const isAdmin = currentUser?.isAdmin ?? true;
 
-  // Base list: network users
-  let list = [...currentNetworkUsers];
+  // Base list: network users (excluding any mock sellers)
+  let list = currentNetworkUsers.filter(u => !isMockSellerName(u.name) && !isMockSellerName(u.id));
 
   // Include any company that is marked as seller and not already in network users
   currentCompanies.forEach(comp => {
-    if (comp.isSeller && !list.some(u => u.id === comp.id)) {
+    if (comp.isSeller && !isMockSellerName(comp.name) && !isMockSellerName(comp.id) && !list.some(u => u.id === comp.id || u.name.toLowerCase() === comp.name.toLowerCase())) {
       list.push({
         id: comp.id,
         name: comp.name,
         shortName: comp.name.split(' ')[0],
-        email: comp.email,
+        email: comp.email || 'contato@' + comp.name.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.br',
         role: 'Empresa Parceira / Vendedora',
-        parentId: comp.registeredBy,
-        commissionRate: comp.commissionRate !== undefined ? comp.commissionRate : 0.5,
-        phone: comp.phone,
-        doc: comp.doc,
-        createdAt: comp.createdAt,
-        status: comp.status,
+        parentId: comp.registeredBy || 'USR-ADMIN',
+        commissionRate: comp.commissionRate !== undefined ? comp.commissionRate : 0.2,
+        phone: comp.phone || '',
+        doc: comp.doc || '',
+        createdAt: comp.createdAt || new Date().toLocaleDateString('pt-BR'),
+        status: comp.status || 'Ativo',
         isCompany: true
       });
+    }
+  });
+
+  // Include any real partner mentioned in companies that isn't registered yet
+  currentCompanies.forEach(comp => {
+    if (comp.partnerName && comp.partnerName.trim() && comp.partnerName !== 'Francisco Pereira Paulo' && !isMockSellerName(comp.partnerName)) {
+      const pName = comp.partnerName.trim();
+      if (!list.some(u => u.name.toLowerCase() === pName.toLowerCase() || u.id === comp.registeredBy)) {
+        list.push({
+          id: comp.registeredBy || `USR-${pName.replace(/[^a-z0-9]/gi, '').slice(0, 8).toUpperCase()}`,
+          name: pName,
+          shortName: pName.split(' ')[0],
+          email: `${pName.toLowerCase().replace(/[^a-z0-9]/g, '')}@parceiro.com`,
+          role: 'Consultor de Vendas',
+          parentId: 'USR-ADMIN',
+          commissionRate: comp.commissionRate !== undefined ? comp.commissionRate : 0.2,
+          status: 'Ativo'
+        });
+      }
     }
   });
 
@@ -1492,22 +1544,39 @@ export function getAvailableSellers() {
 
 // Compute commission metrics and portfolio for a specific seller
 export function computeSellerCommissionData(seller, allCompanies = currentCompanies, allTxs = currentTransactions, networkUsers = currentNetworkUsers) {
-  const isMasterAdmin = seller.id === 'USR-ADMIN';
+  const isMasterAdmin = seller.id === 'USR-ADMIN' || seller.name === 'Francisco Pereira Paulo';
 
   // 1. Direct and indirect companies in seller's portfolio
-  const directCompanies = allCompanies.filter(c => c.registeredBy === seller.id);
-  const subTreeCompanies = allCompanies.filter(c => {
-    if (c.registeredBy === seller.id) return true;
-    const chain = getUplineChain(c.registeredBy, networkUsers, allCompanies);
-    return chain.some(node => node.id === seller.id);
+  const directCompanies = allCompanies.filter(c => {
+    return c.registeredBy === seller.id || (c.partnerName && c.partnerName.toLowerCase() === seller.name.toLowerCase());
   });
 
+  const subTreeCompanies = isMasterAdmin
+    ? allCompanies
+    : allCompanies.filter(c => {
+        if (c.registeredBy === seller.id || (c.partnerName && c.partnerName.toLowerCase() === seller.name.toLowerCase())) return true;
+        const chain = getUplineChain(c.registeredBy, networkUsers, allCompanies);
+        return chain.some(node => node.id === seller.id || node.name.toLowerCase() === seller.name.toLowerCase());
+      });
+
   // 2. Transactions for which this seller receives commission
-  const subCompanyNames = new Set(subTreeCompanies.map(c => normalizeCompanyName(c.name)));
-  const sellerTxs = allTxs.filter(tx => tx.company && subCompanyNames.has(normalizeCompanyName(tx.company)));
+  let sellerTxs = [];
+  if (isMasterAdmin) {
+    sellerTxs = allTxs;
+  } else {
+    const subCompanyNames = new Set(subTreeCompanies.map(c => normalizeCompanyName(c.name)));
+    sellerTxs = allTxs.filter(tx => {
+      if (!tx) return false;
+      const normTx = normalizeCompanyName(tx.company || '');
+      const matchSubTree = subCompanyNames.has(normTx);
+      const matchPartner = tx.partner && tx.partner.toLowerCase() === seller.name.toLowerCase();
+      const matchSelfCompany = seller.isCompany && normTx === normalizeCompanyName(seller.name);
+      return matchSubTree || matchPartner || matchSelfCompany;
+    });
+  }
 
   const grossVolume = sellerTxs.reduce((acc, t) => acc + (Number(t.grossAmount) || 0), 0);
-  const sellerRate = Number(seller.commissionRate !== undefined ? seller.commissionRate : 0.5);
+  const sellerRate = Number(seller.commissionRate !== undefined ? seller.commissionRate : 0.2);
 
   // Total commission earned by this seller
   let commissionEarned = 0;
@@ -1524,13 +1593,13 @@ export function computeSellerCommissionData(seller, allCompanies = currentCompan
   }
 
   const level = calculateUserLevel(seller.id, networkUsers);
-  const upline = getUplineEntity(seller.parentId);
+  const upline = getUplineEntity(seller.parentId, networkUsers, allCompanies);
 
   return {
     seller,
     level,
     uplineName: upline ? upline.name : '👑 Administrador Master',
-    companiesCount: subTreeCompanies.length,
+    companiesCount: isMasterAdmin ? allCompanies.length : subTreeCompanies.length,
     directCompaniesCount: directCompanies.length,
     grossVolume,
     sellerRate,
@@ -1545,6 +1614,38 @@ function updateSellerCommissionsData() {
   currentCompanies = getStoredCompanies();
   currentNetworkUsers = getStoredNetworkUsers();
 
+  // Purge any legacy mock sellers stored in currentNetworkUsers
+  const cleanNetworkUsers = currentNetworkUsers.filter(u => !isMockSellerName(u.name) && !isMockSellerName(u.id));
+  if (cleanNetworkUsers.length !== currentNetworkUsers.length) {
+    currentNetworkUsers = cleanNetworkUsers;
+    saveNetworkUsers(currentNetworkUsers);
+  }
+
+  // Purge mock partners from currentCompanies
+  let companiesChanged = false;
+  currentCompanies.forEach(c => {
+    if (c.partnerName && isMockSellerName(c.partnerName)) {
+      c.partnerName = 'Francisco Pereira Paulo';
+      c.registeredBy = 'USR-ADMIN';
+      companiesChanged = true;
+    }
+  });
+  if (companiesChanged) {
+    saveCompanies(currentCompanies);
+  }
+
+  // Purge mock partners from currentTransactions
+  let txsChanged = false;
+  currentTransactions.forEach(t => {
+    if (t.partner && isMockSellerName(t.partner)) {
+      t.partner = 'Francisco Pereira Paulo';
+      txsChanged = true;
+    }
+  });
+  if (txsChanged) {
+    saveTransactions(currentTransactions);
+  }
+
   const sellers = getAvailableSellers();
   calculatedSellerCommissions = sellers.map(s => computeSellerCommissionData(s, currentCompanies, currentTransactions, currentNetworkUsers));
   filteredSellerCommissions = [...calculatedSellerCommissions];
@@ -1554,8 +1655,6 @@ function updateSellerCommissionsData() {
 function renderRateMetrics() {
   const currentUser = getCurrentUser();
   const isAdmin = currentUser?.isAdmin ?? true;
-
-  updateSellerCommissionsData();
 
   const totalEarned = calculatedSellerCommissions.reduce((acc, item) => acc + item.commissionEarned, 0);
   const totalVolume = calculatedSellerCommissions.reduce((acc, item) => acc + item.grossVolume, 0);
@@ -1918,7 +2017,7 @@ function openEditRateModal(sellerId) {
   if (idInput) idInput.value = seller.id;
   if (nameEl) nameEl.textContent = seller.name;
   if (docEl) docEl.textContent = seller.doc || '-';
-  if (rateInput) rateInput.value = (seller.commissionRate !== undefined ? Number(seller.commissionRate) : 0.5).toFixed(2);
+  if (rateInput) rateInput.value = (seller.commissionRate !== undefined ? Number(seller.commissionRate) : 0.2).toFixed(2);
 
   modal?.classList.add('open');
 }
@@ -1927,25 +2026,81 @@ function openEditRateModal(sellerId) {
 // REDE HIERÁRQUICA E ÁRVORE GENEALÓGICA DE USUÁRIOS
 // ==========================================================================
 
-// Calculate user level in hierarchy tree
-function calculateUserLevel(userId, users = currentNetworkUsers) {
+// Calculate user/company level in hierarchy tree
+export function calculateUserLevel(nodeId, users = currentNetworkUsers, companies = currentCompanies) {
   let level = 0;
-  let current = users.find(u => u.id === userId);
-  while (current && current.parentId) {
+  let currentId = nodeId;
+  const visited = new Set();
+
+  while (currentId && currentId !== 'USR-ADMIN' && !visited.has(currentId)) {
+    visited.add(currentId);
     level++;
-    current = users.find(u => u.id === current.parentId);
+    let entity = users.find(u => u.id === currentId);
+    if (!entity) {
+      const comp = companies.find(c => c.id === currentId);
+      if (comp) {
+        currentId = comp.registeredBy;
+        continue;
+      }
+    }
+    if (entity) {
+      currentId = entity.parentId;
+    } else {
+      break;
+    }
   }
+
   return level;
 }
 
-// Get direct children of a user
-function getUserDirectChildren(userId, users = currentNetworkUsers) {
-  return users.filter(u => u.parentId === userId);
+// Get direct children of a user or company (including indicated client companies)
+export function getUserDirectChildren(userId, users = currentNetworkUsers, companies = currentCompanies) {
+  const children = [];
+
+  // 1. Direct Network Users (Consultants/Affiliates)
+  users.forEach(u => {
+    if (u.id !== 'USR-ADMIN' && (u.parentId === userId || (!u.parentId && userId === 'USR-ADMIN'))) {
+      if (!isMockSellerName(u.name) && !isMockSellerName(u.id)) {
+        children.push({
+          ...u,
+          isCompany: false,
+          isUser: true
+        });
+      }
+    }
+  });
+
+  // 2. Direct Companies/Clients registered under this user
+  companies.forEach(c => {
+    const regBy = c.registeredBy || 'USR-ADMIN';
+    if (regBy === userId && !isMockCompany(c)) {
+      if (!children.some(ch => ch.id === c.id)) {
+        children.push({
+          id: c.id,
+          name: c.name,
+          shortName: c.name.split(' ')[0],
+          email: c.email || 'contato@' + c.name.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.br',
+          role: c.isSeller ? 'Empresa Parceira / Vendedora' : 'Empresa / Cliente',
+          parentId: regBy,
+          commissionRate: c.commissionRate !== undefined ? c.commissionRate : 0.2,
+          phone: c.phone || '',
+          doc: c.doc || '',
+          createdAt: c.createdAt || new Date().toLocaleDateString('pt-BR'),
+          status: c.status || 'Ativo',
+          isCompany: true,
+          isSeller: Boolean(c.isSeller)
+        });
+      }
+    }
+  });
+
+  return children;
 }
 
 // Render complete Network view (metrics, tree, table, and selects)
 function renderNetworkView() {
-  currentNetworkUsers = getStoredNetworkUsers();
+  currentNetworkUsers = getStoredNetworkUsers().filter(u => !isMockSellerName(u.name) && !isMockSellerName(u.id));
+  filteredNetworkUsers = [...currentNetworkUsers];
   renderNetworkMetrics();
   renderNetworkTree();
   renderNetworkTable();
@@ -1967,12 +2122,14 @@ function renderNetworkMetrics() {
     : getUserSubtreeIds(currentUser.id, currentNetworkUsers);
 
   const visibleUsers = currentNetworkUsers.filter(u => visibleUserIds.includes(u.id));
+  const visibleCompanies = getAllowedCompanies();
+  const totalCount = visibleUsers.length + visibleCompanies.length;
 
-  if (statTotal) statTotal.textContent = visibleUsers.length;
+  if (statTotal) statTotal.textContent = totalCount;
   
   const rootId = isAdmin ? 'USR-ADMIN' : currentUser.id;
-  const directUsers = getUserDirectChildren(rootId);
-  if (statDirect) statDirect.textContent = directUsers.length;
+  const directChildren = getUserDirectChildren(rootId);
+  if (statDirect) statDirect.textContent = directChildren.length;
 
   let maxDepth = 0;
   let sumCommission = 0;
@@ -1981,14 +2138,19 @@ function renderNetworkMetrics() {
     if (lvl > maxDepth) maxDepth = lvl;
     sumCommission += Number(u.commissionRate || 0);
   });
+  visibleCompanies.forEach(c => {
+    const lvl = calculateUserLevel(c.id);
+    if (lvl > maxDepth) maxDepth = lvl;
+    sumCommission += Number(c.commissionRate || 0);
+  });
 
   if (statDepth) {
     const userLvl = isAdmin ? 0 : calculateUserLevel(currentUser.id);
     const depthCount = maxDepth - userLvl + 1;
     statDepth.textContent = `${Math.max(1, depthCount)} Níveis`;
   }
-  if (statAvg && visibleUsers.length > 0) {
-    statAvg.textContent = `${(sumCommission / visibleUsers.length).toFixed(1)}%`;
+  if (statAvg && totalCount > 0) {
+    statAvg.textContent = `${(sumCommission / totalCount).toFixed(1)}%`;
   }
 }
 
@@ -2109,39 +2271,48 @@ function renderNetworkTree() {
 
   const rootLevel = isAdmin ? 0 : calculateUserLevel(currentUser.id);
 
-  function buildNodeHTML(user) {
-    const isRoot = !user.parentId || user.id === 'USR-ADMIN' || (!isAdmin && user.id === currentUser.id);
-    const level = calculateUserLevel(user.id);
+  function buildNodeHTML(node) {
+    const isRoot = !node.parentId || node.id === 'USR-ADMIN' || (!isAdmin && node.id === currentUser.id);
+    const level = calculateUserLevel(node.id);
     const displayLevel = Math.max(0, level - rootLevel);
-    const children = getUserDirectChildren(user.id);
-    const initials = user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
-    const isSelf = user.id === currentUser?.id;
+    const children = getUserDirectChildren(node.id);
+    const initials = node.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    const isSelf = node.id === currentUser?.id;
+    const isCompany = Boolean(node.isCompany);
 
     let html = `
       <div class="tree-branch ${children.length > 0 ? 'has-children' : ''}">
-        <div class="tree-node ${isRoot ? 'is-root' : ''}" data-user-id="${user.id}">
+        <div class="tree-node ${isRoot ? 'is-root' : ''} ${isCompany ? 'is-company-node' : ''}" data-user-id="${node.id}">
           <div class="tree-node-header">
-            <div class="tree-node-avatar">${initials}</div>
+            <div class="tree-node-avatar" style="${isCompany ? 'background: #e0f2fe; color: #0284c7; font-size: 15px;' : ''}">
+              ${isCompany ? '🏢' : initials}
+            </div>
             <div class="tree-node-title-group">
-              <span class="tree-node-name" title="${user.name}">
-                ${user.name} ${isSelf ? '<span style="color:#059669; font-size:11px; font-weight:700;">(Você)</span>' : ''}
+              <span class="tree-node-name" title="${node.name}">
+                ${node.name} ${isSelf ? '<span style="color:#059669; font-size:11px; font-weight:700;">(Você)</span>' : ''}
               </span>
-              <span class="tree-node-role">${user.role || 'Membro'}</span>
+              <span class="tree-node-role" style="${isCompany ? 'color: #0284c7; font-weight: 600;' : ''}">${node.role || (isCompany ? 'Empresa / Cliente' : 'Membro')}</span>
             </div>
           </div>
           <div class="tree-node-badges">
             <span class="badge-level">Nível ${displayLevel}</span>
-            <span class="badge-commission">${user.commissionRate}% Comiss.</span>
+            <span class="badge-commission">${node.commissionRate}% Alíquota</span>
           </div>
           <div class="tree-node-footer">
             <span class="tree-downlines-count">
               <i data-lucide="users" style="width: 12px; height: 12px;"></i>
               ${children.length} ${children.length === 1 ? 'indicado' : 'indicados'}
             </span>
-            <button type="button" class="btn-add-subnode" data-parent-id="${user.id}" title="Cadastrar usuário abaixo de ${user.name}">
-              <i data-lucide="plus" style="width: 11px; height: 11px;"></i>
-              <span>+ Indicar</span>
-            </button>
+            ${(!isCompany || node.isSeller) ? `
+              <button type="button" class="btn-add-subnode" data-parent-id="${node.id}" title="Cadastrar abaixo de ${node.name}">
+                <i data-lucide="plus" style="width: 11px; height: 11px;"></i>
+                <span>Indicar</span>
+              </button>
+            ` : `
+              <span style="font-size: 11px; color: #059669; font-weight: 600;">
+                <i data-lucide="check-circle" style="width: 11px; height: 11px; vertical-align: middle;"></i> Cliente Ativo
+              </span>
+            `}
           </div>
         </div>
     `;
@@ -2781,8 +2952,10 @@ function setupEvents() {
     const title = newCompanyModal?.querySelector('.modal-title');
     if (title) title.textContent = 'Cadastrar Nova Pessoa/Empresa';
     newCompanyForm?.reset();
+    const selectType = document.getElementById('newCompanyPersonType');
+    if (selectType) selectType.value = 'PJ';
     const inputRate = document.getElementById('newCompanyCommissionRate');
-    if (inputRate) inputRate.value = '0.50';
+    if (inputRate) inputRate.value = '0.20';
     const inputSeller = document.getElementById('newCompanyIsSeller');
     if (inputSeller) inputSeller.checked = false;
     populateCompanyPartnerSelect();
@@ -2791,9 +2964,15 @@ function setupEvents() {
 
   window.openNewCompanyModalForCompletion = function(comp) {
     companyIdBeingConfigured = comp.id;
+    const isPF = comp.personType === 'PF' || (comp.doc && comp.doc.replace(/\D/g, '').length === 11);
     const title = newCompanyModal?.querySelector('.modal-title');
-    if (title) title.innerHTML = `✨ Configurar Nova Empresa: <span style="color: #059669;">${comp.name}</span>`;
+    if (title) {
+      title.innerHTML = isPF
+        ? `✨ Configurar Pessoa Física: <span style="color: #059669;">${comp.name}</span>`
+        : `✨ Configurar Nova Empresa: <span style="color: #059669;">${comp.name}</span>`;
+    }
 
+    const selectType = document.getElementById('newCompanyPersonType');
     const inputName = document.getElementById('newCompanyName');
     const inputDoc = document.getElementById('newCompanyDoc');
     const inputPhone = document.getElementById('newCompanyPhone');
@@ -2802,11 +2981,12 @@ function setupEvents() {
     const inputSeller = document.getElementById('newCompanyIsSeller');
     const selectStatus = document.getElementById('newCompanyStatus');
 
+    if (selectType) selectType.value = isPF ? 'PF' : 'PJ';
     if (inputName) inputName.value = comp.name;
-    if (inputDoc) inputDoc.value = comp.doc && comp.doc !== '-' ? comp.doc : '';
+    if (inputDoc) inputDoc.value = comp.doc && comp.doc !== '-' ? formatCpfCnpj(comp.doc) : '';
     if (inputPhone) inputPhone.value = comp.phone && comp.phone !== '( ) 9999-9999' ? comp.phone : '';
     if (inputEmail) inputEmail.value = comp.email || '';
-    if (inputRate) inputRate.value = (comp.commissionRate !== undefined ? comp.commissionRate : 0.50).toFixed(2);
+    if (inputRate) inputRate.value = (comp.commissionRate !== undefined ? comp.commissionRate : 0.20).toFixed(2);
     if (inputSeller) inputSeller.checked = Boolean(comp.isSeller);
     if (selectStatus) selectStatus.value = comp.status || 'Ativo';
 
@@ -2825,12 +3005,13 @@ function setupEvents() {
     newCompanyForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const currentUser = getCurrentUser();
+      const personType = document.getElementById('newCompanyPersonType')?.value || 'PJ';
       const name = document.getElementById('newCompanyName').value.trim();
       const doc = document.getElementById('newCompanyDoc').value.trim();
       const phone = document.getElementById('newCompanyPhone').value.trim();
       const email = document.getElementById('newCompanyEmail').value.trim();
       const registeredBy = document.getElementById('newCompanyRegisteredBy')?.value || (currentUser?.id || 'USR-ADMIN');
-      const commissionRate = parseFloat(document.getElementById('newCompanyCommissionRate')?.value) || 0.50;
+      const commissionRate = parseFloat(document.getElementById('newCompanyCommissionRate')?.value) || 0.20;
       const isSeller = Boolean(document.getElementById('newCompanyIsSeller')?.checked);
       const status = document.getElementById('newCompanyStatus').value || 'Ativo';
 
@@ -2844,7 +3025,8 @@ function setupEvents() {
 
       if (targetComp) {
         targetComp.name = name.toUpperCase();
-        targetComp.doc = doc || '-';
+        targetComp.doc = doc ? formatCpfCnpj(doc) : '-';
+        targetComp.personType = personType;
         targetComp.owner = name.split(' ')[0].toUpperCase();
         targetComp.email = email.toLowerCase();
         targetComp.phone = phone || '( ) 9999-9999';
@@ -2857,7 +3039,8 @@ function setupEvents() {
         targetComp = {
           id: `EMP-${Date.now().toString().slice(-4)}`,
           name: name.toUpperCase(),
-          doc: doc || '-',
+          doc: doc ? formatCpfCnpj(doc) : '-',
+          personType: personType,
           owner: name.split(' ')[0].toUpperCase(),
           email: email.toLowerCase(),
           phone: phone || '( ) 9999-9999',
@@ -2900,12 +3083,14 @@ function setupEvents() {
       }
 
       // Atualizar transações vinculadas a esta empresa
+      const normTarget = normalizeCompanyName(targetComp.name);
       currentTransactions.forEach(tx => {
-        if (tx.company && tx.company.toUpperCase() === targetComp.name.toUpperCase()) {
+        if (tx.company && normalizeCompanyName(tx.company) === normTarget) {
           tx.partner = partnerName;
+          tx.company = targetComp.name;
         }
       });
-      filteredTransactions = [...currentTransactions];
+      filteredTransactions = getAllowedTransactions();
 
       saveCompanies(currentCompanies);
       saveTransactions(currentTransactions);
@@ -2915,8 +3100,11 @@ function setupEvents() {
       newCompanyForm.reset();
       closeNewCompanyModal();
 
+      currentPage = 1;
       renderTable();
+      updateSellerCommissionsData();
       renderRatesTable();
+      renderRateMetrics();
       filterCompanies();
       renderNetworkView();
       updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
@@ -3385,14 +3573,19 @@ function setupEvents() {
         updateDashboardStats();
         closeGeminiModal();
 
-        showToast(`🎉 ${newTxs.length} transações de "${existingComp.name}" importadas e associadas ao vendedor "${existingComp.partnerName || 'Francisco'}" (${existingComp.commissionRate || 0.5}% comissão)!`);
+        showToast(`🎉 ${newTxs.length} transações de "${existingComp.name}" importadas e associadas ao vendedor "${existingComp.partnerName || 'Francisco'}" (${existingComp.commissionRate || 0.2}% comissão)!`);
       } else {
-        // 2. Empresa NOVA (não cadastrada): criar pré-cadastro e abrir formulário para o Administrador completar
+        // 2. Empresa / Pessoa NOVA (não cadastrada): criar pré-cadastro e abrir formulário para o Administrador completar
+        const extractedDoc = (extractedGeminiData.document || '').trim();
+        const extractedType = extractedGeminiData.personType || (extractedDoc.replace(/\D/g, '').length === 11 ? 'PF' : 'PJ');
+        const isPF = extractedType === 'PF' || extractedDoc.replace(/\D/g, '').length === 11;
+
         const newCompId = `EMP-${Date.now().toString().slice(-4)}`;
         const preComp = {
           id: newCompId,
           name: rawExtractedName.toUpperCase(),
-          doc: '',
+          doc: extractedDoc ? formatCpfCnpj(extractedDoc) : '',
+          personType: isPF ? 'PF' : 'PJ',
           owner: rawExtractedName.split(' ')[0].toUpperCase(),
           email: 'contato@' + rawExtractedName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.br',
           phone: '',
@@ -3400,7 +3593,7 @@ function setupEvents() {
           status: 'Ativo',
           registeredBy: 'USR-ADMIN',
           partnerName: 'Francisco Pereira Paulo',
-          commissionRate: 0.50,
+          commissionRate: 0.20,
           isSeller: false
         };
 
@@ -3429,14 +3622,15 @@ function setupEvents() {
         updateDashboardStats();
         closeGeminiModal();
 
-        // Abrir formulário para complementar dados da nova empresa e definir vendedor/comissão
+        // Abrir formulário para complementar dados da nova pessoa/empresa e definir vendedor/comissão
         setTimeout(() => {
           if (typeof window.openNewCompanyModalForCompletion === 'function') {
             window.openNewCompanyModalForCompletion(preComp);
           }
         }, 300);
 
-        showToast(`✨ Nova Empresa Detectada! Complete o cadastro para definir o vendedor indicador e comissão de "${preComp.name}".`);
+        const entityLabel = isPF ? 'Pessoa Física' : 'Empresa';
+        showToast(`✨ Nova ${entityLabel} Detectada! Complete o cadastro para definir o vendedor indicador e comissão de "${preComp.name}".`);
       }
     });
   }
@@ -3631,13 +3825,19 @@ async function loadInitialData() {
 
   const remoteTransactions = await fetchTransactionsFromSupabase();
   if (remoteTransactions && remoteTransactions.length > 0) {
-    remoteTransactions.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
-    currentTransactions = remoteTransactions;
-    filteredTransactions = [...remoteTransactions];
-    saveTransactions(currentTransactions);
+    const realRemote = remoteTransactions.filter(t => !isMockTransaction(t));
+    if (realRemote.length > 0) {
+      realRemote.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
+      currentTransactions = realRemote;
+      filteredTransactions = [...realRemote];
+      saveTransactions(currentTransactions);
+    } else {
+      const stored = getStoredTransactions();
+      currentTransactions = stored;
+      filteredTransactions = [...stored];
+    }
   } else {
     const stored = getStoredTransactions();
-    stored.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
     currentTransactions = stored;
     filteredTransactions = [...stored];
   }
@@ -3652,6 +3852,9 @@ async function loadInitialData() {
 
   renderTable();
   renderCompaniesTable();
+  updateSellerCommissionsData();
+  renderRatesTable();
+  renderRateMetrics();
   updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
   refreshTransactionFiltersOptions(currentTransactions);
 

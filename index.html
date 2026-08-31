@@ -985,14 +985,25 @@
       <form id="newCompanyForm">
         <div class="modal-body">
           <div class="filter-group">
-            <label class="filter-label" for="newCompanyName">Nome: *</label>
+            <label class="filter-label" for="newCompanyPersonType">Tipo de Cadastro: *</label>
             <div class="input-wrapper">
-              <input type="text" id="newCompanyName" class="custom-input" placeholder="Digite o nome completo ou razão social" required>
+              <select id="newCompanyPersonType" class="custom-select">
+                <option value="PF">👤 Pessoa Física (CPF)</option>
+                <option value="PJ" selected>🏢 Pessoa Jurídica (CNPJ)</option>
+              </select>
+              <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
             </div>
           </div>
 
           <div class="filter-group">
-            <label class="filter-label" for="newCompanyDoc">CPF/CNPJ: *</label>
+            <label class="filter-label" for="newCompanyName">Nome / Razão Social: *</label>
+            <div class="input-wrapper">
+              <input type="text" id="newCompanyName" class="custom-input" placeholder="Nome completo ou razão social" required>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="newCompanyDoc" id="newCompanyDocLabel">Documento (CPF / CNPJ): *</label>
             <div class="input-wrapper">
               <input type="text" id="newCompanyDoc" class="custom-input" placeholder="000.000.000-00 ou 00.000.000/0000-00" maxlength="18" required>
             </div>
@@ -1026,10 +1037,10 @@
           <div class="filter-group">
             <label class="filter-label" for="newCompanyCommissionRate">Taxa de Comissão do Vendedor (%) *</label>
             <div class="input-wrapper" style="position: relative;">
-              <input type="number" step="0.01" min="0" max="100" id="newCompanyCommissionRate" class="custom-input" value="0.50" placeholder="Ex: 0.50" style="font-size: 15px; font-weight: 700; color: #059669; padding-right: 36px;" required>
+              <input type="number" step="0.01" min="0" max="100" id="newCompanyCommissionRate" class="custom-input" value="0.20" placeholder="Ex: 0.20" style="font-size: 15px; font-weight: 700; color: #059669; padding-right: 36px;" required>
               <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b;">%</span>
             </div>
-            <span style="font-size: 11.5px; color: #059669; margin-top: 2px;">Alíquota de repasse salva para este e todos os próximos relatórios desta empresa.</span>
+            <span style="font-size: 11.5px; color: #059669; margin-top: 2px;">Alíquota de repasse salva para este e todos os próximos relatórios desta empresa (sugestão base: 0,20%).</span>
           </div>
 
           <div class="filter-group" style="padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 4px;">

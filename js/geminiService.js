@@ -206,7 +206,7 @@ async function extractTextFromPdf(file, onProgress = () => {}) {
  * Parser Local Inteligente: extrai relatórios de maquininhas instantaneamente (em < 50ms)
  * com 100% de exatidão matemática e sem risco de timeouts.
  */
-function parseReportTextLocally(fullText) {
+export function parseReportTextLocally(fullText) {
   if (!fullText || typeof fullText !== 'string') return null;
 
   let company = 'MIRANTE BRISA MAR GASTRONOMIA';
@@ -319,7 +319,7 @@ function parseReportTextLocally(fullText) {
       date: date,
       time: time,
       company: company,
-      partner: 'Alpha Soluções e Pagamentos',
+      partner: 'Francisco Pereira Paulo',
       method: method,
       installments: installments,
       brand: brand,
@@ -333,12 +333,41 @@ function parseReportTextLocally(fullText) {
     });
   }
 
+  // Extrair documento (CPF ou CNPJ) e tipo de pessoa (PF vs PJ)
+  let documentNumber = '';
+  let personType = 'PJ';
+
+  const cnpjMatch = fullText.match(/(?:CNPJ|C\.N\.P\.J\.?|Inscrição)?\s*:?\s*(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})/i);
+  const cpfMatch = fullText.match(/(?:CPF|C\.P\.F\.?|Documento)?\s*:?\s*(\d{3}\.?\d{3}\.?\d{3}-?\d{2})/i);
+
+  if (cpfMatch && cpfMatch[1]) {
+    documentNumber = cpfMatch[1].trim();
+    personType = 'PF';
+  } else if (cnpjMatch && cnpjMatch[1]) {
+    documentNumber = cnpjMatch[1].trim();
+    personType = 'PJ';
+  } else {
+    // Se não encontrou documento com formatação explícita, inferir pelo nome
+    const pjSuffixes = ['ltda', 's/a', 'sa', 'eireli', 'me', 'epp', 'serviços', 'servicos', 'comércio', 'comercio', 'restaurante', 'mercado', 'posto', 'loja', 'ótica', 'otica', 'bar', 'café', 'cafe', 'distribuidora', 'academia'];
+    const compLower = (company || '').toLowerCase();
+    const hasPjSuffix = pjSuffixes.some(s => compLower.includes(s));
+    const words = (company || '').trim().split(/\s+/);
+    
+    if (!hasPjSuffix && words.length >= 2 && words.length <= 5) {
+      personType = 'PF';
+    } else {
+      personType = 'PJ';
+    }
+  }
+
   if (transactions.length > 0) {
     // Ordenar da data mais recente para a mais antiga
     transactions.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
 
     return {
       company,
+      document: documentNumber,
+      personType: personType,
       period,
       totalRecords: transactions.length,
       transactions
@@ -382,7 +411,9 @@ const SYSTEM_INSTRUCTION = `
 Você é um especialista em extração contábil e financeira de relatórios de vendas de maquininhas (POS / TEF).
 Extraia com 100% de precisão todas as transações em JSON no formato:
 {
-  "company": "NOME DA EMPRESA OU ESTABELECIMENTO",
+  "company": "NOME COMPLETO DO CLIENTE OU RAZÃO SOCIAL",
+  "document": "CPF (000.000.000-00) OU CNPJ (00.000.000/0000-00) SE ENCONTRADO NO CABEÇALHO/RELATÓRIO",
+  "personType": "PF (Pessoa Física) ou PJ (Pessoa Jurídica)",
   "period": "DD/MM/AAAA a DD/MM/AAAA",
   "transactions": [
     {
@@ -404,9 +435,10 @@ Extraia com 100% de precisão todas as transações em JSON no formato:
 
 Regras:
 1. Sempre extraia as transações ordenadas cronologicamente da mais recente para a mais antiga.
-2. Data no formato DD/MM/AAAA e hora no formato HH:MM.
-3. O campo "clientPaid" representa o Valor Pago ao Cliente / Líquido do Repasse.
-4. Identifique com precisão o Valor Bruto (grossAmount), Taxa (fee), Valor Líquido / Pago ao Cliente (netAmount e clientPaid), Forma de Pagamento e Bandeira.
+2. Identifique se o titular do relatório é Pessoa Física ("PF" com CPF) ou Pessoa Jurídica ("PJ" com CNPJ).
+3. Data no formato DD/MM/AAAA e hora no formato HH:MM.
+4. O campo "clientPaid" representa o Valor Pago ao Cliente / Líquido do Repasse.
+5. Identifique com precisão o Valor Bruto (grossAmount), Taxa (fee), Valor Líquido / Pago ao Cliente (netAmount e clientPaid), Forma de Pagamento e Bandeira.
 `;
 
 /**
@@ -565,7 +597,7 @@ export async function extractTransactionsWithGemini(file, apiKey, onProgress = (
       date: tx.date || new Date().toLocaleDateString('pt-BR'),
       time: tx.time || '12:00',
       company: company,
-      partner: 'Alpha Soluções e Pagamentos',
+      partner: 'Francisco Pereira Paulo',
       method: tx.method || 'Débito',
       installments: tx.installments || '1x',
       brand: tx.brand || 'Pix',

@@ -55,15 +55,15 @@ export async function fetchTransactionsFromSupabase() {
       return null;
     }
 
-    const mockCompanies = [
-      'Auto Posto Alvorada Ltda', 'Supermercado Real Super', 'Restaurante Sabor & Arte',
-      'Boutique Bella Moda', 'Padaria & Confeitaria Estrela', 'Drogaria Central Popular',
-      'Tech Prime Eletrônicos', 'Francisco Comércio Varejista', 'Ótica Nova Visão',
-      'Mecânica Express Auto', 'ESSENCE BEAUTY MIND', 'WILLYAN', 'ALINE RENATA DA ROSA',
-      'EVANDRO CARNIEL', 'VICTOR HUGO ALVES', 'K. SA CAFES ESPECIAIS LTDA'
+    const MOCK_PARTNER_NAMES = [
+      'delta pay', 'nexus tech', 'alpha solu', 'francisco represent', 'beta intermed'
     ];
 
-    const realRows = (data || []).filter(row => !mockCompanies.includes(row.company));
+    const realRows = (data || []).filter(row => {
+      if (row.id && (String(row.id).startsWith('TX-100') || String(row.id).startsWith('TX-MOCK'))) return false;
+      if (row.partner && MOCK_PARTNER_NAMES.some(m => String(row.partner).toLowerCase().includes(m))) return false;
+      return true;
+    });
 
     // Normalizar nomes de colunas do banco para o padrão JS
     return realRows.map(row => ({
