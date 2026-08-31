@@ -47,6 +47,12 @@
   color: #334155;
 }
 
+.filter-actions-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
 /* ==========================================================================
    INPUTS & SELECTS DROPDOWNS (PADRÃO FINTECH PREMIUM)
    ========================================================================== */
@@ -461,8 +467,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .kpi-fintech-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
 }
 
 .kpi-fintech-tile {
@@ -592,19 +598,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* Responsiveness */
-@media (max-width: 1400px) {
-  .kpi-fintech-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .kpi-fintech-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .kpi-fintech-grid {
     grid-template-columns: 1fr;
   }
@@ -1365,9 +1359,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .filters-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-  .filters-row-3 {
-    grid-column: span 3;
-  }
   .kpi-row-top {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1379,16 +1370,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @media (max-width: 768px) {
   .filters-grid {
     grid-template-columns: 1fr;
-  }
-  .filters-row-3 {
-    grid-column: span 1;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
-  .filters-row-3-left {
-    width: 100%;
-    flex-direction: column;
   }
   .filter-actions {
     justify-content: flex-end;

@@ -179,35 +179,13 @@
 
             <form id="filterForm">
               <div class="filters-grid">
-                <!-- Linha 1 -->
+                <!-- Linha 1: Filtros Principais de Transação -->
                 <div class="filter-group">
                   <label class="filter-label" for="filterEmpresas">Empresas</label>
                   <div class="input-wrapper">
                     <span class="input-icon-left"><i data-lucide="search"></i></span>
                     <select id="filterEmpresas" class="custom-select">
-                      <option value="">Selecionar</option>
-                    </select>
-                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                  </div>
-                </div>
-
-                <div class="filter-group">
-                  <label class="filter-label" for="filterParceiro">Parceiro</label>
-                  <div class="input-wrapper">
-                    <span class="input-icon-left"><i data-lucide="search"></i></span>
-                    <select id="filterParceiro" class="custom-select">
-                      <option value="">Todos os parceiros</option>
-                    </select>
-                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                  </div>
-                </div>
-
-                <div class="filter-group">
-                  <label class="filter-label" for="filterTerminal">Terminal</label>
-                  <div class="input-wrapper">
-                    <span class="input-icon-left"><i data-lucide="search"></i></span>
-                    <select id="filterTerminal" class="custom-select">
-                      <option value="">Selecionar</option>
+                      <option value="">Todas as empresas</option>
                     </select>
                     <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
                   </div>
@@ -233,7 +211,6 @@
                   </div>
                 </div>
 
-                <!-- Linha 2 -->
                 <div class="filter-group">
                   <label class="filter-label" for="filterBandeira">Bandeira</label>
                   <div class="input-wrapper">
@@ -254,16 +231,7 @@
                   </div>
                 </div>
 
-                <div class="filter-group">
-                  <label class="filter-label" for="filterContaProvedor">Conta de Provedor</label>
-                  <div class="input-wrapper">
-                    <select id="filterContaProvedor" class="custom-select">
-                      <option value="">Todas as contas</option>
-                    </select>
-                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                  </div>
-                </div>
-
+                <!-- Linha 2: Período, Valores e Ações (Preenchimento Coerente de 5 Colunas) -->
                 <div class="filter-group">
                   <label class="filter-label" for="filterDataInicio">Início</label>
                   <div class="input-wrapper">
@@ -280,31 +248,29 @@
                   </div>
                 </div>
 
-                <!-- Linha 3: Spread, Valor e Botões de Ação perfeitamente alinhados -->
-                <div class="filters-row-3">
-                  <div class="filters-row-3-left">
-                    <div class="filter-group">
-                      <label class="filter-label" for="filterSpread">Spread</label>
-                      <div class="input-wrapper">
-                        <select id="filterSpread" class="custom-select">
-                          <option value="">Todos os spreads</option>
-                        </select>
-                        <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                      </div>
-                    </div>
-
-                    <div class="filter-group">
-                      <label class="filter-label" for="filterValor">Valor</label>
-                      <div class="input-wrapper">
-                        <input type="text" id="filterValor" class="custom-input" value="R$ 0,00">
-                      </div>
-                    </div>
+                <div class="filter-group">
+                  <label class="filter-label" for="filterSpread">Spread</label>
+                  <div class="input-wrapper">
+                    <select id="filterSpread" class="custom-select">
+                      <option value="">Todos os spreads</option>
+                    </select>
+                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
                   </div>
+                </div>
 
-                  <div class="filter-actions">
-                    <button type="button" class="btn btn-ghost" id="btnClearFilters">Limpar Filtros</button>
-                    <button type="submit" class="btn btn-primary-green" id="btnApplyFilters">
-                      <i data-lucide="filter"></i>
+                <div class="filter-group">
+                  <label class="filter-label" for="filterValor">Valor</label>
+                  <div class="input-wrapper">
+                    <input type="text" id="filterValor" class="custom-input" value="R$ 0,00">
+                  </div>
+                </div>
+
+                <div class="filter-group filter-actions-col" style="justify-content: flex-end;">
+                  <label class="filter-label" style="visibility: hidden; user-select: none;">Ações</label>
+                  <div style="display: flex; align-items: center; gap: 8px; height: 40px;">
+                    <button type="button" class="btn btn-ghost" id="btnClearFilters" style="height: 40px; padding: 0 10px; font-size: 12.5px; white-space: nowrap; flex: 1;">Limpar</button>
+                    <button type="submit" class="btn btn-primary-green" id="btnApplyFilters" style="height: 40px; padding: 0 14px; font-size: 13px; white-space: nowrap; flex: 1.2;">
+                      <i data-lucide="filter" style="width: 15px; height: 15px;"></i>
                       <span>Filtrar</span>
                     </button>
                   </div>
@@ -325,49 +291,13 @@
                 <div class="kpi-tile-value val-slate" id="valTotalFaturamento">R$ 0,00</div>
               </div>
 
-              <!-- Item 2: Total Empresa -->
-              <div class="kpi-fintech-tile">
-                <div class="kpi-tile-top">
-                  <span class="kpi-tile-icon icon-slate"><i data-lucide="building-2"></i></span>
-                  <span class="kpi-tile-label">Total Empresa</span>
-                </div>
-                <div class="kpi-tile-value val-slate" id="valTotalEmpresa">R$ 0,00</div>
-              </div>
-
-              <!-- Item 3: Total Líquido -->
+              <!-- Item 2: Total Líquido -->
               <div class="kpi-fintech-tile highlight-blue">
                 <div class="kpi-tile-top">
                   <span class="kpi-tile-icon icon-blue"><i data-lucide="wallet"></i></span>
                   <span class="kpi-tile-label">Total Líquido</span>
                 </div>
                 <div class="kpi-tile-value val-blue" id="valTotalLiquido">R$ 0,00</div>
-              </div>
-
-              <!-- Item 4: Total Parceiro -->
-              <div class="kpi-fintech-tile highlight-emerald">
-                <div class="kpi-tile-top">
-                  <span class="kpi-tile-icon icon-emerald"><i data-lucide="trending-up"></i></span>
-                  <span class="kpi-tile-label">Total Parceiro</span>
-                </div>
-                <div class="kpi-tile-value val-emerald" id="valTotalParceiro">R$ 0,00</div>
-              </div>
-
-              <!-- Item 5: Total Pago Clientes -->
-              <div class="kpi-fintech-tile highlight-amber">
-                <div class="kpi-tile-top">
-                  <span class="kpi-tile-icon icon-amber"><i data-lucide="credit-card"></i></span>
-                  <span class="kpi-tile-label">Total Pago Clientes</span>
-                </div>
-                <div class="kpi-tile-value val-amber" id="valTotalPagoClientes">R$ 0,00</div>
-              </div>
-
-              <!-- Item 6: Total Comissão Cliente -->
-              <div class="kpi-fintech-tile highlight-emerald">
-                <div class="kpi-tile-top">
-                  <span class="kpi-tile-icon icon-emerald"><i data-lucide="coins"></i></span>
-                  <span class="kpi-tile-label">Total Comissão Cliente</span>
-                </div>
-                <div class="kpi-tile-value val-emerald" id="valTotalComissaoCliente">R$ 0,00</div>
               </div>
             </div>
           </section>
@@ -382,17 +312,23 @@
               </button>
             </div>
 
-            <!-- Barra de busca e totalizador da tabela -->
+            <!-- Barra de busca e totalizador da tabela com Ações em Massa -->
             <div class="table-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
               <div class="table-search input-wrapper" style="flex: 1; max-width: 380px;">
                 <span class="input-icon-left"><i data-lucide="search"></i></span>
-                <input type="text" id="tableSearchInput" class="custom-input" placeholder="Buscar por terminal, empresa, status...">
+                <input type="text" id="tableSearchInput" class="custom-input" placeholder="Buscar por empresa, status, forma de pagamento...">
               </div>
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <button type="button" class="btn btn-ghost" id="btnClearTransactionsTable" style="height: 36px; padding: 0 12px; font-size: 12px; color: #ef4444; font-weight: 700; display: none; align-items: center; gap: 6px;">
-                  <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                  <span>Limpar Dados</span>
-                </button>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <!-- Barra de Ações em Massa de Transações -->
+                <div id="transactionsBulkActionBar" style="display: none; align-items: center; gap: 8px;">
+                  <button type="button" class="btn btn-danger" id="btnDeleteSelectedTransactions" style="background-color: #ef4444; color: #ffffff; height: 34px; padding: 0 14px; font-size: 12.5px; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; box-shadow: 0 1px 3px rgba(239, 68, 68, 0.25);">
+                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                    <span id="bulkDeleteTxCountText">Excluir Selecionadas (0)</span>
+                  </button>
+                  <button type="button" class="btn btn-ghost" id="btnClearTransactionSelection" style="height: 34px; padding: 0 10px; font-size: 12px; border-radius: 6px;">
+                    Desmarcar
+                  </button>
+                </div>
                 <div class="table-meta-count" id="tableRecordCount" style="font-size: 13px; color: #64748b;">
                   Exibindo <strong>0</strong> transações
                 </div>
@@ -404,16 +340,15 @@
               <table class="data-table" id="transactionsTable">
                 <thead>
                   <tr>
-                    <th class="sortable" data-sort="terminal" style="min-width: 160px;">Terminal</th>
+                    <th style="width: 44px; text-align: center;">
+                      <input type="checkbox" id="checkAllTransactions" title="Selecionar / Desmarcar todas" style="cursor: pointer; width: 16px; height: 16px; accent-color: #1d68d8;">
+                    </th>
                     <th class="sortable" data-sort="date" style="min-width: 110px;">Data</th>
                     <th class="sortable" data-sort="company" style="min-width: 180px; max-width: 220px;">Empresa</th>
                     <th style="min-width: 215px; width: 215px;">Pagamento</th>
                     <th class="sortable" data-sort="status" style="min-width: 120px;">Status</th>
-                    <th style="min-width: 80px;">Taxa</th>
                     <th class="sortable" data-sort="grossAmount" style="min-width: 110px;">Valor Bruto</th>
-                    <th class="sortable" data-sort="netAmount" style="min-width: 110px;">Valor Líquido</th>
-                    <th class="sortable" data-sort="spread" style="min-width: 100px;">Spread</th>
-                    <th style="min-width: 130px; text-align: center;">Valor pago cliente</th>
+                    <th class="sortable" data-sort="clientPaid" style="min-width: 130px; text-align: center;">Valor Pago Cliente</th>
                   </tr>
                 </thead>
                 <tbody id="transactionsTableBody">
@@ -792,54 +727,68 @@
           </div>
         </div>
 
-        <!-- ================= VIEW 4: COMISSÕES (Gestão de Alíquotas por Empresa - Admin) ================= -->
+        <!-- ================= VIEW 4: COMISSÕES (Distribuição de Comissões da Rede) ================= -->
         <div id="view-comissoes" class="app-view" style="display: none;">
-          <!-- Topo da Seção de Alíquotas -->
+          <!-- Topo da Seção de Comissões -->
           <div class="hierarchy-header-card" style="margin-bottom: 24px;">
             <div>
-              <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Alíquotas de Comissões por Empresa</h2>
-              <p style="font-size: 13px; color: #64748b;">Configure e gerencie a alíquota percentual (%) de comissão aplicada sobre o faturamento de cada empresa cadastrada.</p>
-            </div>
-            <div>
-              <button type="button" class="btn btn-primary-blue" id="btnOpenBulkRateModal">
-                <i data-lucide="sliders"></i>
-                <span>Definir Alíquota em Massa</span>
-              </button>
+              <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 4px;" id="commissionsViewHeaderTitle">Distribuição e Repasse de Comissões</h2>
+              <p style="font-size: 13px; color: #64748b;" id="commissionsViewHeaderSubtitle">Acompanhe as comissões calculadas em cascata sobre as transações da sua rede.</p>
             </div>
           </div>
 
-          <!-- Grade de 4 Cards de Métricas de Alíquotas -->
-          <div class="commissions-metrics-grid">
-            <div class="com-metric-card">
-              <div class="com-metric-icon icon-emerald">
-                <i data-lucide="building-2"></i>
+          <!-- Grade de 4 Cards de Métricas de Comissões -->
+          <div class="commissions-metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="com-metric-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+              <div class="com-metric-icon icon-emerald" style="width: 44px; height: 44px; border-radius: 10px; background: rgba(5, 150, 105, 0.12); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <i data-lucide="coins"></i>
               </div>
               <div class="com-metric-info">
-                <span class="com-metric-label">Empresas Cadastradas</span>
-                <span class="com-metric-val" id="rateStatTotal">16</span>
+                <span class="com-metric-label" style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Total Comissões a Receber</span>
+                <span class="com-metric-val" id="commStatTotalEarned" style="font-size: 20px; font-weight: 800; color: #059669; display: block; margin-top: 2px;">R$ 0,00</span>
               </div>
             </div>
 
-            <div class="com-metric-card">
-              <div class="com-metric-icon icon-blue">
+            <div class="com-metric-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+              <div class="com-metric-icon icon-blue" style="width: 44px; height: 44px; border-radius: 10px; background: rgba(37, 99, 235, 0.12); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <i data-lucide="trending-up"></i>
+              </div>
+              <div class="com-metric-info">
+                <span class="com-metric-label" style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Volume Transacionado</span>
+                <span class="com-metric-val" id="commStatTotalVolume" style="font-size: 20px; font-weight: 800; color: #0f172a; display: block; margin-top: 2px;">R$ 0,00</span>
+              </div>
+            </div>
+
+            <div class="com-metric-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+              <div class="com-metric-icon icon-purple" style="width: 44px; height: 44px; border-radius: 10px; background: rgba(147, 51, 234, 0.12); color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                <i data-lucide="users"></i>
+              </div>
+              <div class="com-metric-info">
+                <span class="com-metric-label" style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Vendedores na Rede</span>
+                <span class="com-metric-val" id="commStatTotalSellers" style="font-size: 20px; font-weight: 800; color: #0f172a; display: block; margin-top: 2px;">0</span>
+              </div>
+            </div>
+
+            <div class="com-metric-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+              <div class="com-metric-icon icon-amber" style="width: 44px; height: 44px; border-radius: 10px; background: rgba(217, 119, 6, 0.12); color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                 <i data-lucide="percent"></i>
               </div>
               <div class="com-metric-info">
-                <span class="com-metric-label">Alíquota Média Geral</span>
-                <span class="com-metric-val" id="rateStatAvg">7.72%</span>
+                <span class="com-metric-label" style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase;">Alíquota Média da Rede</span>
+                <span class="com-metric-val" id="commStatAvgRate" style="font-size: 20px; font-weight: 800; color: #0f172a; display: block; margin-top: 2px;">0.00%</span>
               </div>
             </div>
           </div>
 
-          <!-- CARD 1: Pesquisar e Filtrar Empresas -->
+          <!-- CARD 1: Pesquisar e Filtrar Comissões -->
           <section class="card companies-search-card">
-            <h2 class="card-title" style="margin-bottom: 16px;">Pesquisar Pessoas/Empresas para Ajuste de Alíquota</h2>
+            <h2 class="card-title" style="margin-bottom: 16px;">Pesquisar Vendedores / Parceiros</h2>
 
             <form id="ratesFilterForm">
               <div class="search-top-row">
                 <div class="input-wrapper search-main-input">
                   <span class="input-icon-left"><i data-lucide="search"></i></span>
-                  <input type="text" id="inputSearchRateCompany" class="custom-input" placeholder="Buscar por nome da empresa, CPF/CNPJ ou responsável...">
+                  <input type="text" id="inputSearchRateCompany" class="custom-input" placeholder="Buscar por nome do vendedor, parceiro, CPF/CNPJ ou email...">
                 </div>
                 <div class="search-actions-group">
                   <button type="submit" class="btn btn-primary-green" id="btnSearchRates">
@@ -852,7 +801,7 @@
 
               <div class="search-bottom-grid">
                 <div class="filter-group">
-                  <label class="filter-label" for="filterRateStatus">Status da Empresa</label>
+                  <label class="filter-label" for="filterRateStatus">Status</label>
                   <div class="input-wrapper">
                     <select id="filterRateStatus" class="custom-select">
                       <option value="">Todos os status</option>
@@ -864,34 +813,11 @@
                 </div>
 
                 <div class="filter-group">
-                  <label class="filter-label" for="filterRatePartner">Parceiro / Responsável</label>
-                  <div class="input-wrapper">
-                    <select id="filterRatePartner" class="custom-select">
-                      <option value="">Todos os parceiros</option>
-                      <!-- Preenchido dinamicamente via JS -->
-                    </select>
-                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                  </div>
-                </div>
-
-                <div class="filter-group">
-                  <label class="filter-label" for="filterRateRange">Faixa de Alíquota (%)</label>
-                  <div class="input-wrapper">
-                    <select id="filterRateRange" class="custom-select">
-                      <option value="">Todas as alíquotas</option>
-                      <option value="low">Até 5.0%</option>
-                      <option value="mid">5.1% a 9.9%</option>
-                      <option value="high">10.0% ou mais</option>
-                    </select>
-                    <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
-                  </div>
-                </div>
-
-                <div class="filter-group">
                   <label class="filter-label" for="filterRateOrder">Ordenar por</label>
                   <div class="input-wrapper">
                     <select id="filterRateOrder" class="custom-select">
-                      <option value="recentes">Mais recentes</option>
+                      <option value="maior_comissao">Maior Comissão (R$)</option>
+                      <option value="maior_volume">Maior Volume de Vendas (R$)</option>
                       <option value="maior_aliquota">Maior Alíquota (%)</option>
                       <option value="menor_aliquota">Menor Alíquota (%)</option>
                       <option value="nome_asc">Nome (A - Z)</option>
@@ -903,13 +829,13 @@
             </form>
           </section>
 
-          <!-- CARD 2: Tabela de Alíquotas de Comissões por Empresa -->
+          <!-- CARD 2: Tabela de Comissões Distribuídas por Vendedor -->
           <section class="card companies-list-card" style="margin-top: 24px;">
             <div class="companies-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-              <h2 class="card-title" id="ratesListTitle">Alíquotas de Comissões por Empresa (16)</h2>
+              <h2 class="card-title" id="ratesListTitle">Comissões Distribuídas por Vendedor / Parceiro</h2>
               <span style="font-size: 13px; color: #64748b; font-weight: 500;">
                 <i data-lucide="info" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i>
-                Edite os valores diretamente nos campos abaixo ou pelo botão de ajuste
+                Comissões calculadas em cascata sobre o volume faturado pelas empresas indicadas
               </span>
             </div>
 
@@ -917,11 +843,14 @@
               <table class="data-table" id="ratesTable">
                 <thead>
                   <tr>
-                    <th>Empresa / Pessoa</th>
-                    <th>CPF / CNPJ</th>
-                    <th>Parceiro Responsável</th>
-                    <th>Status</th>
-                    <th style="text-align: center; width: 220px;">Alíquota de Comissão (%)</th>
+                    <th>Vendedor / Parceiro</th>
+                    <th>Indicado por (Upline)</th>
+                    <th style="text-align: center;">Nível</th>
+                    <th style="text-align: center; width: 140px;">Alíquota (%)</th>
+                    <th style="text-align: right;">Volume da Carteira</th>
+                    <th style="text-align: right; color: #059669;">Comissão a Receber</th>
+                    <th style="text-align: center;">Empresas</th>
+                    <th style="text-align: center;">Status</th>
                   </tr>
                 </thead>
                 <tbody id="ratesTableBody">
@@ -930,7 +859,7 @@
               </table>
             </div>
 
-            <!-- Paginação de Alíquotas -->
+            <!-- Paginação de Comissões -->
             <div class="pagination-container" style="margin-top: 20px;">
               <div class="pagination-info" id="ratesPaginationInfo">
                 Página 1 de 1
@@ -1084,16 +1013,34 @@
           </div>
 
           <div class="filter-group">
-            <label class="filter-label" for="newCompanyRegisteredBy">Parceiro / Consultor Responsável *</label>
+            <label class="filter-label" for="newCompanyRegisteredBy">De quem essa empresa é cliente? (Indicador / Vendedor) *</label>
             <div class="input-wrapper">
               <select id="newCompanyRegisteredBy" class="custom-select" required>
-                <!-- Preenchido dinamicamente via JS de acordo com a hierarquia -->
+                <!-- Preenchido dinamicamente via JS com Francisco + Vendedores + Empresas Parceiras -->
               </select>
               <span class="input-icon-right"><i data-lucide="chevron-down"></i></span>
             </div>
+            <span style="font-size: 11.5px; color: #64748b; margin-top: 2px;">Selecione quem indicou e receberá a comissão sobre as transações desta empresa.</span>
           </div>
 
           <div class="filter-group">
+            <label class="filter-label" for="newCompanyCommissionRate">Taxa de Comissão do Vendedor (%) *</label>
+            <div class="input-wrapper" style="position: relative;">
+              <input type="number" step="0.01" min="0" max="100" id="newCompanyCommissionRate" class="custom-input" value="0.50" placeholder="Ex: 0.50" style="font-size: 15px; font-weight: 700; color: #059669; padding-right: 36px;" required>
+              <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b;">%</span>
+            </div>
+            <span style="font-size: 11.5px; color: #059669; margin-top: 2px;">Alíquota de repasse salva para este e todos os próximos relatórios desta empresa.</span>
+          </div>
+
+          <div class="filter-group" style="padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 4px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: 700; color: #0f172a;">
+              <input type="checkbox" id="newCompanyIsSeller" style="width: 17px; height: 17px; accent-color: #059669; cursor: pointer;">
+              <span>Esta empresa também pode atuar como Vendedora (indicar novos clientes)?</span>
+            </label>
+            <span style="font-size: 11.5px; color: #64748b; display: block; margin-top: 4px; margin-left: 27px;">Permite que ela participe da árvore genealógica da rede e receba comissão sobre as vendas das empresas que indicar.</span>
+          </div>
+
+          <div class="filter-group" style="margin-top: 8px;">
             <label class="filter-label" for="newCompanyStatus">Status Inicial</label>
             <div class="input-wrapper">
               <select id="newCompanyStatus" class="custom-select">
@@ -1107,8 +1054,8 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-ghost" id="btnCancelNewCompany">Cancelar</button>
           <button type="submit" class="btn btn-primary-blue" id="btnSaveNewCompany">
-            <i data-lucide="plus"></i>
-            <span>Cadastrar Pessoa/Empresa</span>
+            <i data-lucide="check"></i>
+            <span>Salvar e Aplicar Configurações</span>
           </button>
         </div>
       </form>
@@ -1244,34 +1191,7 @@
     </div>
   </div>
 
-  <!-- Modal: Alíquota em Massa -->
-  <div class="modal-backdrop" id="bulkRateModal">
-    <div class="modal-card" style="max-width: 480px;">
-      <div class="modal-header">
-        <h3 class="modal-title">Aplicar Alíquota em Massa</h3>
-        <button class="modal-close" id="btnCloseBulkRateModal">&times;</button>
-      </div>
-      <form id="bulkRateForm">
-        <div class="modal-body">
-          <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
-            Defina uma alíquota percentual (%) para ser aplicada a <strong>todas as empresas filtradas</strong> de uma só vez.
-          </p>
 
-          <div class="filter-group">
-            <label class="filter-label" for="bulkRateInput">Alíquota Global para Empresas (%)</label>
-            <div class="input-wrapper" style="position: relative;">
-              <input type="number" step="0.01" min="0" max="100" id="bulkRateInput" class="custom-input" placeholder="Ex: 8.50" style="font-size: 16px; font-weight: 700; color: #059669; padding-right: 40px;" required>
-              <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b;">%</span>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-ghost" id="btnCancelBulkRate">Cancelar</button>
-          <button type="submit" class="btn btn-primary-blue">Aplicar a Todas</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- Modal: Importação com Gemini AI -->
   <div class="modal-backdrop" id="geminiImportModal">
@@ -1384,7 +1304,7 @@
                   <th>Pagamento</th>
                   <th>Status</th>
                   <th>Valor Bruto</th>
-                  <th>Valor Líquido</th>
+                  <th>Valor Pago Cliente</th>
                 </tr>
               </thead>
               <tbody id="geminiPreviewTableBody">
@@ -1406,6 +1326,27 @@
             Confirmar e Inserir no Sistema
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmação de Exclusão Clean Fintech -->
+  <div class="modal-backdrop" id="deleteConfirmModal">
+    <div class="modal-card" style="max-width: 440px; text-align: center; padding: 28px 24px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+      <div style="width: 52px; height: 52px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);">
+        <i data-lucide="trash-2" style="width: 26px; height: 26px;"></i>
+      </div>
+      <h3 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px;" id="deleteConfirmTitle">Confirmar Exclusão</h3>
+      <p style="font-size: 13.5px; color: #64748b; line-height: 1.5; margin-bottom: 24px;" id="deleteConfirmMessage">
+        Tem certeza que deseja remover as transações selecionadas? Esta ação é definitiva e recalculará as métricas da rede.
+      </p>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+        <button type="button" class="btn btn-ghost" id="btnCancelDeleteConfirm" style="flex: 1; height: 42px; font-weight: 600;">
+          Cancelar
+        </button>
+        <button type="button" class="btn" id="btnExecuteDeleteConfirm" style="flex: 1; height: 42px; background: #ef4444; color: #ffffff; font-weight: 700; border: none; border-radius: var(--radius-md); box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3); cursor: pointer;">
+          Sim, Excluir
+        </button>
       </div>
     </div>
   </div>

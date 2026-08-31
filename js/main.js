@@ -37,7 +37,8 @@ import {
 import {
   getStoredGeminiKey,
   saveGeminiKey,
-  extractTransactionsWithGemini
+  extractTransactionsWithGemini,
+  parseTxDateTime
 } from './geminiService.js';
 
 // Limpeza automática de dados mocados herdados do cache local
@@ -80,6 +81,7 @@ export function getStoredTransactions() {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
         const realOnly = parsed.filter(t => !isMockItem(t));
+        realOnly.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
         if (realOnly.length !== parsed.length) {
           localStorage.setItem('konzpay_saved_transactions', JSON.stringify(realOnly));
         }
@@ -105,6 +107,26 @@ let recordsPerPage = localStorage.getItem('konzpay_rows_per_page') === 'all'
   ? Infinity
   : (parseInt(localStorage.getItem('konzpay_rows_per_page')) || 10);
 let currentSort = { column: 'date', order: 'desc' };
+let selectedTransactionIds = new Set();
+let pendingDeleteCallback = null;
+
+// Modal de Confirmação de Exclusão Clean Fintech
+export function openDeleteConfirmModal({ title, message, onConfirm }) {
+  const modal = document.getElementById('deleteConfirmModal');
+  const titleEl = document.getElementById('deleteConfirmTitle');
+  const msgEl = document.getElementById('deleteConfirmMessage');
+  if (titleEl && title) titleEl.textContent = title;
+  if (msgEl && message) msgEl.innerHTML = message;
+  pendingDeleteCallback = onConfirm;
+  if (modal) modal.classList.add('open');
+  refreshIcons();
+}
+
+export function closeDeleteConfirmModal() {
+  const modal = document.getElementById('deleteConfirmModal');
+  if (modal) modal.classList.remove('open');
+  pendingDeleteCallback = null;
+}
 
 // LocalStorage helpers for companies persistence
 export function getStoredCompanies() {
@@ -175,6 +197,96 @@ let commissionsSort = { column: 'date', order: 'desc' };
 let currentNetworkUsers = getStoredNetworkUsers();
 let filteredNetworkUsers = [...currentNetworkUsers];
 let currentNetworkViewMode = 'tree'; // 'tree' ou 'table'
+let companyIdBeingConfigured = null;
+
+// Helper: Normalizar nome de empresa para correspondência inteligente
+export function normalizeCompanyName(name) {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[.,\-\/\\_#@!$%&*]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\b(ltda|me|epp|s\/a|sa|eireli|eir|meu)\b/gi, '')
+    .trim();
+}
+
+// Helper: Buscar empresa existente por nome com correspondência inteligente
+export function findCompanyMatch(rawName, companies = currentCompanies) {
+  if (!rawName) return null;
+  const rawNorm = normalizeCompanyName(rawName);
+  if (!rawNorm) return null;
+
+  // 1. Correspondência exata ou normalizada idêntica
+  for (const comp of companies) {
+    if (comp.name.toUpperCase() === rawName.toUpperCase()) return comp;
+    if (normalizeCompanyName(comp.name) === rawNorm) return comp;
+  }
+
+  // 2. Correspondência parcial / sufixos
+  for (const comp of companies) {
+    const compNorm = normalizeCompanyName(comp.name);
+    if (compNorm.length >= 4 && rawNorm.length >= 4) {
+      if (compNorm.includes(rawNorm) || rawNorm.includes(compNorm)) return comp;
+    }
+  }
+
+  return null;
+}
+
+// Helper: Obter dados da entidade Upline (seja usuário ou empresa parceira/vendedora)
+export function getUplineEntity(id) {
+  if (!id || id === 'USR-ADMIN') {
+    return { id: 'USR-ADMIN', name: 'Francisco Pereira Paulo', role: 'Administrador Master' };
+  }
+  const user = currentNetworkUsers.find(u => u.id === id);
+  if (user) return user;
+  const comp = currentCompanies.find(c => c.id === id);
+  if (comp) return { id: comp.id, name: comp.name, role: 'Empresa Parceira / Vendedora', commissionRate: comp.commissionRate };
+  return { id, name: 'Francisco Pereira Paulo', role: 'Administrador' };
+}
+
+// Helper: Obter cadeia de uplines em cascata para repasse de comissões
+export function getUplineChain(registeredById, networkUsers = currentNetworkUsers, companies = currentCompanies) {
+  const chain = [];
+  let currentId = registeredById;
+  const visited = new Set();
+
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId);
+    let entity = networkUsers.find(u => u.id === currentId);
+    if (!entity) {
+      const comp = companies.find(c => c.id === currentId);
+      if (comp) {
+        entity = {
+          id: comp.id,
+          name: comp.name,
+          role: 'Empresa Parceira / Vendedora',
+          parentId: comp.registeredBy,
+          commissionRate: comp.commissionRate !== undefined ? comp.commissionRate : 0.5,
+          isCompany: true
+        };
+      }
+    }
+
+    if (entity) {
+      if (entity.id !== 'USR-ADMIN') {
+        chain.push({
+          id: entity.id,
+          name: entity.name,
+          role: entity.role || 'Vendedor',
+          rate: Number(entity.commissionRate !== undefined ? entity.commissionRate : 0.5),
+          parentId: entity.parentId
+        });
+      }
+      currentId = entity.parentId;
+    } else {
+      break;
+    }
+  }
+
+  return chain;
+}
 
 // Initialize Lucide Icons
 function refreshIcons() {
@@ -384,13 +496,10 @@ function refreshTransactionFiltersOptions(txs = currentTransactions) {
   const spreads = ['Todos os spreads', '0.50%', '0.70%', '0.90%', '1.20%'];
 
   populateSelect('filterEmpresas', companies.length > 1 ? companies : ['Todas as empresas']);
-  populateSelect('filterParceiro', partners.length > 1 ? partners : ['Todos os parceiros', 'Alpha Soluções e Pagamentos']);
-  populateSelect('filterTerminal', terminals.length > 1 ? terminals : ['Todos os terminais']);
   populateSelect('filterFormaPagamento', methods.length > 1 ? methods : ['Todas as formas', 'Débito', 'Crédito à Vista', 'Crédito Parcelado', 'PIX QR Code']);
   populateSelect('filterParcelas', installments.length > 1 ? installments : ['Todas as parcelas', '1x', '2x', '3x', '4x', '5x', '6x']);
   populateSelect('filterBandeira', brands.length > 1 ? brands : ['Todas as bandeiras', 'Mastercard', 'Visa', 'Elo', 'Maestro', 'Pix']);
   populateSelect('filterStatus', statuses.length > 1 ? statuses : ['Todos os status', 'Aprovada', 'Rejeitada', 'Estornada']);
-  populateSelect('filterContaProvedor', accounts.length > 1 ? accounts : ['Todas as contas', 'American']);
   populateSelect('filterSpread', spreads);
 
   // Preencher datas de início e término com as datas limites do extrato
@@ -421,12 +530,23 @@ function initFilters() {
 
 // Update KPI UI elements
 function updateKPIs(kpis) {
-  document.getElementById('valTotalFaturamento').textContent = formatBRL(kpis.totalFaturamento);
-  document.getElementById('valTotalEmpresa').textContent = formatBRL(kpis.totalEmpresa);
-  document.getElementById('valTotalLiquido').textContent = formatBRL(kpis.totalLiquido);
-  document.getElementById('valTotalParceiro').textContent = formatBRL(kpis.totalParceiro);
-  document.getElementById('valTotalPagoClientes').textContent = formatBRL(kpis.totalPagoClientes);
-  document.getElementById('valTotalComissaoCliente').textContent = formatBRL(kpis.totalComissaoCliente);
+  const elFat = document.getElementById('valTotalFaturamento');
+  if (elFat) elFat.textContent = formatBRL(kpis.totalFaturamento);
+
+  const elEmp = document.getElementById('valTotalEmpresa');
+  if (elEmp) elEmp.textContent = formatBRL(kpis.totalEmpresa);
+
+  const elLiq = document.getElementById('valTotalLiquido');
+  if (elLiq) elLiq.textContent = formatBRL(kpis.totalLiquido);
+
+  const elPar = document.getElementById('valTotalParceiro');
+  if (elPar) elPar.textContent = formatBRL(kpis.totalParceiro);
+
+  const elPago = document.getElementById('valTotalPagoClientes');
+  if (elPago) elPago.textContent = formatBRL(kpis.totalPagoClientes);
+
+  const elCom = document.getElementById('valTotalComissaoCliente');
+  if (elCom) elCom.textContent = formatBRL(kpis.totalComissaoCliente);
 }
 
 // Calculate KPIs based on a list of transactions
@@ -530,6 +650,41 @@ function getStatusBadge(status) {
   return `<span class="status-pill status-refunded">${status}</span>`;
 }
 
+// Helper: Atualizar estado visual da seleção de transações e barra de exclusão em massa
+export function updateTransactionSelectionState() {
+  const bulkBar = document.getElementById('transactionsBulkActionBar');
+  const countText = document.getElementById('bulkDeleteTxCountText');
+  const checkAll = document.getElementById('checkAllTransactions');
+
+  if (bulkBar && countText) {
+    if (selectedTransactionIds.size > 0) {
+      bulkBar.style.display = 'inline-flex';
+      countText.textContent = `Excluir Selecionadas (${selectedTransactionIds.size})`;
+    } else {
+      bulkBar.style.display = 'none';
+    }
+  }
+
+  if (checkAll) {
+    const isAllRows = recordsPerPage === Infinity;
+    const totalRecords = filteredTransactions.length;
+    const startIndex = isAllRows ? 0 : (currentPage - 1) * recordsPerPage;
+    const endIndex = isAllRows ? totalRecords : Math.min(startIndex + recordsPerPage, totalRecords);
+    const currentSlice = filteredTransactions.slice(startIndex, endIndex);
+
+    if (currentSlice.length > 0 && currentSlice.every(t => selectedTransactionIds.has(t.id))) {
+      checkAll.checked = true;
+      checkAll.indeterminate = false;
+    } else if (currentSlice.some(t => selectedTransactionIds.has(t.id))) {
+      checkAll.checked = false;
+      checkAll.indeterminate = true;
+    } else {
+      checkAll.checked = false;
+      checkAll.indeterminate = false;
+    }
+  }
+}
+
 // Render transactions table
 function renderTable() {
   const tbody = document.getElementById('transactionsTableBody');
@@ -538,8 +693,23 @@ function renderTable() {
 
   // Sorting
   filteredTransactions.sort((a, b) => {
+    if (currentSort.column === 'date') {
+      const timeA = parseTxDateTime(a.date, a.time);
+      const timeB = parseTxDateTime(b.date, b.time);
+      return currentSort.order === 'asc' ? timeA - timeB : timeB - timeA;
+    }
+
     let valA = a[currentSort.column];
     let valB = b[currentSort.column];
+
+    if (currentSort.column === 'clientPaid') {
+      valA = (a.clientPaid !== null && a.clientPaid !== undefined && !isNaN(a.clientPaid))
+        ? a.clientPaid
+        : (a.netAmount !== null && a.netAmount !== undefined && !isNaN(a.netAmount) ? a.netAmount : 0);
+      valB = (b.clientPaid !== null && b.clientPaid !== undefined && !isNaN(b.clientPaid))
+        ? b.clientPaid
+        : (b.netAmount !== null && b.netAmount !== undefined && !isNaN(b.netAmount) ? b.netAmount : 0);
+    }
 
     if (valA === undefined) valA = '';
     if (valB === undefined) valB = '';
@@ -553,18 +723,12 @@ function renderTable() {
   const totalRecords = filteredTransactions.length;
   countEl.innerHTML = `Exibindo <strong>${totalRecords}</strong> transações`;
 
-  // Toggle botão Limpar Dados
-  const clearBtn = document.getElementById('btnClearTransactionsTable');
-  if (clearBtn) {
-    clearBtn.style.display = currentTransactions.length > 0 ? 'inline-flex' : 'none';
-  }
-
   // Estado Vazio (Zero transações)
   if (totalRecords === 0) {
     if (currentTransactions.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="10" style="text-align: center; padding: 60px 20px; background: #ffffff;">
+          <td colspan="7" style="text-align: center; padding: 60px 20px; background: #ffffff;">
             <div style="width: 56px; height: 56px; border-radius: 50%; background: #fffbeb; border: 1px solid #fef3c7; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
               <i data-lucide="inbox" style="width: 26px; height: 26px; color: #d97706;"></i>
             </div>
@@ -586,12 +750,13 @@ function renderTable() {
     } else {
       tbody.innerHTML = `
         <tr>
-          <td colspan="10" style="text-align: center; padding: 40px; color: #94a3b8; background: #ffffff;">
+          <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8; background: #ffffff;">
             Nenhuma transação encontrada com os filtros aplicados.
           </td>
         </tr>
       `;
     }
+    updateTransactionSelectionState();
     renderPagination(1);
     refreshIcons();
     return;
@@ -615,12 +780,17 @@ function renderTable() {
       timeOnly = parts[1].slice(0, 5);
     }
 
-    const feeDisplay = tx.feePercent || (tx.fee ? `${tx.fee}%` : '4.98%');
-    const spreadDisplay = tx.spread !== undefined ? tx.spread : (tx.grossAmount * 0.009);
+    const clientPaidVal = (tx.clientPaid !== null && tx.clientPaid !== undefined && !isNaN(tx.clientPaid))
+      ? tx.clientPaid
+      : (tx.netAmount !== null && tx.netAmount !== undefined && !isNaN(tx.netAmount) ? tx.netAmount : 0);
+
+    const isChecked = selectedTransactionIds.has(tx.id) ? 'checked' : '';
 
     return `
       <tr>
-        <td class="cell-terminal">${tx.terminal}</td>
+        <td style="width: 44px; text-align: center;">
+          <input type="checkbox" class="tx-row-select" data-id="${tx.id}" ${isChecked} style="cursor: pointer; width: 16px; height: 16px; accent-color: #1d68d8;">
+        </td>
         <td>
           <div class="cell-date">
             <span class="date-day">${dateOnly}</span>
@@ -640,17 +810,28 @@ function renderTable() {
           </div>
         </td>
         <td>${getStatusBadge(tx.status)}</td>
-        <td class="cell-tax">${feeDisplay}</td>
         <td class="cell-gross">${formatBRL(tx.grossAmount)}</td>
-        <td class="cell-net">${formatBRL(tx.netAmount)}</td>
-        <td class="cell-spread">${formatBRL(spreadDisplay)}</td>
-        <td class="cell-client-paid" style="text-align: center;">
-          ${tx.clientPaid ? formatBRL(tx.clientPaid) : '-'}
+        <td class="cell-client-paid" style="text-align: center; font-weight: 700; color: #059669;">
+          ${formatBRL(clientPaidVal)}
         </td>
       </tr>
     `;
   }).join('');
 
+  // Vincular eventos aos checkboxes de linha
+  tbody.querySelectorAll('.tx-row-select').forEach(chk => {
+    chk.addEventListener('change', (e) => {
+      const id = e.target.getAttribute('data-id');
+      if (e.target.checked) {
+        selectedTransactionIds.add(id);
+      } else {
+        selectedTransactionIds.delete(id);
+      }
+      updateTransactionSelectionState();
+    });
+  });
+
+  updateTransactionSelectionState();
   renderPagination(totalPages);
   refreshIcons();
 }
@@ -886,14 +1067,35 @@ function populateCompanyPartnerSelect(selectedId = null) {
     : getUserSubtreeIds(currentUser.id, currentNetworkUsers);
 
   const allowedUsers = currentNetworkUsers.filter(u => allowedIds.includes(u.id));
+
+  // Incluir empresas parceiras (vendedoras)
+  const partnerCompanies = currentCompanies.filter(c => {
+    if (companyIdBeingConfigured && c.id === companyIdBeingConfigured) return false;
+    return c.isSeller || (c.status === 'Ativo');
+  });
+
   const targetSelected = selectedId || (isAdmin ? (currentNetworkUsers[0]?.id || 'USR-ADMIN') : currentUser.id);
 
-  select.innerHTML = allowedUsers.map(u => {
+  let html = `<optgroup label="👑 Administrador e Vendedores da Rede">`;
+  allowedUsers.forEach(u => {
     const level = calculateUserLevel(u.id);
     const isSelected = targetSelected === u.id ? 'selected' : '';
     const isMe = u.id === currentUser?.id ? ' (Você)' : '';
-    return `<option value="${u.id}" ${isSelected}>[Nível ${level}] ${u.name}${isMe} - ${u.role}</option>`;
-  }).join('');
+    html += `<option value="${u.id}" ${isSelected}>[Nível ${level}] ${u.name}${isMe} - ${u.role}</option>`;
+  });
+  html += `</optgroup>`;
+
+  if (partnerCompanies.length > 0) {
+    html += `<optgroup label="🏢 Empresas Parceiras (Vendedoras / Indicadoras)">`;
+    partnerCompanies.forEach(c => {
+      const isSelected = targetSelected === c.id ? 'selected' : '';
+      const rateDisplay = c.commissionRate !== undefined ? `${c.commissionRate}%` : '0.5%';
+      html += `<option value="${c.id}" ${isSelected}>🏢 ${c.name} (${rateDisplay} comissão)</option>`;
+    });
+    html += `</optgroup>`;
+  }
+
+  select.innerHTML = html;
 }
 
 // View Navigation Switcher
@@ -1241,40 +1443,148 @@ function filterCompanies() {
 }
 
 // ==========================================================================
-// MÓDULO DE GESTÃO DE ALÍQUOTAS DE COMISSÕES POR EMPRESA (EXCLUSIVO ADMIN)
+// ==========================================================================
+// MÓDULO DE DISTRIBUIÇÃO E REPASSE DE COMISSÕES DA REDE (MULTI-NÍVEL & SUB-ÁRVORE)
 // ==========================================================================
 
-let filteredRateCompanies = [...currentCompanies];
+let calculatedSellerCommissions = [];
+let filteredSellerCommissions = [];
 let ratesCurrentPage = 1;
 const ratesPerPage = 8;
-let ratesSort = { column: 'createdAt', order: 'desc' };
+let ratesSort = { column: 'commissionEarned', order: 'desc' };
+
+// Helper to get unified list of sellers/partners for commission calculations
+export function getAvailableSellers() {
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+
+  // Base list: network users
+  let list = [...currentNetworkUsers];
+
+  // Include any company that is marked as seller and not already in network users
+  currentCompanies.forEach(comp => {
+    if (comp.isSeller && !list.some(u => u.id === comp.id)) {
+      list.push({
+        id: comp.id,
+        name: comp.name,
+        shortName: comp.name.split(' ')[0],
+        email: comp.email,
+        role: 'Empresa Parceira / Vendedora',
+        parentId: comp.registeredBy,
+        commissionRate: comp.commissionRate !== undefined ? comp.commissionRate : 0.5,
+        phone: comp.phone,
+        doc: comp.doc,
+        createdAt: comp.createdAt,
+        status: comp.status,
+        isCompany: true
+      });
+    }
+  });
+
+  if (isAdmin) {
+    return list;
+  }
+
+  // Multi-tenant lineage: Sellers only see themselves and their indicated sub-tree
+  const allowedIds = getUserSubtreeIds(currentUser.id, list);
+  return list.filter(u => allowedIds.includes(u.id));
+}
+
+// Compute commission metrics and portfolio for a specific seller
+export function computeSellerCommissionData(seller, allCompanies = currentCompanies, allTxs = currentTransactions, networkUsers = currentNetworkUsers) {
+  const isMasterAdmin = seller.id === 'USR-ADMIN';
+
+  // 1. Direct and indirect companies in seller's portfolio
+  const directCompanies = allCompanies.filter(c => c.registeredBy === seller.id);
+  const subTreeCompanies = allCompanies.filter(c => {
+    if (c.registeredBy === seller.id) return true;
+    const chain = getUplineChain(c.registeredBy, networkUsers, allCompanies);
+    return chain.some(node => node.id === seller.id);
+  });
+
+  // 2. Transactions for which this seller receives commission
+  const subCompanyNames = new Set(subTreeCompanies.map(c => normalizeCompanyName(c.name)));
+  const sellerTxs = allTxs.filter(tx => tx.company && subCompanyNames.has(normalizeCompanyName(tx.company)));
+
+  const grossVolume = sellerTxs.reduce((acc, t) => acc + (Number(t.grossAmount) || 0), 0);
+  const sellerRate = Number(seller.commissionRate !== undefined ? seller.commissionRate : 0.5);
+
+  // Total commission earned by this seller
+  let commissionEarned = 0;
+  if (isMasterAdmin) {
+    sellerTxs.forEach(t => {
+      const spread = Number(t.spread) || (Number(t.grossAmount) * 0.009); // standard fallback spread
+      const comp = allCompanies.find(c => normalizeCompanyName(c.name) === normalizeCompanyName(t.company));
+      const chain = comp ? getUplineChain(comp.registeredBy, networkUsers, allCompanies) : [];
+      const sellersCommissionTotal = chain.reduce((sum, node) => sum + (Number(t.grossAmount) * (node.rate / 100)), 0);
+      commissionEarned += Math.max(0, spread - sellersCommissionTotal);
+    });
+  } else {
+    commissionEarned = grossVolume * (sellerRate / 100);
+  }
+
+  const level = calculateUserLevel(seller.id, networkUsers);
+  const upline = getUplineEntity(seller.parentId);
+
+  return {
+    seller,
+    level,
+    uplineName: upline ? upline.name : '👑 Administrador Master',
+    companiesCount: subTreeCompanies.length,
+    directCompaniesCount: directCompanies.length,
+    grossVolume,
+    sellerRate,
+    commissionEarned,
+    status: seller.status || 'Ativo'
+  };
+}
+
+// Update calculated seller commissions data cache
+function updateSellerCommissionsData() {
+  currentTransactions = getStoredTransactions();
+  currentCompanies = getStoredCompanies();
+  currentNetworkUsers = getStoredNetworkUsers();
+
+  const sellers = getAvailableSellers();
+  calculatedSellerCommissions = sellers.map(s => computeSellerCommissionData(s, currentCompanies, currentTransactions, currentNetworkUsers));
+  filteredSellerCommissions = [...calculatedSellerCommissions];
+}
 
 // Render Rate Top Metrics
 function renderRateMetrics() {
-  const companies = currentCompanies;
-  const count = companies.length;
-  const rates = companies.map(c => Number(c.commissionRate !== undefined ? c.commissionRate : 5.0));
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
 
-  const avg = count > 0 ? (rates.reduce((a, b) => a + b, 0) / count).toFixed(2) : '0.00';
+  updateSellerCommissionsData();
 
-  const elTotal = document.getElementById('rateStatTotal');
-  const elAvg = document.getElementById('rateStatAvg');
+  const totalEarned = calculatedSellerCommissions.reduce((acc, item) => acc + item.commissionEarned, 0);
+  const totalVolume = calculatedSellerCommissions.reduce((acc, item) => acc + item.grossVolume, 0);
+  const totalSellers = calculatedSellerCommissions.length;
+  const ratesSum = calculatedSellerCommissions.reduce((acc, item) => acc + item.sellerRate, 0);
+  const avgRate = totalSellers > 0 ? (ratesSum / totalSellers).toFixed(2) : '0.00';
 
-  if (elTotal) elTotal.textContent = count;
-  if (elAvg) elAvg.textContent = `${avg}%`;
-}
+  const elEarned = document.getElementById('commStatTotalEarned');
+  const elVolume = document.getElementById('commStatTotalVolume');
+  const elSellers = document.getElementById('commStatTotalSellers');
+  const elAvg = document.getElementById('commStatAvgRate');
 
-// Populate Partner select in rates filter
-function populateRatePartnerSelect() {
-  const select = document.getElementById('filterRatePartner');
-  if (!select) return;
+  if (elEarned) elEarned.textContent = formatBRL(totalEarned);
+  if (elVolume) elVolume.textContent = formatBRL(totalVolume);
+  if (elSellers) elSellers.textContent = totalSellers;
+  if (elAvg) elAvg.textContent = `${avgRate}%`;
 
-  const partners = currentNetworkUsers;
-  select.innerHTML = `<option value="">Todos os parceiros</option>` + partners.map(p => {
-    return `<option value="${p.id}">${p.name} - ${p.role}</option>`;
-  }).join('');
-
-  syncAllCustomSelects();
+  const headerTitle = document.getElementById('commissionsViewHeaderTitle');
+  const headerSubtitle = document.getElementById('commissionsViewHeaderSubtitle');
+  if (headerTitle) {
+    headerTitle.textContent = isAdmin 
+      ? 'Distribuição e Repasse de Comissões da Rede' 
+      : 'Suas Comissões e Indicados';
+  }
+  if (headerSubtitle) {
+    headerSubtitle.textContent = isAdmin
+      ? 'Visão completa de todos os vendedores e cálculo das alíquotas distribuídas em cascata.'
+      : 'Acompanhe as suas comissões acumuladas e o rendimento da sua carteira de indicados.';
+  }
 }
 
 // Render Rates Table
@@ -1283,14 +1593,21 @@ function renderRatesTable() {
   const titleEl = document.getElementById('ratesListTitle');
   if (!tbody) return;
 
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.isAdmin ?? true;
+
   // Sorting
-  filteredRateCompanies.sort((a, b) => {
+  filteredSellerCommissions.sort((a, b) => {
     let valA = a[ratesSort.column];
     let valB = b[ratesSort.column];
 
-    if (ratesSort.column === 'commissionRate') {
-      valA = Number(valA !== undefined ? valA : 5.0);
-      valB = Number(valB !== undefined ? valB : 5.0);
+    if (ratesSort.column === 'sellerName') {
+      valA = (a.seller.name || '').toLowerCase();
+      valB = (b.seller.name || '').toLowerCase();
+      return ratesSort.order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    }
+
+    if (typeof valA === 'number' && typeof valB === 'number') {
       return ratesSort.order === 'asc' ? valA - valB : valB - valA;
     }
 
@@ -1299,23 +1616,25 @@ function renderRatesTable() {
     return ratesSort.order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
   });
 
-  const totalRecords = filteredRateCompanies.length;
+  const totalRecords = filteredSellerCommissions.length;
   const totalPages = Math.ceil(totalRecords / ratesPerPage) || 1;
   if (ratesCurrentPage > totalPages) ratesCurrentPage = totalPages;
 
   const startIndex = (ratesCurrentPage - 1) * ratesPerPage;
   const endIndex = Math.min(startIndex + ratesPerPage, totalRecords);
-  const currentSlice = filteredRateCompanies.slice(startIndex, endIndex);
+  const currentSlice = filteredSellerCommissions.slice(startIndex, endIndex);
 
   if (titleEl) {
-    titleEl.textContent = `Alíquotas de Comissões por Empresa (${totalRecords})`;
+    titleEl.textContent = isAdmin
+      ? `Comissões Distribuídas por Vendedor / Parceiro (${totalRecords})`
+      : `Minhas Comissões e Indicados (${totalRecords})`;
   }
 
   if (totalRecords === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">
-          Nenhuma empresa encontrada com os filtros pesquisados.
+        <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
+          Nenhum vendedor ou comissão encontrada com os filtros pesquisados.
         </td>
       </tr>
     `;
@@ -1323,37 +1642,80 @@ function renderRatesTable() {
     return;
   }
 
-  tbody.innerHTML = currentSlice.map(comp => {
-    const rate = Number(comp.commissionRate !== undefined ? comp.commissionRate : 5.0).toFixed(2);
-    const partner = currentNetworkUsers.find(u => u.id === comp.registeredBy);
-    const partnerName = partner ? partner.name : '👑 Admin Master';
-    const statusBadge = comp.status === 'Ativo'
+  tbody.innerHTML = currentSlice.map(item => {
+    const s = item.seller;
+    const isSelf = s.id === currentUser?.id;
+    const isMaster = s.id === 'USR-ADMIN';
+    const initials = s.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    const rateFormatted = item.sellerRate.toFixed(2);
+    const badgeRole = s.isCompany 
+      ? `<span style="display: inline-block; font-size: 10.5px; padding: 2px 6px; background: #e0f2fe; color: #0284c7; border-radius: 4px; font-weight: 700; margin-top: 2px;">🏢 Empresa Parceira</span>`
+      : `<span style="font-size: 11px; color: #64748b;">${s.role || 'Consultor'}</span>`;
+
+    const statusBadge = item.status === 'Ativo'
       ? `<span class="badge-company-active">Ativo</span>`
       : `<span class="badge-company-inactive">Inativo</span>`;
 
+    // Apenas Admin Master pode editar alíquotas diretamente na tabela
+    const rateControl = isAdmin && !isMaster
+      ? `
+        <div class="premium-rate-control" data-id="${s.id}">
+          <div class="rate-badge-capsule" title="Clique para editar a alíquota deste vendedor">
+            <span class="rate-prefix-dot"></span>
+            <input type="number" step="0.01" min="0" max="100" class="rate-core-input" data-id="${s.id}" data-original="${rateFormatted}" value="${rateFormatted}">
+            <span class="rate-suffix-badge">%</span>
+          </div>
+          <button type="button" class="btn-rate-save-pulse" data-id="${s.id}" style="display: none;" title="Salvar alteração">
+            <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+            <span>Salvar</span>
+          </button>
+        </div>
+      `
+      : `
+        <div style="font-weight: 800; font-size: 13.5px; color: #059669;">
+          ${rateFormatted}%
+        </div>
+      `;
+
     return `
       <tr>
-        <td class="cell-company-name">
-          <strong>${comp.name}</strong>
-        </td>
-        <td class="cell-doc" style="font-family: monospace; font-size: 12px; color: #475569;">${comp.doc || '-'}</td>
         <td>
-          <div style="font-weight: 600; color: #0f172a; font-size: 12.5px;">${partnerName}</div>
-          <div style="font-size: 11px; color: #64748b;">${partner?.role || 'Administrador'}</div>
-        </td>
-        <td>${statusBadge}</td>
-        <td style="text-align: center;">
-          <div class="premium-rate-control" data-id="${comp.id}">
-            <div class="rate-badge-capsule" title="Clique para editar a alíquota da empresa">
-              <span class="rate-prefix-dot"></span>
-              <input type="number" step="0.01" min="0" max="100" class="rate-core-input" data-id="${comp.id}" data-original="${rate}" value="${rate}">
-              <span class="rate-suffix-badge">%</span>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 34px; height: 34px; border-radius: 8px; background: #f1f5f9; color: #0f172a; font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0;">
+              ${initials}
             </div>
-            <button type="button" class="btn-rate-save-pulse" data-id="${comp.id}" style="display: none;" title="Salvar alteração">
-              <i data-lucide="check" style="width: 14px; height: 14px;"></i>
-              <span>Salvar</span>
-            </button>
+            <div>
+              <div style="font-weight: 700; color: #0f172a; font-size: 13px;">
+                ${s.name} ${isSelf ? '<span style="color: #2563eb; font-size: 11px; font-weight: 700;">(Você)</span>' : ''}
+              </div>
+              ${badgeRole}
+            </div>
           </div>
+        </td>
+        <td>
+          <div style="font-weight: 600; color: #334155; font-size: 12.5px;">${item.uplineName}</div>
+        </td>
+        <td style="text-align: center;">
+          <span style="font-size: 11.5px; font-weight: 700; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 8px; border-radius: 6px; color: #475569;">
+            Nível ${item.level}
+          </span>
+        </td>
+        <td style="text-align: center;">
+          ${rateControl}
+        </td>
+        <td style="text-align: right; font-weight: 700; font-size: 13px; color: #0f172a;">
+          ${formatBRL(item.grossVolume)}
+        </td>
+        <td style="text-align: right; font-weight: 800; font-size: 14px; color: #059669;">
+          ${formatBRL(item.commissionEarned)}
+        </td>
+        <td style="text-align: center;">
+          <span style="font-weight: 700; color: #3b82f6; font-size: 12.5px;">
+            ${item.companiesCount} ${item.companiesCount === 1 ? 'empresa' : 'empresas'}
+          </span>
+        </td>
+        <td style="text-align: center;">
+          ${statusBadge}
         </td>
       </tr>
     `;
@@ -1394,7 +1756,7 @@ function renderRatesTable() {
           showToast('Informe uma alíquota válida entre 0% e 100%.');
           return;
         }
-        updateCompanyCommissionRate(id, val);
+        updateSellerCommissionRate(id, val);
         input.setAttribute('data-original', val.toFixed(2));
         if (saveBtn) saveBtn.style.display = 'none';
         input.blur();
@@ -1416,7 +1778,7 @@ function renderRatesTable() {
           showToast('Informe uma alíquota válida entre 0% e 100%.');
           return;
         }
-        updateCompanyCommissionRate(id, val);
+        updateSellerCommissionRate(id, val);
         input.setAttribute('data-original', val.toFixed(2));
         btn.style.display = 'none';
       }
@@ -1485,37 +1847,32 @@ function renderRatesPagination(totalPages) {
 function filterRates() {
   const term = document.getElementById('inputSearchRateCompany')?.value.trim().toLowerCase() || '';
   const status = document.getElementById('filterRateStatus')?.value || '';
-  const partner = document.getElementById('filterRatePartner')?.value || '';
-  const range = document.getElementById('filterRateRange')?.value || '';
-  const order = document.getElementById('filterRateOrder')?.value || 'recentes';
+  const order = document.getElementById('filterRateOrder')?.value || 'maior_comissao';
 
-  filteredRateCompanies = currentCompanies.filter(comp => {
+  updateSellerCommissionsData();
+
+  filteredSellerCommissions = calculatedSellerCommissions.filter(item => {
     if (term) {
-      const matchName = (comp.name || '').toLowerCase().includes(term);
-      const matchDoc = (comp.doc || '').toLowerCase().includes(term);
-      const matchOwner = (comp.owner || '').toLowerCase().includes(term);
-      const matchEmail = (comp.email || '').toLowerCase().includes(term);
-      if (!matchName && !matchDoc && !matchOwner && !matchEmail) return false;
+      const matchName = (item.seller.name || '').toLowerCase().includes(term);
+      const matchEmail = (item.seller.email || '').toLowerCase().includes(term);
+      const matchDoc = (item.seller.doc || '').toLowerCase().includes(term);
+      const matchRole = (item.seller.role || '').toLowerCase().includes(term);
+      if (!matchName && !matchEmail && !matchDoc && !matchRole) return false;
     }
-    if (status && comp.status !== status) return false;
-    if (partner && comp.registeredBy !== partner) return false;
-    if (range) {
-      const r = Number(comp.commissionRate !== undefined ? comp.commissionRate : 5.0);
-      if (range === 'low' && r > 5.0) return false;
-      if (range === 'mid' && (r <= 5.0 || r >= 10.0)) return false;
-      if (range === 'high' && r < 10.0) return false;
-    }
+    if (status && item.status !== status) return false;
     return true;
   });
 
-  if (order === 'maior_aliquota') {
-    ratesSort = { column: 'commissionRate', order: 'desc' };
+  if (order === 'maior_comissao') {
+    ratesSort = { column: 'commissionEarned', order: 'desc' };
+  } else if (order === 'maior_volume') {
+    ratesSort = { column: 'grossVolume', order: 'desc' };
+  } else if (order === 'maior_aliquota') {
+    ratesSort = { column: 'sellerRate', order: 'desc' };
   } else if (order === 'menor_aliquota') {
-    ratesSort = { column: 'commissionRate', order: 'asc' };
+    ratesSort = { column: 'sellerRate', order: 'asc' };
   } else if (order === 'nome_asc') {
-    ratesSort = { column: 'name', order: 'asc' };
-  } else {
-    ratesSort = { column: 'createdAt', order: 'desc' };
+    ratesSort = { column: 'sellerName', order: 'asc' };
   }
 
   ratesCurrentPage = 1;
@@ -1523,21 +1880,34 @@ function filterRates() {
   renderRateMetrics();
 }
 
-// Update single company commission rate
-function updateCompanyCommissionRate(companyId, newRate) {
-  const comp = currentCompanies.find(c => c.id === companyId);
-  if (!comp) return;
+// Update single seller commission rate
+function updateSellerCommissionRate(sellerId, newRate) {
+  const rate = parseFloat(parseFloat(newRate).toFixed(2));
 
-  comp.commissionRate = parseFloat(parseFloat(newRate).toFixed(2));
+  // 1. Atualizar na rede
+  const user = currentNetworkUsers.find(u => u.id === sellerId);
+  if (user) {
+    user.commissionRate = rate;
+    saveNetworkUsers(currentNetworkUsers);
+  }
+
+  // 2. Atualizar em empresas se for empresa vendedora
+  const comp = currentCompanies.find(c => c.id === sellerId);
+  if (comp) {
+    comp.commissionRate = rate;
+    saveCompanies(currentCompanies);
+  }
+
   renderRatesTable();
   renderRateMetrics();
-  showToast(`Alíquota da empresa "${comp.name}" atualizada para ${comp.commissionRate.toFixed(2)}% com sucesso!`);
+  renderNetworkView();
+  showToast(`Alíquota de "${user ? user.name : (comp ? comp.name : 'Vendedor')}" atualizada para ${rate.toFixed(2)}%!`);
 }
 
 // Open Edit Rate Modal
-function openEditRateModal(companyId) {
-  const comp = currentCompanies.find(c => c.id === companyId);
-  if (!comp) return;
+function openEditRateModal(sellerId) {
+  const seller = currentNetworkUsers.find(u => u.id === sellerId) || currentCompanies.find(c => c.id === sellerId);
+  if (!seller) return;
 
   const modal = document.getElementById('editRateModal');
   const idInput = document.getElementById('editRateCompanyId');
@@ -1545,10 +1915,10 @@ function openEditRateModal(companyId) {
   const docEl = document.getElementById('editRateCompanyDoc');
   const rateInput = document.getElementById('editRateInput');
 
-  if (idInput) idInput.value = comp.id;
-  if (nameEl) nameEl.textContent = comp.name;
-  if (docEl) docEl.textContent = comp.doc || '-';
-  if (rateInput) rateInput.value = (comp.commissionRate !== undefined ? Number(comp.commissionRate) : 5.0).toFixed(2);
+  if (idInput) idInput.value = seller.id;
+  if (nameEl) nameEl.textContent = seller.name;
+  if (docEl) docEl.textContent = seller.doc || '-';
+  if (rateInput) rateInput.value = (seller.commissionRate !== undefined ? Number(seller.commissionRate) : 0.5).toFixed(2);
 
   modal?.classList.add('open');
 }
@@ -2125,7 +2495,6 @@ function setupEvents() {
 
   document.getElementById('filterRateStatus')?.addEventListener('change', filterRates);
   document.getElementById('filterRatePartner')?.addEventListener('change', filterRates);
-  document.getElementById('filterRateRange')?.addEventListener('change', filterRates);
   document.getElementById('filterRateOrder')?.addEventListener('change', filterRates);
 
   // Modal: Edit Single Rate
@@ -2141,44 +2510,14 @@ function setupEvents() {
   if (editRateForm) {
     editRateForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const compId = document.getElementById('editRateCompanyId').value;
+      const sellerId = document.getElementById('editRateCompanyId').value;
       const rateVal = parseFloat(document.getElementById('editRateInput').value);
       if (isNaN(rateVal) || rateVal < 0 || rateVal > 100) {
         showToast('Informe uma alíquota válida entre 0% e 100%.');
         return;
       }
-      updateCompanyCommissionRate(compId, rateVal);
+      updateSellerCommissionRate(sellerId, rateVal);
       closeEditRateModal();
-    });
-  }
-
-  // Modal: Bulk Rate
-  const bulkRateModal = document.getElementById('bulkRateModal');
-  const btnOpenBulkRateModal = document.getElementById('btnOpenBulkRateModal');
-  const btnCloseBulkRateModal = document.getElementById('btnCloseBulkRateModal');
-  const btnCancelBulkRate = document.getElementById('btnCancelBulkRate');
-  const bulkRateForm = document.getElementById('bulkRateForm');
-
-  const closeBulkRateModal = () => bulkRateModal?.classList.remove('open');
-  if (btnOpenBulkRateModal) btnOpenBulkRateModal.addEventListener('click', () => bulkRateModal?.classList.add('open'));
-  if (btnCloseBulkRateModal) btnCloseBulkRateModal.addEventListener('click', closeBulkRateModal);
-  if (btnCancelBulkRate) btnCancelBulkRate.addEventListener('click', closeBulkRateModal);
-
-  if (bulkRateForm) {
-    bulkRateForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const bulkRate = parseFloat(document.getElementById('bulkRateInput').value);
-      if (isNaN(bulkRate) || bulkRate < 0 || bulkRate > 100) {
-        showToast('Informe uma alíquota válida entre 0% e 100%.');
-        return;
-      }
-      filteredRateCompanies.forEach(c => {
-        c.commissionRate = bulkRate;
-      });
-      renderRatesTable();
-      renderRateMetrics();
-      closeBulkRateModal();
-      showToast(`Alíquota de ${bulkRate}% aplicada com sucesso a ${filteredRateCompanies.length} empresas!`);
     });
   }
 
@@ -2187,20 +2526,22 @@ function setupEvents() {
   if (filterForm) {
     filterForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const empresa = document.getElementById('filterEmpresas').value;
-      const parceiro = document.getElementById('filterParceiro').value;
-      const terminal = document.getElementById('filterTerminal').value;
-      const metodo = document.getElementById('filterFormaPagamento').value;
-      const bandeira = document.getElementById('filterBandeira').value;
-      const status = document.getElementById('filterStatus').value;
+      const empresa = document.getElementById('filterEmpresas')?.value;
+      const metodo = document.getElementById('filterFormaPagamento')?.value;
+      const parcelas = document.getElementById('filterParcelas')?.value;
+      const bandeira = document.getElementById('filterBandeira')?.value;
+      const status = document.getElementById('filterStatus')?.value;
+      const dataInicio = document.getElementById('filterDataInicio')?.value.trim();
+      const dataTermino = document.getElementById('filterDataTermino')?.value.trim();
 
       filteredTransactions = currentTransactions.filter(tx => {
         if (empresa && tx.company !== empresa) return false;
-        if (parceiro && tx.partner !== parceiro) return false;
-        if (terminal && !tx.terminal.includes(terminal)) return false;
         if (metodo && !tx.method.includes(metodo)) return false;
+        if (parcelas && tx.installments && !tx.installments.includes(parcelas)) return false;
         if (bandeira && tx.brand !== bandeira) return false;
         if (status && tx.status !== status) return false;
+        if (dataInicio && tx.date && tx.date < dataInicio) return false;
+        if (dataTermino && tx.date && tx.date > dataTermino) return false;
         return true;
       });
 
@@ -2266,19 +2607,77 @@ function setupEvents() {
     });
   }
 
-  // Clear Transactions Table Button
-  const btnClearTransactionsTable = document.getElementById('btnClearTransactionsTable');
-  if (btnClearTransactionsTable) {
-    btnClearTransactionsTable.addEventListener('click', () => {
-      if (confirm('Deseja realmente limpar todas as transações da tabela?')) {
-        currentTransactions = [];
-        filteredTransactions = [];
-        saveTransactions([]);
-        currentPage = 1;
-        renderTable();
-        updateKPIs(calculateKPIsFromTransactions([]));
-        showToast('Tabela de transações limpa com sucesso.');
+  // Check All Transactions Handler
+  const checkAllTransactions = document.getElementById('checkAllTransactions');
+  if (checkAllTransactions) {
+    checkAllTransactions.addEventListener('change', () => {
+      const isAllRows = recordsPerPage === Infinity;
+      const totalRecords = filteredTransactions.length;
+      const startIndex = isAllRows ? 0 : (currentPage - 1) * recordsPerPage;
+      const endIndex = isAllRows ? totalRecords : Math.min(startIndex + recordsPerPage, totalRecords);
+      const currentSlice = filteredTransactions.slice(startIndex, endIndex);
+
+      if (checkAllTransactions.checked) {
+        currentSlice.forEach(t => selectedTransactionIds.add(t.id));
+      } else {
+        currentSlice.forEach(t => selectedTransactionIds.delete(t.id));
       }
+      renderTable();
+    });
+  }
+
+  // Bulk Delete Transactions Button
+  const btnDeleteSelectedTransactions = document.getElementById('btnDeleteSelectedTransactions');
+  if (btnDeleteSelectedTransactions) {
+    btnDeleteSelectedTransactions.addEventListener('click', () => {
+      if (selectedTransactionIds.size === 0) return;
+      const count = selectedTransactionIds.size;
+      openDeleteConfirmModal({
+        title: 'Excluir Transações Selecionadas',
+        message: `Tem certeza que deseja excluir <strong>${count} transação(ões)</strong> selecionada(s)? Esta ação é definitiva e atualizará todas as métricas da rede.`,
+        onConfirm: () => {
+          currentTransactions = currentTransactions.filter(t => !selectedTransactionIds.has(t.id));
+          filteredTransactions = filteredTransactions.filter(t => !selectedTransactionIds.has(t.id));
+          saveTransactions(currentTransactions);
+          selectedTransactionIds.clear();
+          renderTable();
+          updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
+          updateDashboardStats();
+          refreshTransactionFiltersOptions(currentTransactions);
+          renderRatesTable();
+          renderRateMetrics();
+          showToast(`${count} transação(ões) excluída(s) com sucesso.`);
+        }
+      });
+    });
+  }
+
+  // Clear Transaction Selection
+  const btnClearTransactionSelection = document.getElementById('btnClearTransactionSelection');
+  if (btnClearTransactionSelection) {
+    btnClearTransactionSelection.addEventListener('click', () => {
+      selectedTransactionIds.clear();
+      renderTable();
+    });
+  }
+
+  // Modal: Delete Confirm
+  const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+  const btnCancelDeleteConfirm = document.getElementById('btnCancelDeleteConfirm');
+  const btnExecuteDeleteConfirm = document.getElementById('btnExecuteDeleteConfirm');
+
+  if (btnCancelDeleteConfirm) {
+    btnCancelDeleteConfirm.addEventListener('click', closeDeleteConfirmModal);
+  }
+
+  if (btnExecuteDeleteConfirm) {
+    btnExecuteDeleteConfirm.addEventListener('click', () => {
+      if (typeof pendingDeleteCallback === 'function') {
+        const cb = pendingDeleteCallback;
+        pendingDeleteCallback = null;
+        cb();
+      }
+      closeDeleteConfirmModal();
     });
   }
 
@@ -2327,14 +2726,18 @@ function setupEvents() {
     btnDeleteSelectedCompanies.addEventListener('click', () => {
       if (selectedCompanyIds.size === 0) return;
       const count = selectedCompanyIds.size;
-      if (confirm(`Deseja realmente excluir ${count} empresa(s) selecionada(s)? Esta ação é permanente.`)) {
-        currentCompanies = currentCompanies.filter(c => !selectedCompanyIds.has(c.id));
-        filteredCompanies = filteredCompanies.filter(c => !selectedCompanyIds.has(c.id));
-        saveCompanies(currentCompanies);
-        selectedCompanyIds.clear();
-        renderCompaniesTable();
-        showToast(`${count} empresa(s) excluída(s) com sucesso.`);
-      }
+      openDeleteConfirmModal({
+        title: 'Excluir Pessoas/Empresas Selecionadas',
+        message: `Tem certeza que deseja excluir <strong>${count} pessoa(s)/empresa(s)</strong> selecionada(s)? Esta ação é definitiva.`,
+        onConfirm: () => {
+          currentCompanies = currentCompanies.filter(c => !selectedCompanyIds.has(c.id));
+          filteredCompanies = filteredCompanies.filter(c => !selectedCompanyIds.has(c.id));
+          saveCompanies(currentCompanies);
+          selectedCompanyIds.clear();
+          renderCompaniesTable();
+          showToast(`${count} empresa(s) excluída(s) com sucesso.`);
+        }
+      });
     });
   }
 
@@ -2368,9 +2771,46 @@ function setupEvents() {
     });
   }
 
-  const closeNewCompanyModal = () => newCompanyModal?.classList.remove('open');
+  const closeNewCompanyModal = () => {
+    companyIdBeingConfigured = null;
+    newCompanyModal?.classList.remove('open');
+  };
+
   const openNewCompanyModal = () => {
+    companyIdBeingConfigured = null;
+    const title = newCompanyModal?.querySelector('.modal-title');
+    if (title) title.textContent = 'Cadastrar Nova Pessoa/Empresa';
+    newCompanyForm?.reset();
+    const inputRate = document.getElementById('newCompanyCommissionRate');
+    if (inputRate) inputRate.value = '0.50';
+    const inputSeller = document.getElementById('newCompanyIsSeller');
+    if (inputSeller) inputSeller.checked = false;
     populateCompanyPartnerSelect();
+    newCompanyModal?.classList.add('open');
+  };
+
+  window.openNewCompanyModalForCompletion = function(comp) {
+    companyIdBeingConfigured = comp.id;
+    const title = newCompanyModal?.querySelector('.modal-title');
+    if (title) title.innerHTML = `✨ Configurar Nova Empresa: <span style="color: #059669;">${comp.name}</span>`;
+
+    const inputName = document.getElementById('newCompanyName');
+    const inputDoc = document.getElementById('newCompanyDoc');
+    const inputPhone = document.getElementById('newCompanyPhone');
+    const inputEmail = document.getElementById('newCompanyEmail');
+    const inputRate = document.getElementById('newCompanyCommissionRate');
+    const inputSeller = document.getElementById('newCompanyIsSeller');
+    const selectStatus = document.getElementById('newCompanyStatus');
+
+    if (inputName) inputName.value = comp.name;
+    if (inputDoc) inputDoc.value = comp.doc && comp.doc !== '-' ? comp.doc : '';
+    if (inputPhone) inputPhone.value = comp.phone && comp.phone !== '( ) 9999-9999' ? comp.phone : '';
+    if (inputEmail) inputEmail.value = comp.email || '';
+    if (inputRate) inputRate.value = (comp.commissionRate !== undefined ? comp.commissionRate : 0.50).toFixed(2);
+    if (inputSeller) inputSeller.checked = Boolean(comp.isSeller);
+    if (selectStatus) selectStatus.value = comp.status || 'Ativo';
+
+    populateCompanyPartnerSelect(comp.registeredBy || 'USR-ADMIN');
     newCompanyModal?.classList.add('open');
   };
 
@@ -2390,27 +2830,99 @@ function setupEvents() {
       const phone = document.getElementById('newCompanyPhone').value.trim();
       const email = document.getElementById('newCompanyEmail').value.trim();
       const registeredBy = document.getElementById('newCompanyRegisteredBy')?.value || (currentUser?.id || 'USR-ADMIN');
-      const status = document.getElementById('newCompanyStatus').value;
+      const commissionRate = parseFloat(document.getElementById('newCompanyCommissionRate')?.value) || 0.50;
+      const isSeller = Boolean(document.getElementById('newCompanyIsSeller')?.checked);
+      const status = document.getElementById('newCompanyStatus').value || 'Ativo';
 
-      const newComp = {
-        id: `EMP-${Date.now().toString().slice(-4)}`,
-        name: name.toUpperCase(),
-        doc: doc || '-',
-        owner: name.split(' ')[0].toUpperCase(),
-        email: email.toLowerCase(),
-        phone: phone || '( ) 9999-9999',
-        createdAt: new Date().toLocaleDateString('pt-BR'),
-        status: status || 'Ativo',
-        registeredBy
-      };
+      const upline = getUplineEntity(registeredBy);
+      const partnerName = upline ? upline.name : 'Francisco Pereira Paulo';
 
-      currentCompanies.unshift(newComp);
+      let targetComp = null;
+      if (companyIdBeingConfigured) {
+        targetComp = currentCompanies.find(c => c.id === companyIdBeingConfigured);
+      }
+
+      if (targetComp) {
+        targetComp.name = name.toUpperCase();
+        targetComp.doc = doc || '-';
+        targetComp.owner = name.split(' ')[0].toUpperCase();
+        targetComp.email = email.toLowerCase();
+        targetComp.phone = phone || '( ) 9999-9999';
+        targetComp.registeredBy = registeredBy;
+        targetComp.partnerName = partnerName;
+        targetComp.commissionRate = commissionRate;
+        targetComp.isSeller = isSeller;
+        targetComp.status = status;
+      } else {
+        targetComp = {
+          id: `EMP-${Date.now().toString().slice(-4)}`,
+          name: name.toUpperCase(),
+          doc: doc || '-',
+          owner: name.split(' ')[0].toUpperCase(),
+          email: email.toLowerCase(),
+          phone: phone || '( ) 9999-9999',
+          createdAt: new Date().toLocaleDateString('pt-BR'),
+          status: status,
+          registeredBy: registeredBy,
+          partnerName: partnerName,
+          commissionRate: commissionRate,
+          isSeller: isSeller
+        };
+        currentCompanies.unshift(targetComp);
+      }
+
+      // Se a empresa também atua como vendedora na rede, adicionar/atualizar na rede
+      if (isSeller) {
+        let userNode = currentNetworkUsers.find(u => u.id === targetComp.id);
+        if (!userNode) {
+          userNode = {
+            id: targetComp.id,
+            name: targetComp.name,
+            shortName: targetComp.name.split(' ')[0],
+            email: targetComp.email,
+            role: 'Empresa Parceira / Vendedora',
+            parentId: targetComp.registeredBy,
+            commissionRate: targetComp.commissionRate,
+            phone: targetComp.phone,
+            doc: targetComp.doc,
+            createdAt: targetComp.createdAt,
+            status: targetComp.status,
+            isCompany: true
+          };
+          currentNetworkUsers.push(userNode);
+        } else {
+          userNode.name = targetComp.name;
+          userNode.parentId = targetComp.registeredBy;
+          userNode.commissionRate = targetComp.commissionRate;
+          userNode.status = targetComp.status;
+        }
+        saveNetworkUsers(currentNetworkUsers);
+      }
+
+      // Atualizar transações vinculadas a esta empresa
+      currentTransactions.forEach(tx => {
+        if (tx.company && tx.company.toUpperCase() === targetComp.name.toUpperCase()) {
+          tx.partner = partnerName;
+        }
+      });
+      filteredTransactions = [...currentTransactions];
+
       saveCompanies(currentCompanies);
+      saveTransactions(currentTransactions);
+      refreshTransactionFiltersOptions(currentTransactions);
+
+      companyIdBeingConfigured = null;
       newCompanyForm.reset();
       closeNewCompanyModal();
+
+      renderTable();
+      renderRatesTable();
       filterCompanies();
+      renderNetworkView();
+      updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
       updateDashboardStats();
-      showToast(`"${newComp.name}" cadastrado(a) com sucesso!`);
+
+      showToast(`🎉 "${targetComp.name}" configurada com sucesso! Vendedor: "${partnerName}" | Comissão: ${targetComp.commissionRate}%`);
     });
   }
 
@@ -2816,7 +3328,7 @@ function setupEvents() {
               <td>${t.method} (${t.brand})</td>
               <td><span class="badge-company-active" style="padding: 2px 6px; font-size: 11px;">${t.status}</span></td>
               <td style="font-weight: 700;">${formatBRL(t.grossAmount)}</td>
-              <td style="color: #059669; font-weight: 700;">${formatBRL(t.netAmount)}</td>
+              <td style="color: #059669; font-weight: 700;">${formatBRL(t.clientPaid !== null && t.clientPaid !== undefined ? t.clientPaid : t.netAmount)}</td>
             </tr>
           `).join('');
         }
@@ -2843,44 +3355,89 @@ function setupEvents() {
     btnConfirmGeminiImport.addEventListener('click', () => {
       if (!extractedGeminiData || !extractedGeminiData.transactions.length) return;
 
+      const rawExtractedName = (extractedGeminiData.company || 'Empresa Sem Nome').trim();
+      const existingComp = findCompanyMatch(rawExtractedName, currentCompanies);
+
       const newTxs = extractedGeminiData.transactions;
+      // Garantir ordenação da mais recente para a mais antiga
+      newTxs.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
 
-      // Injetar no início das transações
-      currentTransactions.unshift(...newTxs);
-      filteredTransactions = [...currentTransactions];
+      if (existingComp) {
+        // 1. Empresa JÁ cadastrada: associar automaticamente com as configurações e vendedor existentes
+        newTxs.forEach(t => {
+          t.company = existingComp.name;
+          t.partner = existingComp.partnerName || getUplineEntity(existingComp.registeredBy).name || 'Francisco Pereira Paulo';
+        });
 
-      // Se a empresa extraída não estiver cadastrada, cadastrar automaticamente
-      const exists = currentCompanies.some(c => c.name.toUpperCase() === extractedGeminiData.company.toUpperCase());
-      if (!exists) {
-        const newComp = {
-          id: `EMP-${Date.now().toString().slice(-4)}`,
-          name: extractedGeminiData.company.toUpperCase(),
-          doc: '12.345.678/0001-90',
-          owner: extractedGeminiData.company.split(' ')[0],
-          email: 'contato@' + extractedGeminiData.company.toLowerCase().replace(/\s+/g, '') + '.com.br',
-          phone: '(41) 98888-7777',
+        // Injetar e ordenar todas as transações da mais recente para a mais antiga
+        currentTransactions = [...newTxs, ...currentTransactions];
+        currentTransactions.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
+        filteredTransactions = [...currentTransactions];
+
+        currentSort = { column: 'date', order: 'desc' };
+        saveTransactions(currentTransactions);
+        refreshTransactionFiltersOptions(currentTransactions);
+
+        currentPage = 1;
+        renderTable();
+        renderRatesTable();
+        updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
+        updateDashboardStats();
+        closeGeminiModal();
+
+        showToast(`🎉 ${newTxs.length} transações de "${existingComp.name}" importadas e associadas ao vendedor "${existingComp.partnerName || 'Francisco'}" (${existingComp.commissionRate || 0.5}% comissão)!`);
+      } else {
+        // 2. Empresa NOVA (não cadastrada): criar pré-cadastro e abrir formulário para o Administrador completar
+        const newCompId = `EMP-${Date.now().toString().slice(-4)}`;
+        const preComp = {
+          id: newCompId,
+          name: rawExtractedName.toUpperCase(),
+          doc: '',
+          owner: rawExtractedName.split(' ')[0].toUpperCase(),
+          email: 'contato@' + rawExtractedName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com.br',
+          phone: '',
           createdAt: new Date().toLocaleDateString('pt-BR'),
           status: 'Ativo',
-          registeredBy: 'USR-ADMIN'
+          registeredBy: 'USR-ADMIN',
+          partnerName: 'Francisco Pereira Paulo',
+          commissionRate: 0.50,
+          isSeller: false
         };
-        currentCompanies.unshift(newComp);
+
+        currentCompanies.unshift(preComp);
+        saveCompanies(currentCompanies);
         filterCompanies();
+
+        newTxs.forEach(t => {
+          t.company = preComp.name;
+          t.partner = preComp.partnerName;
+        });
+
+        // Injetar e ordenar todas as transações da mais recente para a mais antiga
+        currentTransactions = [...newTxs, ...currentTransactions];
+        currentTransactions.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
+        filteredTransactions = [...currentTransactions];
+
+        currentSort = { column: 'date', order: 'desc' };
+        saveTransactions(currentTransactions);
+        refreshTransactionFiltersOptions(currentTransactions);
+
+        currentPage = 1;
+        renderTable();
+        renderRatesTable();
+        updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
+        updateDashboardStats();
+        closeGeminiModal();
+
+        // Abrir formulário para complementar dados da nova empresa e definir vendedor/comissão
+        setTimeout(() => {
+          if (typeof window.openNewCompanyModalForCompletion === 'function') {
+            window.openNewCompanyModalForCompletion(preComp);
+          }
+        }, 300);
+
+        showToast(`✨ Nova Empresa Detectada! Complete o cadastro para definir o vendedor indicador e comissão de "${preComp.name}".`);
       }
-
-      // Atualizar lista de empresas no filtro se necessário
-      // Salvar transações persistentemente no navegador
-      saveTransactions(currentTransactions);
-
-      // Sincronizar dinamicamente todos os seletores de filtros com o novo extrato
-      refreshTransactionFiltersOptions(currentTransactions);
-
-      currentPage = 1;
-      renderTable();
-      updateKPIs(calculateKPIsFromTransactions(filteredTransactions));
-      updateDashboardStats();
-      closeGeminiModal();
-
-      showToast(`🎉 ${newTxs.length} transações de "${extractedGeminiData.company}" importadas e organizadas com sucesso!`);
     });
   }
 
@@ -2892,8 +3449,8 @@ function setupEvents() {
     if (e.target === newCompanyModal) closeNewCompanyModal();
     if (e.target === newNetworkUserModal) closeNewNetworkUserModal();
     if (e.target === editRateModal) closeEditRateModal();
-    if (e.target === bulkRateModal) closeBulkRateModal();
     if (e.target === geminiImportModal) closeGeminiModal();
+    if (e.target === deleteConfirmModal) closeDeleteConfirmModal();
   });
 
   // Dashboard Action Links
@@ -3074,11 +3631,13 @@ async function loadInitialData() {
 
   const remoteTransactions = await fetchTransactionsFromSupabase();
   if (remoteTransactions && remoteTransactions.length > 0) {
+    remoteTransactions.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
     currentTransactions = remoteTransactions;
     filteredTransactions = [...remoteTransactions];
     saveTransactions(currentTransactions);
   } else {
     const stored = getStoredTransactions();
+    stored.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
     currentTransactions = stored;
     filteredTransactions = [...stored];
   }

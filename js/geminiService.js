@@ -35,6 +35,58 @@ export function saveGeminiKey(key) {
 }
 
 /**
+ * Retorna o timestamp em ms a partir de date (DD/MM/YYYY ou YYYY-MM-DD) e time (HH:MM:SS ou HH:MM)
+ */
+export function parseTxDateTime(dateStr, timeStr = '') {
+  if (!dateStr) return 0;
+  let d = String(dateStr).trim();
+  let t = String(timeStr || '').trim();
+
+  if (d.includes(' ')) {
+    const parts = d.split(/\s+/);
+    d = parts[0];
+    if (!t && parts[1]) t = parts[1];
+  }
+
+  let year = 1970, month = 1, day = 1;
+
+  if (d.includes('/')) {
+    const p = d.split('/');
+    if (p.length === 3) {
+      day = parseInt(p[0], 10) || 1;
+      month = parseInt(p[1], 10) || 1;
+      let y = parseInt(p[2], 10) || 1970;
+      if (y < 100) y += 2000;
+      year = y;
+    }
+  } else if (d.includes('-')) {
+    const p = d.split('-');
+    if (p.length === 3) {
+      if (p[0].length === 4) {
+        year = parseInt(p[0], 10) || 1970;
+        month = parseInt(p[1], 10) || 1;
+        day = parseInt(p[2], 10) || 1;
+      } else {
+        day = parseInt(p[0], 10) || 1;
+        month = parseInt(p[1], 10) || 1;
+        year = parseInt(p[2], 10) || 1970;
+      }
+    }
+  }
+
+  let hours = 0, minutes = 0, seconds = 0;
+  if (t) {
+    const tParts = t.split(':');
+    hours = parseInt(tParts[0], 10) || 0;
+    minutes = parseInt(tParts[1], 10) || 0;
+    seconds = parseInt(tParts[2], 10) || 0;
+  }
+
+  const dt = new Date(year, month - 1, day, hours, minutes, seconds);
+  return isNaN(dt.getTime()) ? 0 : dt.getTime();
+}
+
+/**
  * Converte um arquivo de imagem para Base64 puro
  */
 function fileToBase64(file) {
@@ -276,12 +328,15 @@ function parseReportTextLocally(fullText) {
       grossAmount: gross,
       netAmount: net,
       spread: spread,
-      clientPaid: null,
+      clientPaid: net,
       providerAccount: provider || 'American'
     });
   }
 
   if (transactions.length > 0) {
+    // Ordenar da data mais recente para a mais antiga
+    transactions.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
+
     return {
       company,
       period,
@@ -324,10 +379,10 @@ function safeJsonParse(rawText) {
  * Prompt de sistema para o Gemini
  */
 const SYSTEM_INSTRUCTION = `
-Você é um especialista em extração contábil de vendas de maquininhas (POS).
+Você é um especialista em extração contábil e financeira de relatórios de vendas de maquininhas (POS / TEF).
 Extraia com 100% de precisão todas as transações em JSON no formato:
 {
-  "company": "NOME DA EMPRESA",
+  "company": "NOME DA EMPRESA OU ESTABELECIMENTO",
   "period": "DD/MM/AAAA a DD/MM/AAAA",
   "transactions": [
     {
@@ -339,12 +394,19 @@ Extraia com 100% de precisão todas as transações em JSON no formato:
       "grossAmount": 15.75,
       "fee": 0.46,
       "netAmount": 15.29,
+      "clientPaid": 15.29,
       "method": "Pix",
       "brand": "Pix",
-      "installments": ""
+      "installments": "1x"
     }
   ]
 }
+
+Regras:
+1. Sempre extraia as transações ordenadas cronologicamente da mais recente para a mais antiga.
+2. Data no formato DD/MM/AAAA e hora no formato HH:MM.
+3. O campo "clientPaid" representa o Valor Pago ao Cliente / Líquido do Repasse.
+4. Identifique com precisão o Valor Bruto (grossAmount), Taxa (fee), Valor Líquido / Pago ao Cliente (netAmount e clientPaid), Forma de Pagamento e Bandeira.
 `;
 
 /**
@@ -493,6 +555,10 @@ export async function extractTransactionsWithGemini(file, apiKey, onProgress = (
     }
     const spread = parseFloat((gross * 0.009).toFixed(2));
 
+    const clientPaid = (tx.clientPaid !== undefined && tx.clientPaid !== null && !isNaN(parseFloat(tx.clientPaid)))
+      ? parseFloat(tx.clientPaid)
+      : net;
+
     return {
       id: `TX-AI-${Date.now().toString().slice(-4)}-${idx + 1}`,
       terminal: tx.terminal || '1733773143',
@@ -508,10 +574,13 @@ export async function extractTransactionsWithGemini(file, apiKey, onProgress = (
       grossAmount: gross,
       netAmount: net,
       spread,
-      clientPaid: null,
+      clientPaid: clientPaid,
       providerAccount: tx.providerAccount || 'American'
     };
   });
+
+  // Ordenar da data mais recente para a mais antiga
+  processed.sort((a, b) => parseTxDateTime(b.date, b.time) - parseTxDateTime(a.date, a.time));
 
   onProgress({
     step: 3,
